@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { User, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import AuthModal from '../Auth/AuthModal';
-
 type HeaderProps = {
   onNavigate: (page: string) => void;
   currentPage: string;
@@ -41,9 +40,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               className="flex items-center space-x-2 cursor-pointer"
               onClick={() => onNavigate('home')}
             >
-              <img src="/src/assets/3D_S-Logo-removebg.png"
-                alt="LearnHub logo"
-                className="h-10 w-auto"/>
+              <img src="/3D_S-Logo-removebg.png"
+              alt="LearnHub logo"
+              className="h-10 w-auto" />
               <span className="text-xl font-bold text-gray-800">@Learn</span>
             </div>
 
