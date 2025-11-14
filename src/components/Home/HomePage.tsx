@@ -87,7 +87,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
     <div>
       <section
         className="text-white py-20 bg-cover bg-center"
-        style={{ backgroundImage: `url('/src/assets/banner%20page.png')` }}
+        style={{ backgroundImage: `url('/banner-p.png')` }}
         aria-label="Home banner"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -181,12 +181,12 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
           )}
         </div>
       </section>
+      <section
+           className="text-white py-20 bg-cover bg-center"
+           style={{ backgroundImage: `url('/banner-r.png')` }}
+           aria-label="Home banner"
+             >
 
-         <section
-        className="text-white py-20 bg-cover bg-center"
-        style={{ backgroundImage: `url('/src/assets/banner%20R.png')` }}
-        aria-label="Home banner"
-      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
