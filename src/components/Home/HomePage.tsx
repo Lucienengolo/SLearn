@@ -190,7 +190,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-4">Why Choose LearnHub?</h2>
+              <h2 className="text-3xl font-bold mb-4">Why Choose S@Learn?</h2>
               <ul className="space-y-4">
                 <li className="flex items-start space-x-3">
                   <TrendingUp className="flex-shrink-0 mt-1" size={24} />
