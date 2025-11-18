@@ -100,7 +100,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -115,7 +115,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-2">
-            <BookOpen className="text-blue-600" size={24} />
+            <BookOpen className="text-primary-600" size={24} />
             <span className="text-3xl font-bold text-gray-800">{stats.totalCourses}</span>
           </div>
           <p className="text-gray-600 text-sm">Total Courses</p>
@@ -147,7 +147,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
       </div>
 
       {certificates.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 mb-8 text-white">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg shadow-lg p-6 mb-8 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold mb-1">Certificates Earned</h3>
@@ -155,7 +155,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
             </div>
             <button
               onClick={onCertificateView}
-              className="bg-white text-blue-600 px-6 py-2 rounded-lg hover:bg-blue-50 transition font-medium"
+              className="bg-white text-primary-600 px-6 py-2 rounded-lg hover:bg-blue-50 transition font-medium"
             >
               View All
             </button>
@@ -180,7 +180,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
                 className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer"
                 onClick={() => onCourseSelect(enrollment.course_id)}
               >
-                <div className="h-40 bg-gradient-to-br from-blue-400 to-blue-600 rounded-t-lg flex items-center justify-center">
+                <div className="h-40 bg-gradient-to-br from-primary-400 to-primary-600 rounded-t-lg flex items-center justify-center">
                   {enrollment.course.thumbnail_url ? (
                     <img
                       src={enrollment.course.thumbnail_url}
@@ -194,7 +194,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     {enrollment.course.category && (
-                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                      <span className="text-xs bg-blue-100 text-primary-600 px-2 py-1 rounded">
                         {enrollment.course.category.name}
                       </span>
                     )}
@@ -222,7 +222,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
                         className={`h-2 rounded-full ${
                           enrollment.progress_percentage === 100
                             ? 'bg-green-600'
-                            : 'bg-blue-600'
+                            : 'bg-primary-600'
                         }`}
                         style={{ width: `${enrollment.progress_percentage}%` }}
                       ></div>

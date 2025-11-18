@@ -6,7 +6,7 @@ import CourseEditor from './CourseEditor';
 
 export default function InstructorDashboard() {
   const { user } = useAuth();
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -109,7 +109,7 @@ export default function InstructorDashboard() {
             setSelectedCourse(null);
             setShowEditor(true);
           }}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+          className="flex items-center space-x-2 bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition font-medium"
         >
           <Plus size={20} />
           <span>Create Course</span>
@@ -118,7 +118,7 @@ export default function InstructorDashboard() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       ) : courses.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -127,7 +127,7 @@ export default function InstructorDashboard() {
           <p className="text-gray-600 mb-6">Create your first course to get started</p>
           <button
             onClick={() => setShowEditor(true)}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition"
           >
             Create Your First Course
           </button>
@@ -158,9 +158,9 @@ export default function InstructorDashboard() {
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <div className="flex items-center justify-center mb-1">
-                      <Users size={18} className="text-blue-600" />
+                      <Users size={18} className="text-primary-600" />
                     </div>
-                    <p className="text-2xl font-bold text-blue-600">{course.enrollmentCount}</p>
+                    <p className="text-2xl font-bold text-primary-600">{course.enrollmentCount}</p>
                     <p className="text-xs text-gray-600">Students</p>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-lg">
@@ -184,7 +184,7 @@ export default function InstructorDashboard() {
                       setSelectedCourse(course.id);
                       setShowEditor(true);
                     }}
-                    className="flex-1 flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                    className="flex-1 flex items-center justify-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
                   >
                     <Edit size={16} />
                     <span>Edit</span>
@@ -202,6 +202,7 @@ export default function InstructorDashboard() {
                   <button
                     onClick={() => handleDeleteCourse(course.id)}
                     className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                    title="Delete course"
                   >
                     <Trash2 size={16} />
                   </button>
