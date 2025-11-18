@@ -17,7 +17,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
       onClick={onClick}
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer"
     >
-      <div className="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+      <div className="h-48 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
         {course.thumbnail_url ? (
           <img
             src={course.thumbnail_url}
@@ -31,7 +31,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           {course.category && (
-            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+            <span className="text-xs bg-blue-100 text-primary-600 px-2 py-1 rounded">
               {course.category.name}
             </span>
           )}
@@ -71,7 +71,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
           </p>
         )}
         {course.price > 0 ? (
-          <p className="text-lg font-bold text-blue-600 mt-2">
+          <p className="text-lg font-bold text-primary-600 mt-2">
             ${course.price.toFixed(2)}
           </p>
         ) : (

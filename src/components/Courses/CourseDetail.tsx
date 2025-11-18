@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Users, Star, BookOpen, CheckCircle } from 'lucide-react';
-import { supabase, Course, Lesson, Review } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase, Course, Lesson, Review, Enrollment } from '../../lib/supabase';
 
 type CourseDetailProps = {
   courseId: string;
@@ -10,12 +10,12 @@ type CourseDetailProps = {
 };
 
 export default function CourseDetail({ courseId, onBack, onStartLesson }: CourseDetailProps) {
-  const { user, profile } = useAuth();
-  const [course, setCourse] = useState<any>(null);
+  const { user } = useAuth();
+  const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [enrollment, setEnrollment] = useState<any>(null);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -118,9 +118,9 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg h-64 flex items-center justify-center text-white">
+          <div className="bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg h-64 flex items-center justify-center text-white">
             {course.thumbnail_url ? (
-              <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover rounded-lg" />
+              <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover rounded-lg" /> 
             ) : (
               <span className="text-8xl opacity-50">📚</span>
             )}
@@ -128,9 +128,9 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
           <div>
             <div className="flex items-center gap-2 mb-2">
-              {course.category && (
-                <span className="text-sm bg-blue-100 text-blue-600 px-3 py-1 rounded">
-                  {course.category.name}
+              {course.category?.name && (
+                <span className="text-sm bg-blue-100 text-primary-600 px-3 py-1 rounded">
+ {course.category?.name}
                 </span>
               )}
               <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded">
@@ -175,7 +175,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 <div
                   key={lesson.id}
                   className={`bg-white p-4 rounded-lg border ${
-                    isEnrolled ? 'hover:border-blue-500 cursor-pointer' : 'border-gray-200'
+                    isEnrolled ? 'hover:border-primary-500 cursor-pointer' : 'border-gray-200'
                   }`}
                   onClick={() => isEnrolled && onStartLesson(lesson.id)}
                 >
@@ -246,7 +246,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-blue-600 h-2 rounded-full"
+                        className="bg-primary-600 h-2 rounded-full"
                         style={{ width: `${enrollment.progress_percentage}%` }}
                       ></div>
                     </div>
@@ -254,7 +254,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 )}
                 <button
                   onClick={() => lessons.length > 0 && onStartLesson(lessons[0].id)}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium"
                 >
                   Continue Learning
                 </button>
@@ -262,7 +262,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             ) : (
               <button
                 onClick={handleEnroll}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium"
               >
                 {user ? 'Enroll Now' : 'Sign In to Enroll'}
               </button>

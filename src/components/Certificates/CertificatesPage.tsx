@@ -79,10 +79,10 @@ export default function CertificatesPage({ onBack }: CertificatesPageProps) {
               key={certificate.id}
               className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition"
             >
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+              <div className="bg-gradient-to-r from-primary-500 to-primary-600 p-6 text-white">
                 <Award size={48} className="mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Certificate of Completion</h2>
-                <p className="text-blue-100">LearnHub Online Learning Platform</p>
+                <p className="text-blue-100">S@Learn Online Learning Platform</p>
               </div>
 
               <div className="p-6">
@@ -107,7 +107,7 @@ export default function CertificatesPage({ onBack }: CertificatesPageProps) {
                       <p className="text-sm text-gray-600">Issue Date</p>
                       <p className="font-medium text-gray-800">{formatDate(certificate.issued_at)}</p>
                     </div>
-                    <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <button className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition">
                       <Download size={18} />
                       <span>Download</span>
                     </button>
