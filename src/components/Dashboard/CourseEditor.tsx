@@ -1,8 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { ArrowLeft, Plus, Trash2, GripVertical, Upload, X, FileText, Video } from 'lucide-react';
 import { supabase, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { uploadLessonVideo, uploadLessonPDF, deleteLessonVideo, deleteLessonPDF } from '../../lib/storage';
+import { uploadLessonVideo, uploadLessonPDF } from '../../lib/storage';
+
+type Lesson = {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  video_url?: string;
+  video_file_url?: string;
+  pdf_notes_url?: string;
+  file_upload_type?: string;
+  duration_minutes: number;
+  order_index?: number;
+};
 
 type CourseEditorProps = {
   courseId: string | null;
@@ -19,7 +32,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const [durationHours, setDurationHours] = useState(0);
   const [price, setPrice] = useState(0);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [lessons, setLessons] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -166,9 +179,9 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
     ]);
   };
 
-  const updateLesson = (index: number, field: string, value: any) => {
+  const updateLesson = <K extends keyof Lesson>(index: number, field: K, value: Lesson[K]) => {
     const newLessons = [...lessons];
-    newLessons[index] = { ...newLessons[index], [field]: value };
+    newLessons[index] = { ...newLessons[index], [field]: value } as Lesson;
     setLessons(newLessons);
   };
 
@@ -212,7 +225,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Introduction to Web Development"
               required
             />
@@ -225,7 +238,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={4}
               placeholder="Describe what students will learn..."
               required
@@ -240,7 +253,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Select a course category"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Select a category</option>
                 {categories.map((cat) => (
@@ -256,9 +270,10 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 Level
               </label>
               <select
+                title="Select course level"
                 value={level}
-                onChange={(e) => setLevel(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setLevel(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
@@ -274,7 +289,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 type="number"
                 value={durationHours}
                 onChange={(e) => setDurationHours(parseInt(e.target.value) || 0)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 min="0"
               />
             </div>
@@ -287,25 +302,54 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 min="0"
                 step="0.01"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Thumbnail URL
-            </label>
-            <input
-              type="url"
-              value={thumbnailUrl}
-              onChange={(e) => setThumbnailUrl(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Course Thumbnail
+              </label>
+              {thumbnailUrl ? (
+                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-300">
+                  <div className="flex items-center space-x-2">
+                    <img src={thumbnailUrl} alt="Thumbnail preview" className="w-12 h-12 rounded object-cover" />
+                    <span className="text-sm text-gray-700">Thumbnail ready</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setThumbnailUrl('')}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50">
+                  <div className="text-center">
+                    <Upload size={24} className="mx-auto text-gray-600 mb-2" />
+                    <span className="text-sm text-gray-700">Click to upload thumbnail</span>
+                    <span className="text-xs text-gray-500 block mt-1">JPG, PNG (Max 5MB)</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => setThumbnailUrl(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              )}
+            </div>
 
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
@@ -328,6 +372,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       <span className="font-medium text-gray-700">Lesson {index + 1}</span>
                     </div>
                     <button
+                      aria-label={`Delete lesson ${index + 1}`}
+                      title={`Delete lesson ${index + 1}`}
                       onClick={() => removeLesson(index)}
                       className="text-red-600 hover:text-red-700"
                     >
@@ -340,19 +386,19 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       type="text"
                       value={lesson.title}
                       onChange={(e) => updateLesson(index, 'title', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       placeholder="Lesson title"
                       required
                     />
                     <textarea
                       value={lesson.description}
                       onChange={(e) => updateLesson(index, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       rows={2}
                       placeholder="Lesson description"
                     />
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="bg-blue-50 border border-primary-200 rounded-lg p-4">
                       <p className="text-sm font-semibold text-gray-800 mb-3">
                         Lesson Content *
                       </p>
@@ -364,13 +410,13 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                           <textarea
                             value={lesson.content}
                             onChange={(e) => updateLesson(index, 'content', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                             rows={3}
                             placeholder="Enter lesson text content (optional)"
                           />
                         </div>
 
-                        <div className="border-t border-blue-200 pt-3">
+                        <div className="border-t border-primary-200 pt-3">
                           <label className="text-sm text-gray-700 font-medium mb-2 block">
                             Upload Video File (Optional)
                           </label>
@@ -382,16 +428,19 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                               </div>
                               <button
                                 type="button"
+                                title="Remove video file"
+                                aria-label="Remove video file"
                                 onClick={() => updateLesson(index, 'video_file_url', '')}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X size={18} />
+                                Remove video file
                               </button>
                             </div>
                           ) : (
-                            <label className="flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg p-4 cursor-pointer hover:bg-blue-50">
+                            <label className="flex items-center justify-center border-2 border-dashed border-primary-300 rounded-lg p-4 cursor-pointer hover:bg-primary-50">
                               <div className="text-center">
-                                <Upload size={24} className="mx-auto text-blue-600 mb-1" />
+                                <Upload size={24} className="mx-auto text-primary-600 mb-1" />
                                 <span className="text-sm text-gray-700">Click to upload video</span>
                                 <span className="text-xs text-gray-500 block mt-1">MP4, WebM (Max 500MB)</span>
                               </div>
@@ -399,6 +448,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                                 type="file"
                                 accept="video/mp4,video/webm"
                                 className="hidden"
+                                title="Upload video file"
+                                placeholder="Upload video file"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if (file && courseId) {
@@ -427,16 +478,19 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                               </div>
                               <button
                                 type="button"
+                                title="Remove PDF notes"
+                                aria-label={`Remove PDF notes for lesson ${index + 1}`}
                                 onClick={() => updateLesson(index, 'pdf_notes_url', '')}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X size={18} />
+                                <span className="sr-only">Remove PDF notes</span>
                               </button>
                             </div>
                           ) : (
-                            <label className="flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg p-4 cursor-pointer hover:bg-blue-50">
+                            <label className="flex items-center justify-center border-2 border-dashed border-primary-300 rounded-lg p-4 cursor-pointer hover:bg-primary-50">
                               <div className="text-center">
-                                <Upload size={24} className="mx-auto text-blue-600 mb-1" />
+                                <Upload size={24} className="mx-auto text-primary-600 mb-1" />
                                 <span className="text-sm text-gray-700">Click to upload PDF notes</span>
                                 <span className="text-xs text-gray-500 block mt-1">PDF only (Max 50MB)</span>
                               </div>
@@ -470,7 +524,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       type="url"
                       value={lesson.video_url}
                       onChange={(e) => updateLesson(index, 'video_url', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       placeholder="Embed URL (YouTube, Vimeo) - Optional"
                     />
 
@@ -478,7 +532,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       type="number"
                       value={lesson.duration_minutes}
                       onChange={(e) => updateLesson(index, 'duration_minutes', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       placeholder="Duration (min)"
                       min="0"
                     />
@@ -492,7 +546,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
             <button
               onClick={handleSaveCourse}
               disabled={saving || !title || !description}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+              className="flex-1 bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Course'}
             </button>
