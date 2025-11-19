@@ -171,7 +171,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   if (!lesson || !course) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -247,10 +247,10 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
           )}
 
           {(lesson as any).pdf_notes_url && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <FileText size={24} className="text-blue-600" />
+                  <FileText size={24} className="text-primary-600" />
                   <div>
                     <h3 className="font-semibold text-gray-800">PDF Notes</h3>
                     <p className="text-sm text-gray-600">Lesson notes and materials</p>
@@ -261,7 +261,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
                   download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
                 >
                   <Download size={18} />
                   <span>Download</span>
@@ -289,7 +289,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
               {quiz && (
                 <button
                   onClick={() => setShowQuiz(true)}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition font-medium"
                 >
                   Take Quiz
                 </button>
@@ -316,11 +316,11 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             <div
               key={l.id}
               className={`flex items-center space-x-3 p-2 rounded ${
-                l.id === lesson.id ? 'bg-blue-50' : ''
+                l.id === lesson.id ? 'bg-primary-50' : ''
               }`}
             >
               <span className="text-sm text-gray-500">{index + 1}</span>
-              <span className={`text-sm flex-1 ${l.id === lesson.id ? 'font-medium text-blue-600' : 'text-gray-700'}`}>
+              <span className={`text-sm flex-1 ${l.id === lesson.id ? 'font-medium text-primary-600' : 'text-gray-700'}`}>
                 {l.title}
               </span>
             </div>
