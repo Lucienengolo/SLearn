@@ -41,7 +41,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               onClick={() => onNavigate('home')}
             >
               <img src="/3D_S-Logo-removebg.png"
-              alt="LearnHub logo"
+              alt="S@Learn logo"
               className="h-10 w-auto" />
               <span className="text-xl font-bold text-gray-800">@Learn</span>
             </div>
