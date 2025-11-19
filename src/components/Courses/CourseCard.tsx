@@ -31,7 +31,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           {course.category && (
-            <span className="text-xs bg-blue-100 text-primary-600 px-2 py-1 rounded">
+            <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded">
               {course.category.name}
             </span>
           )}
