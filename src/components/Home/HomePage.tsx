@@ -210,27 +210,27 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
                   <Users className="flex-shrink-0 mt-1" size={24} />
                   <div>
                     <h3 className="font-semibold text-lg">Expert Instructors</h3>
-                    <p className="text-blue-100">Learn from industry professionals</p>
+                    <p className="text-primary-100">Learn from industry professionals</p>
                   </div>
                 </li>
               </ul>
             </div>
             <div className="bg-white bg-opacity-10 backdrop-blur rounded-lg p-8">
               <h3 className="text-2xl font-bold mb-4">Ready to Start Learning?</h3>
-              <p className="text-blue-100 mb-6">
+              <p className="text-primary-100 mb-6">
                 Join thousands of students already learning on LearnHub
               </p>
               {!user ? (
                 <button
                   onClick={() => onNavigate('courses')}
-                  className="w-full bg-white text-primary-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition font-semibold"
+                  className="w-full bg-white text-primary-600 px-6 py-3 rounded-lg hover:bg-primary-50 transition font-semibold"
                 >
                   Get Started Today
                 </button>
               ) : (
                 <button
                   onClick={() => onNavigate('courses')}
-                  className="w-full bg-white text-primary-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition font-semibold"
+                  className="w-full bg-white text-primary-600 px-6 py-3 rounded-lg hover:bg-primary-50 transition font-semibold"
                 >
                   Browse Courses
                 </button>
