@@ -156,7 +156,7 @@ export default function InstructorDashboard() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-center p-3 bg-primary-50 rounded-lg">
                     <div className="flex items-center justify-center mb-1">
                       <Users size={18} className="text-primary-600" />
                     </div>
