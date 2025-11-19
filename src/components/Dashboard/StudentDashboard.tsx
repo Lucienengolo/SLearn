@@ -151,11 +151,11 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView }: 
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold mb-1">Certificates Earned</h3>
-              <p className="text-blue-100">You have {certificates.length} certificate(s)</p>
+              <p className="text-primary-100">You have {certificates.length} certificate(s)</p>
             </div>
             <button
               onClick={onCertificateView}
-              className="bg-white text-primary-600 px-6 py-2 rounded-lg hover:bg-blue-50 transition font-medium"
+              className="bg-white text-primary-600 px-6 py-2 rounded-lg hover:bg-primary-50 transition font-medium"
             >
               View All
             </button>
