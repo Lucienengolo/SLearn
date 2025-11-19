@@ -398,7 +398,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       placeholder="Lesson description"
                     />
 
-                    <div className="bg-blue-50 border border-primary-200 rounded-lg p-4">
+                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
                       <p className="text-sm font-semibold text-gray-800 mb-3">
                         Lesson Content *
                       </p>
