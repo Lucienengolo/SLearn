@@ -115,8 +115,11 @@ Deno.serve(async (req: Request) => {
         quantity: 1,
       },
     ],
-    success_url: `${body.origin}/#course-${course.id}?checkout=success`,
-    cancel_url: `${body.origin}/#course-${course.id}?checkout=cancel`,
+    // Query string must come before the hash fragment: this app routes on
+    // window.location.hash (see App.tsx), so `#course-<id>?checkout=...`
+    // would corrupt the courseId it parses out of the hash.
+    success_url: `${body.origin}/?checkout=success#course-${course.id}`,
+    cancel_url: `${body.origin}/?checkout=cancel#course-${course.id}`,
     client_reference_id: userId,
     metadata: { student_id: userId, course_id: course.id },
   });

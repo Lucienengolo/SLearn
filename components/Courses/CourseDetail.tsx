@@ -27,10 +27,41 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkoutNotice, setCheckoutNotice] = useState<'success' | 'cancel' | null>(null);
+  const [startingCheckout, setStartingCheckout] = useState(false);
 
   useEffect(() => {
     fetchCourseData();
   }, [courseId, user]);
+
+  // Stripe redirects back with ?checkout=success|cancel before the hash
+  // (see create-checkout-session's success_url/cancel_url). Consume it once
+  // so a page refresh doesn't re-trigger the banner, then poll briefly for
+  // success since stripe-webhook creates the enrollment asynchronously.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    if (checkout !== 'success' && checkout !== 'cancel') return;
+
+    setCheckoutNotice(checkout);
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+
+    if (checkout === 'success') {
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts += 1;
+        await fetchCourseData();
+        if (attempts >= 5) clearInterval(poll);
+      }, 2000);
+      return () => clearInterval(poll);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    if (checkoutNotice === 'success' && isEnrolled) {
+      setCheckoutNotice(null);
+    }
+  }, [checkoutNotice, isEnrolled]);
 
   const fetchCourseData = async () => {
     const { data: courseData } = await supabase
@@ -97,6 +128,23 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
       } else {
         alert('Please sign in to enroll in paid courses');
       }
+      return;
+    }
+
+    if (course && course.price > 0) {
+      setStartingCheckout(true);
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { courseId, origin: window.location.origin },
+      });
+      setStartingCheckout(false);
+
+      if (error || !data?.url) {
+        console.error('Error starting checkout:', error);
+        alert('Could not start checkout. Please try again.');
+        return;
+      }
+
+      window.location.href = data.url;
       return;
     }
 
@@ -258,6 +306,17 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+            {checkoutNotice === 'success' && !isEnrolled && (
+              <div className="mb-4 text-sm text-primary-700 bg-primary-50 p-3 rounded-lg">
+                Payment received — activating your enrollment…
+              </div>
+            )}
+            {checkoutNotice === 'cancel' && (
+              <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                Checkout cancelled — you have not been charged.
+              </div>
+            )}
+
             {course.price > 0 ? (
               <p className="text-3xl font-bold text-gray-800 mb-4">${course.price.toFixed(2)}</p>
             ) : (
@@ -303,9 +362,18 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             ) : (
               <button
                 onClick={handleEnroll}
-                className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium"
+                disabled={startingCheckout}
+                className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {user ? 'Enroll Now' : course.price === 0 ? 'Start Free (Guest)' : 'Sign In to Enroll'}
+                {startingCheckout
+                  ? 'Redirecting to checkout…'
+                  : user
+                  ? course.price > 0
+                    ? 'Enroll Now — Pay & Enroll'
+                    : 'Enroll Now'
+                  : course.price === 0
+                  ? 'Start Free (Guest)'
+                  : 'Sign In to Enroll'}
               </button>
             )}
 
