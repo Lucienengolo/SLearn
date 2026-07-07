@@ -1,0 +1,37 @@
+name: Database backup
+
+on:
+  schedule:
+    # 03:00 UTC daily. Supabase's own paid-plan backups/PITR are the primary
+    # safety net — this is a supplementary, self-managed copy under your
+    # own control (see README §6 DO-6 for the restore drill this pairs with).
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    name: pg_dump and upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install postgresql-client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Run backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set — add it in repo Settings > Secrets > Actions (Supabase dashboard: Settings > Database > Connection string > URI, use the pooler URI)."
+            exit 1
+          fi
+          chmod +x scripts/db-backup.sh
+          ./scripts/db-backup.sh backups
+      # Default retention (90 days) via GitHub artifacts — good enough to
+      # start, and needs no extra service. For longer retention, add an
+      # upload-to-S3/R2/GCS step instead (or in addition) using the same
+      # backups/*.dump file this step produces.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: slearn-db-backup-${{ github.run_id }}
+          path: backups/*.dump
+          retention-days: 90

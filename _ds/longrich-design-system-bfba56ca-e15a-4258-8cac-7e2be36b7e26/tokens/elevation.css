@@ -1,0 +1,35 @@
+/* ============================================================
+   ELEVATION — radius, borders, soft shadows
+   Light, low-contrast shadows for a clean / airy feel.
+   ============================================================ */
+:root {
+  /* Radius (medium, rounded) */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   10px;   /* buttons, inputs */
+  --radius-lg:   14px;   /* cards */
+  --radius-xl:   20px;   /* large surfaces / modals */
+  --radius-2xl:  28px;
+  --radius-full: 999px;
+
+  /* Border widths */
+  --border-1: 1px;
+  --border-2: 2px;
+
+  /* Soft elevation system (cool-neutral, low alpha) */
+  --shadow-xs: 0 1px 2px rgba(20, 35, 25, 0.04);
+  --shadow-sm: 0 1px 3px rgba(20, 35, 25, 0.06), 0 1px 2px rgba(20, 35, 25, 0.04);
+  --shadow-md: 0 4px 12px rgba(20, 35, 25, 0.06), 0 2px 4px rgba(20, 35, 25, 0.04);
+  --shadow-lg: 0 12px 28px rgba(20, 35, 25, 0.10), 0 4px 8px rgba(20, 35, 25, 0.04);
+  --shadow-xl: 0 24px 48px rgba(20, 35, 25, 0.14);
+
+  /* Primary-tinted glow for emphasized CTAs */
+  --shadow-primary: 0 6px 16px rgba(21, 122, 77, 0.22);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --duration-fast: 120ms; /* @kind other */
+  --duration-base: 180ms; /* @kind other */
+  --duration-slow: 280ms; /* @kind other */
+}

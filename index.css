@@ -1,0 +1,11 @@
+@import './_ds/longrich-design-system-bfba56ca-e15a-4258-8cac-7e2be36b7e26/styles.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--surface-page);
+  color: var(--text-primary);
+}

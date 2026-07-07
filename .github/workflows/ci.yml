@@ -1,0 +1,153 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend:
+    name: Lint, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # This job never launches a browser — skip puppeteer's ~300MB Chromium
+      # download (a devDependency of @axe-core/puppeteer, only actually
+      # needed by the `accessibility` job below).
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+  edge-functions:
+    name: Edge functions (Deno check + lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      # --config is explicit rather than relied-on-by-discovery: a bare `deno
+      # check <file>` from the repo root does not reliably auto-discover
+      # supabase/functions/deno.json (observed directly — some npm-backed
+      # imports resolve via the module cache from a prior explicit-config
+      # run, others 404 with "not a dependency" from the same command).
+      - run: >
+          deno check --config supabase/functions/deno.json
+          supabase/functions/instructor-approval/index.ts
+          supabase/functions/notify-application-email/index.ts
+          supabase/functions/kairos-mind-tutor/index.ts
+          supabase/functions/health/index.ts
+      - run: deno lint supabase/functions
+
+  accessibility:
+    name: Accessibility (axe-core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Placeholder creds only — this checks the static UI (labels, landmarks,
+      # contrast, hit targets), not real data-driven pages. See
+      # scripts/a11y-audit.mjs for exactly what's exercised.
+      - name: Write placeholder env
+        run: |
+          echo "VITE_SUPABASE_URL=http://127.0.0.1:9" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=placeholder-anon-key" >> .env
+      - run: npm run build
+      - name: Serve build and run axe-core audit
+        run: |
+          npx vite preview --port 5173 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5173 > /dev/null && break
+            sleep 1
+          done
+          A11Y_BASE_URL=http://localhost:5173 npm run test:a11y
+
+  lighthouse:
+    name: Lighthouse budget (accessibility/best-practices/SEO gated; performance reported only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # treosh/lighthouse-ci-action brings its own Chrome — this job doesn't
+      # need puppeteer's copy either.
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      # Same placeholder-creds caveat as the accessibility job. Performance
+      # numbers from this build are NOT representative of the real app —
+      # without a live Supabase backend, failed API calls retry for the
+      # entire trace window and dominate every timing metric (confirmed
+      # locally: a fast-failing backend made scores *worse* than a slow-DNS
+      # one, which only makes sense as a retry-storm artifact). That's why
+      # performance has no assertion below — it's collected for trend
+      # visibility, not gated. Re-run this against a real backend + real
+      # course data before trusting the performance number.
+      - name: Write placeholder env
+        run: |
+          echo "VITE_SUPABASE_URL=http://127.0.0.1:9" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=placeholder-anon-key" >> .env
+      - run: npm run build
+      - uses: treosh/lighthouse-ci-action@v11
+        with:
+          configPath: './lighthouserc.json'
+
+  database:
+    name: Migrations apply cleanly
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGPASSWORD: postgres
+      PGHOST: localhost
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply stub schema (auth/storage/pg_net stand-ins — see file header)
+        run: psql -v ON_ERROR_STOP=1 -f .github/ci/stub_supabase_schema.sql
+      - name: Apply migrations in order
+        run: |
+          set -e
+          for f in supabase/migrations/*.sql; do
+            echo "::group::Applying $f"
+            if [[ "$f" == *0004_reviewer_and_notifications.sql ]]; then
+              # pg_net ships on every real Supabase project but isn't an
+              # installable package on plain Postgres. CI validates the rest
+              # of this migration's SQL with that one line stripped and
+              # relies on the net.http_post stub above for the trigger
+              # bodies that call it.
+              sed '/^create extension if not exists pg_net;/d' "$f" | psql -v ON_ERROR_STOP=1
+            else
+              psql -v ON_ERROR_STOP=1 -f "$f"
+            fi
+            echo "::endgroup::"
+          done
+
+# Preview/production deploys are handled by Vercel's native GitHub
+# integration on this repo (not a custom Actions job here) — it already
+# comments a preview URL on every PR and deploys `main` to production.
+# See vercel.json for build/header config, and README §9 for the env vars
+# that need to be set in the Vercel project dashboard.
