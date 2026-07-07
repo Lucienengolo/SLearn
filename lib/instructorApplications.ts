@@ -4,7 +4,6 @@ import {
   InstructorCredential,
   InstructorCredentialType,
   Interview,
-  InterviewSlot,
 } from './supabase';
 
 export type ApplicationDraft = Partial<
@@ -100,17 +99,6 @@ export async function uploadCredential(
   return data;
 }
 
-export async function fetchOpenInterviewSlots(): Promise<InterviewSlot[]> {
-  const { data, error } = await supabase
-    .from('interview_slots')
-    .select('*')
-    .eq('is_booked', false)
-    .order('starts_at', { ascending: true });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
 export async function fetchMyInterview(applicationId: string): Promise<Interview | null> {
   const { data, error } = await supabase
     .from('interviews')
@@ -122,29 +110,17 @@ export async function fetchMyInterview(applicationId: string): Promise<Interview
   return data;
 }
 
-export async function scheduleInterview(
-  applicationId: string,
-  slot: InterviewSlot
-): Promise<Interview> {
-  const { error: slotError } = await supabase
-    .from('interview_slots')
-    .update({ is_booked: true })
-    .eq('id', slot.id)
-    .eq('is_booked', false);
+// Interviews are booked through Cal.com (see supabase/functions/cal-webhook)
+// instead of a DB-native slot picker — this just builds the prefilled
+// booking link. Undefined when VITE_CAL_BOOKING_LINK isn't configured, same
+// no-op-until-configured pattern as Sentry/PostHog (lib/errorTracking.ts,
+// lib/analytics.ts).
+export function getCalBookingLink(name: string, email: string): string | null {
+  const base = import.meta.env.VITE_CAL_BOOKING_LINK;
+  if (!base) return null;
 
-  if (slotError) throw slotError;
-
-  const { data, error } = await supabase
-    .from('interviews')
-    .insert({
-      application_id: applicationId,
-      slot_id: slot.id,
-      scheduled_at: slot.starts_at,
-      panelist_id: slot.panelist_id,
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data;
+  const url = new URL(base);
+  if (name) url.searchParams.set('name', name);
+  if (email) url.searchParams.set('email', email);
+  return url.toString();
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Circle, Clock, XCircle } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
 import { InstructorApplication, InstructorCredential, Interview } from '../../../lib/supabase';
-import { fetchCredentials, fetchMyInterview } from '../../../lib/instructorApplications';
+import { fetchCredentials, fetchMyInterview, getCalBookingLink } from '../../../lib/instructorApplications';
 import { trackEvent } from '../../../lib/analytics';
 
 const STAGES = ['submitted', 'review', 'interview', 'approved'] as const;
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default function VerificationPipeline({ application }: Props) {
+  const { user } = useAuth();
   const [credentials, setCredentials] = useState<InstructorCredential[]>([]);
   const [interview, setInterview] = useState<Interview | null>(null);
 
@@ -113,6 +115,32 @@ export default function VerificationPipeline({ application }: Props) {
           }
         />
       </div>
+
+      {interview?.meeting_url && interview.outcome === 'pending' && (
+        <div className="mt-4 bg-primary-50 border border-primary-100 rounded-lg p-4 text-sm text-primary-800">
+          <a href={interview.meeting_url} target="_blank" rel="noopener noreferrer" className="font-medium underline">
+            Join your interview
+          </a>
+        </div>
+      )}
+
+      {!interview && !rejected && application.status !== 'approved' && (
+        (() => {
+          const calLink = getCalBookingLink(application.full_name ?? '', user?.email ?? '');
+          return calLink ? (
+            <div className="mt-4">
+              <a
+                href={calLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium"
+              >
+                Schedule your interview on Cal.com
+              </a>
+            </div>
+          ) : null;
+        })()
+      )}
     </div>
   );
 }

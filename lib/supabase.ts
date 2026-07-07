@@ -196,6 +196,8 @@ export type Interview = {
   panelist_id: string | null;
   outcome: InterviewOutcome;
   notes: string | null;
+  cal_booking_uid: string | null;
+  meeting_url: string | null;
   created_at: string;
   updated_at: string;
 };

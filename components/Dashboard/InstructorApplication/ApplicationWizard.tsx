@@ -2,13 +2,12 @@ import { cloneElement, useEffect, useState } from 'react';
 import { CheckCircle, Upload } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { trackEvent } from '../../../lib/analytics';
-import { supabase, Category, InstructorApplication, InstructorCredential, InterviewSlot } from '../../../lib/supabase';
+import { supabase, Category, InstructorApplication, InstructorCredential } from '../../../lib/supabase';
 import {
   ApplicationDraft,
   fetchCredentials,
-  fetchOpenInterviewSlots,
+  getCalBookingLink,
   saveDraft,
-  scheduleInterview,
   submitApplication,
   uploadCredential,
 } from '../../../lib/instructorApplications';
@@ -32,8 +31,6 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
   const [step, setStep] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [credentials, setCredentials] = useState<InstructorCredential[]>([]);
-  const [openSlots, setOpenSlots] = useState<InterviewSlot[]>([]);
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -56,8 +53,6 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       .select('*')
       .order('name', { ascending: true })
       .then(({ data }) => setCategories(data ?? []));
-
-    fetchOpenInterviewSlots().then(setOpenSlots).catch(() => setOpenSlots([]));
   }, []);
 
   useEffect(() => {
@@ -116,10 +111,6 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     setSaving(true);
     setError('');
     try {
-      const slot = openSlots.find((s) => s.id === selectedSlotId);
-      if (slot) {
-        await scheduleInterview(application.id, slot);
-      }
       await submitApplication(application.id);
       trackEvent('instructor_application_submitted');
       onSubmitted();
@@ -306,31 +297,33 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
         {step === 4 && (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-              Pick a preferred interview slot. A reviewer will confirm it once your
-              credentials and application have been checked.
-            </p>
-            {openSlots.length === 0 && (
-              <p className="text-sm text-gray-500">No open slots right now — you can still submit and we'll follow up by email.</p>
-            )}
-            {openSlots.map((slot) => (
-              <label
-                key={slot.id}
-                className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer ${
-                  selectedSlotId === slot.id ? 'border-primary-600 bg-primary-50' : 'border-gray-200'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="slot"
-                  checked={selectedSlotId === slot.id}
-                  onChange={() => setSelectedSlotId(slot.id)}
-                />
-                <span className="text-sm text-gray-800">
-                  {new Date(slot.starts_at).toLocaleString()} – {new Date(slot.ends_at).toLocaleTimeString()}
-                </span>
-              </label>
-            ))}
+            {(() => {
+              const calLink = getCalBookingLink(form.full_name ?? '', user?.email ?? '');
+              return calLink ? (
+                <>
+                  <p className="text-sm text-gray-600">
+                    Book your compulsory interview on Cal.com — pick any time that works for you.
+                    A reviewer confirms it once your credentials and application have been checked.
+                  </p>
+                  <a
+                    href={calLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium"
+                  >
+                    Schedule interview on Cal.com
+                  </a>
+                  <p className="text-xs text-gray-500">
+                    You can also submit now and schedule later from your dashboard.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Interview scheduling isn't configured yet — submit your application and
+                  we'll follow up by email to schedule.
+                </p>
+              );
+            })()}
           </div>
         )}
 
