@@ -26,7 +26,12 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
 
   useEffect(() => {
     fetchLessonData();
-  }, [lessonId]);
+    // user is a real dependency: on a fresh page load, this can fire
+    // before auth resolves, taking the guest-mode branch and never
+    // refetching once the real signed-in user loads (found by screenshot-
+    // testing the deployed curriculum sidebar showing lessons as
+    // incomplete/locked despite being done in the real account).
+  }, [lessonId, user]);
 
   const fetchLessonData = async () => {
     const { data: lessonData } = await supabase
