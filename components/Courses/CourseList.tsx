@@ -6,6 +6,7 @@ import { getCourseCover } from '../../lib/courseCovers';
 
 type CourseListProps = {
   onCourseSelect: (courseId: string) => void;
+  initialSearch?: string;
 };
 
 type CourseWithStats = Course & {
@@ -15,16 +16,26 @@ type CourseWithStats = Course & {
   averageRating: number;
 };
 
-export default function CourseList({ onCourseSelect }: CourseListProps) {
+const PAGE_SIZE = 12;
+
+export default function CourseList({ onCourseSelect, initialSearch }: CourseListProps) {
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch ?? '');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     fetchCategories();
-    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    setPage(0);
+    fetchCourses(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, searchQuery]);
 
   const fetchCategories = async () => {
@@ -36,15 +47,23 @@ export default function CourseList({ onCourseSelect }: CourseListProps) {
     if (data) setCategories(data);
   };
 
-  const fetchCourses = async () => {
-    setLoading(true);
+  const fetchCourses = async (targetPage: number, append: boolean) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     let query = supabase
       .from('courses')
-      .select(`
+      .select(
+        `
         *,
         instructor:profiles!instructor_id(full_name),
         category:categories(name)
-      `)
+      `,
+        { count: 'exact' }
+      )
       .eq('is_published', true);
 
     if (selectedCategory !== 'all') {
@@ -55,11 +74,16 @@ export default function CourseList({ onCourseSelect }: CourseListProps) {
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const from = targetPage * PAGE_SIZE;
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
 
     if (error) {
       console.error('Error fetching courses:', error);
     } else if (data) {
+      setTotalCount(count ?? data.length);
+
       // One follow-up query for every course's stats, instead of 2 per
       // course (previously enrollment count + reviews, N+1 -- see
       // course_stats in 0020/0021_*.sql).
@@ -70,18 +94,25 @@ export default function CourseList({ onCourseSelect }: CourseListProps) {
 
       const statsByCourseId = new Map((statsRows ?? []).map((s: CourseStats) => [s.course_id, s]));
 
-      setCourses(
-        data.map((course: Course) => {
-          const stats = statsByCourseId.get(course.id);
-          return {
-            ...course,
-            enrollmentCount: stats?.enrollment_count ?? 0,
-            averageRating: stats?.average_rating ?? 0,
-          };
-        })
-      );
+      const page = data.map((course: Course) => {
+        const stats = statsByCourseId.get(course.id);
+        return {
+          ...course,
+          enrollmentCount: stats?.enrollment_count ?? 0,
+          averageRating: stats?.average_rating ?? 0,
+        };
+      });
+
+      setCourses((prev) => (append ? [...prev, ...page] : page));
     }
     setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchCourses(nextPage, true);
   };
 
   return (
@@ -143,15 +174,28 @@ export default function CourseList({ onCourseSelect }: CourseListProps) {
           <p className="text-gray-600 text-lg">No courses found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onClick={() => onCourseSelect(course.id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onClick={() => onCourseSelect(course.id)}
+              />
+            ))}
+          </div>
+          {courses.length < totalCount && (
+            <div className="text-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition font-medium h-11 px-6 rounded-[10px] disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading…' : `Load more (${totalCount - courses.length} remaining)`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

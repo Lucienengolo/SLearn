@@ -30,6 +30,7 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [courseSearchTerm, setCourseSearchTerm] = useState('');
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -51,6 +52,11 @@ function AppContent() {
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
+  };
+
+  const handleSearchCourses = (term: string) => {
+    setCourseSearchTerm(term);
+    handleNavigate('courses');
   };
 
   const handleCourseSelect = (courseId: string) => {
@@ -103,11 +109,11 @@ function AppContent() {
 
       <main id="main-content">
         {currentPage === 'home' && (
-          <HomePage onNavigate={handleNavigate} onCourseSelect={handleCourseSelect} />
+          <HomePage onNavigate={handleNavigate} onCourseSelect={handleCourseSelect} onSearchCourses={handleSearchCourses} />
         )}
 
         {currentPage === 'courses' && (
-          <CourseList onCourseSelect={handleCourseSelect} />
+          <CourseList onCourseSelect={handleCourseSelect} initialSearch={courseSearchTerm} />
         )}
 
         {currentPage === 'course-detail' && selectedCourseId && (

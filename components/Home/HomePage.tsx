@@ -8,12 +8,13 @@ import { CATEGORY_COVERS } from '../../lib/courseCovers';
 type HomePageProps = {
   onNavigate: (page: string) => void;
   onCourseSelect: (courseId: string) => void;
+  onSearchCourses: (term: string) => void;
 };
 
 type CourseRow = Course & { instructor?: { full_name: string }; category?: { name: string } };
 type CourseWithStats = CourseRow & { enrollmentCount: number; averageRating: number };
 
-export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) {
+export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses }: HomePageProps) {
   const { user } = useAuth();
   const [featuredCourses, setFeaturedCourses] = useState<CourseWithStats[]>([]);
   const [stats, setStats] = useState({
@@ -83,11 +84,9 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
     });
   };
 
-  // Full search-by-term filtering on the Courses page is a follow-up --
-  // this submits to the same place "Explore Courses" goes today.
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    onNavigate('courses');
+    onSearchCourses(searchTerm);
   };
 
   const trust = [
