@@ -140,6 +140,7 @@ export type InstructorApplication = {
   applicant_id: string;
   status: InstructorApplicationStatus;
   full_name: string | null;
+  address: string | null;
   headline: string | null;
   bio: string | null;
   qualifications: string | null;

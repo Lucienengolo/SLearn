@@ -10,6 +10,7 @@ export type ApplicationDraft = Partial<
   Pick<
     InstructorApplication,
     | 'full_name'
+    | 'address'
     | 'headline'
     | 'bio'
     | 'qualifications'

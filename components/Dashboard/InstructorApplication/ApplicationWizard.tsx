@@ -37,6 +37,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
   const [form, setForm] = useState<ApplicationDraft>({
     full_name: initialApplication?.full_name ?? '',
+    address: initialApplication?.address ?? '',
     headline: initialApplication?.headline ?? '',
     bio: initialApplication?.bio ?? '',
     qualifications: initialApplication?.qualifications ?? '',
@@ -157,6 +158,14 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={form.full_name ?? ''}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+              />
+            </Field>
+            <Field label="Home address">
+              <input
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={form.address ?? ''}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                placeholder="Street, city, country"
               />
             </Field>
             <Field label="Headline (e.g. 'Backend engineer & Python instructor')">
