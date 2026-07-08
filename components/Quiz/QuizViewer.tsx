@@ -112,41 +112,45 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
 
   if (submitted && result) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
+        <div className="rounded-[14px] border border-canvas-150 p-8 text-center">
           {result.passed ? (
-            <div className="space-y-4">
-              <CheckCircle size={64} className="mx-auto text-green-600" />
-              <h2 className="text-3xl font-bold text-gray-800">Congratulations!</h2>
-              <p className="text-xl text-gray-600">You passed the quiz!</p>
+            <div className="space-y-3">
+              <span className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+                <CheckCircle size={36} className="text-green-600" />
+              </span>
+              <h2 className="font-display text-3xl text-gray-900">Congratulations!</h2>
+              <p className="text-lg text-gray-500">You passed the quiz</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <XCircle size={64} className="mx-auto text-red-600" />
-              <h2 className="text-3xl font-bold text-gray-800">Keep Trying!</h2>
-              <p className="text-xl text-gray-600">You can retake this quiz anytime.</p>
+            <div className="space-y-3">
+              <span className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                <XCircle size={36} className="text-red-600" />
+              </span>
+              <h2 className="font-display text-3xl text-gray-900">Keep trying!</h2>
+              <p className="text-lg text-gray-500">You can retake this quiz anytime</p>
             </div>
           )}
 
-          <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+          <div className="mt-7 p-5 bg-canvas-25 rounded-[10px] border border-canvas-150">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-3xl font-bold text-primary-700">{result.score}%</p>
-                <p className="text-gray-600">Your Score</p>
+                <p className="font-display text-3xl text-primary-700">{result.score}%</p>
+                <p className="text-sm text-gray-500 mt-1">Your score</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="font-display text-3xl text-gray-900">
                   {result.correctCount}/{result.totalQuestions}
                 </p>
-                <p className="text-gray-600">Correct Answers</p>
+                <p className="text-sm text-gray-500 mt-1">Correct answers</p>
               </div>
             </div>
-            <p className="mt-4 text-sm text-gray-600">
-              Passing Score: {quiz.passing_score}%
+            <p className="mt-4 text-sm text-gray-500">
+              Passing score: {quiz.passing_score}%
             </p>
           </div>
 
-          <div className="mt-8 space-y-3">
+          <div className="mt-7 space-y-3">
             {!result.passed && (
               <button
                 onClick={() => {
@@ -154,16 +158,16 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
                   setAnswers({});
                   setResult(null);
                 }}
-                className="w-full bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium"
+                className="w-full bg-primary-500 text-gray-900 h-12 rounded-[10px] hover:bg-primary-400 transition font-semibold"
               >
-                Retake Quiz
+                Retake quiz
               </button>
             )}
             <button
               onClick={onBack}
-              className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition font-medium"
+              className="w-full bg-white border border-gray-200 text-gray-700 h-12 rounded-[10px] hover:bg-gray-50 transition font-medium"
             >
-              Back to Lesson
+              Back to lesson
             </button>
           </div>
         </div>
@@ -174,39 +178,39 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
   const allAnswered = questions.every((q) => answers[q.id]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       <button
         onClick={onBack}
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-6"
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-6"
       >
-        <ArrowLeft size={20} />
-        <span>Back to Lesson</span>
+        <ArrowLeft size={16} />
+        <span>Back to lesson</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+      <div className="rounded-[14px] border border-canvas-150 p-6 md:p-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{quiz.title}</h1>
+          <h1 className="font-display text-3xl text-gray-900 mb-2">{quiz.title}</h1>
           {quiz.description && (
-            <p className="text-gray-600">{quiz.description}</p>
+            <p className="text-gray-500">{quiz.description}</p>
           )}
           <p className="text-sm text-gray-500 mt-2">
-            Passing Score: {quiz.passing_score}%
+            Passing score: {quiz.passing_score}%
           </p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-7">
           {questions.map((question, index) => (
-            <div key={question.id} className="border-b pb-6 last:border-b-0">
-              <h3 className="font-semibold text-gray-800 mb-4">
+            <div key={question.id} className="pb-7 border-b border-canvas-150 last:border-b-0 last:pb-0">
+              <h3 className="font-semibold text-gray-900 mb-3.5">
                 {index + 1}. {question.question_text}
               </h3>
               <div className="space-y-2">
                 {Array.isArray(question.options) && question.options.map((option: string) => (
                   <label
                     key={option}
-                    className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${
+                    className={`flex items-center gap-3 p-3 rounded-[10px] border cursor-pointer transition ${
                       answers[question.id] === option
-                        ? 'border-primary-500 bg-primary-50'
+                        ? 'border-primary-300 bg-primary-50'
                         : 'border-gray-200 hover:bg-gray-50'
                     }`}
                   >
@@ -220,7 +224,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
                       }
                       className="text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="text-gray-700">{option}</span>
+                    <span className="text-gray-700 text-sm">{option}</span>
                   </label>
                 ))}
               </div>
@@ -228,13 +232,13 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
           ))}
         </div>
 
-        <div className="mt-8 pt-6 border-t">
+        <div className="mt-8 pt-6 border-t border-canvas-150">
           <button
             onClick={handleSubmit}
             disabled={!allAnswered}
-            className="w-full bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-500 text-gray-900 h-12 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {allAnswered ? 'Submit Quiz' : `Answer All Questions (${Object.keys(answers).length}/${questions.length})`}
+            {allAnswered ? 'Submit quiz' : `Answer all questions (${Object.keys(answers).length}/${questions.length})`}
           </button>
         </div>
       </div>

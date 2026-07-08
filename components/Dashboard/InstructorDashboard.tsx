@@ -100,21 +100,21 @@ export default function InstructorDashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-[1200px] mx-auto px-6 py-10">
+      <div className="flex justify-between items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">My Courses</h1>
-          <p className="text-gray-600 mt-1">Create and manage your courses</p>
+          <h1 className="font-display text-3xl sm:text-4xl text-gray-900">My courses</h1>
+          <p className="text-gray-500 mt-1">Create and manage your courses</p>
         </div>
         <button
           onClick={() => {
             setSelectedCourse(null);
             setShowEditor(true);
           }}
-          className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-6 py-3 rounded-lg hover:bg-primary-400 transition font-medium"
+          className="flex items-center gap-2 bg-primary-500 text-gray-900 h-11 px-5 rounded-[10px] hover:bg-primary-400 transition font-semibold whitespace-nowrap"
         >
-          <Plus size={20} />
-          <span>Create Course</span>
+          <Plus size={18} />
+          <span>Create course</span>
         </button>
       </div>
 
@@ -123,60 +123,56 @@ export default function InstructorDashboard() {
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       ) : courses.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">No courses yet</h3>
-          <p className="text-gray-600 mb-6">Create your first course to get started</p>
+        <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
+          <BookOpen size={40} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">No courses yet</h3>
+          <p className="text-gray-500 text-sm mb-6">Create your first course to get started</p>
           <button
             onClick={() => setShowEditor(true)}
-            className="bg-primary-500 text-gray-900 px-6 py-2 rounded-lg hover:bg-primary-400 transition"
+            className="bg-primary-500 text-gray-900 h-11 px-5 rounded-[10px] hover:bg-primary-400 transition font-semibold"
           >
-            Create Your First Course
+            Create your first course
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {courses.map((course) => (
-            <div key={course.id} className="bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div key={course.id} className="rounded-[14px] border border-canvas-150 hover:border-gray-300 transition">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-bold text-gray-800">{course.title}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">{course.title}</h3>
                       <span
-                        className={`text-xs px-2 py-1 rounded ${
+                        className={`text-2xs font-semibold px-2 py-1 rounded-full ${
                           course.is_published
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-gray-100 text-gray-500'
                         }`}
                       >
                         {course.is_published ? 'Published' : 'Draft'}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-sm line-clamp-2">{course.description}</p>
+                    <p className="text-gray-500 text-sm line-clamp-2">{course.description}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center p-3 bg-primary-50 rounded-lg">
-                    <div className="flex items-center justify-center mb-1">
-                      <Users size={18} className="text-primary-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-primary-700">{course.enrollmentCount}</p>
-                    <p className="text-xs text-gray-600">Students</p>
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="text-center p-3 bg-primary-50 rounded-[10px]">
+                    <Users size={16} className="text-primary-700 mx-auto mb-1" />
+                    <p className="font-display text-xl text-primary-700">{course.enrollmentCount}</p>
+                    <p className="text-2xs text-gray-500">Students</p>
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center justify-center mb-1">
-                      <BookOpen size={18} className="text-green-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-green-600">{course.lessonCount}</p>
-                    <p className="text-xs text-gray-600">Lessons</p>
+                  <div className="text-center p-3 bg-green-50 rounded-[10px]">
+                    <BookOpen size={16} className="text-green-600 mx-auto mb-1" />
+                    <p className="font-display text-xl text-green-600">{course.lessonCount}</p>
+                    <p className="text-2xs text-gray-500">Lessons</p>
                   </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <p className="text-2xl font-bold text-gray-800">
+                  <div className="text-center p-3 bg-gray-50 rounded-[10px]">
+                    <p className="font-display text-xl text-gray-900 mt-[22px]">
                       {course.price > 0 ? `$${course.price}` : 'Free'}
                     </p>
-                    <p className="text-xs text-gray-600">Price</p>
+                    <p className="text-2xs text-gray-500">Price</p>
                   </div>
                 </div>
 
@@ -186,14 +182,14 @@ export default function InstructorDashboard() {
                       setSelectedCourse(course.id);
                       setShowEditor(true);
                     }}
-                    className="flex-1 flex items-center justify-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 h-10 rounded-[10px] hover:bg-primary-400 transition font-medium"
                   >
-                    <Edit size={16} />
+                    <Edit size={15} />
                     <span>Edit</span>
                   </button>
                   <button
                     onClick={() => handleTogglePublish(course.id, course.is_published)}
-                    className={`flex-1 px-4 py-2 rounded-lg transition ${
+                    className={`flex-1 h-10 rounded-[10px] transition font-medium ${
                       course.is_published
                         ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         : 'bg-green-600 text-white hover:bg-green-700'
@@ -203,10 +199,10 @@ export default function InstructorDashboard() {
                   </button>
                   <button
                     onClick={() => handleDeleteCourse(course.id)}
-                    className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                    className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-600 rounded-[10px] hover:bg-red-100 transition flex-shrink-0"
                     title="Delete course"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

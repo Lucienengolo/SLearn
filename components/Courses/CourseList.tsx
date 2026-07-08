@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { supabase, Course, Category } from '../../lib/supabase';
 import CourseCard from './CourseCard';
+import { getCourseCover } from '../../lib/courseCovers';
 
 type CourseListProps = {
   onCourseSelect: (courseId: string) => void;
@@ -88,35 +89,51 @@ export default function CourseList({ onCourseSelect }: CourseListProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Explore Courses</h1>
+    <div className="max-w-[1200px] mx-auto px-6 py-10">
+      <div className="mb-7">
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-6">Explore courses</h1>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search courses..."
-              aria-label="Search courses"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            aria-label="Filter courses by category"
+        <div className="relative mb-4">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search courses..."
+            aria-label="Search courses"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 h-12 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+          />
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition ${
+              selectedCategory === 'all'
+                ? 'border-primary-200 bg-primary-50 text-primary-700'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
+            }`}
           >
-            <option value="all">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
+            All categories
+          </button>
+          {categories.map((category) => {
+            const CategoryIcon = getCourseCover(category.name).icon;
+            const active = selectedCategory === category.id;
+            return (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition whitespace-nowrap ${
+                  active
+                    ? 'border-primary-200 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
+                }`}
+              >
+                <CategoryIcon size={15} />
                 {category.name}
-              </option>
-            ))}
-          </select>
+              </button>
+            );
+          })}
         </div>
       </div>
 

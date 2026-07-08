@@ -19,9 +19,9 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer"
+      className="rounded-[14px] border border-canvas-150 overflow-hidden hover:border-gray-300 hover:shadow-md transition cursor-pointer bg-white"
     >
-      <div className="h-48 flex items-center justify-center" style={{ background: cover.gradient }}>
+      <div className="h-44 flex items-center justify-center" style={{ background: cover.gradient }}>
         {course.thumbnail_url ? (
           <img
             src={course.thumbnail_url}
@@ -30,58 +30,58 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <CoverIcon size={56} className="text-white/50" />
+          <CoverIcon size={48} className="text-white/50" />
         )}
       </div>
       <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2.5">
           {course.category && (
-            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
+            <span className="text-2xs font-semibold tracking-[0.04em] uppercase text-primary-700 bg-primary-50 px-2 py-1 rounded-full">
               {course.category.name}
             </span>
           )}
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-            {course.level}
-          </span>
+          <span className="text-2xs text-gray-500 capitalize">{course.level}</span>
         </div>
-        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2">
+        <h3 className="font-semibold text-lg text-gray-900 mb-1.5 line-clamp-2">
           {course.title}
         </h3>
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        <p className="text-gray-500 text-sm mb-3 line-clamp-2">
           {course.description}
         </p>
-        <div className="flex items-center text-sm text-gray-500 space-x-4 mb-3">
+        <div className="flex items-center text-sm text-gray-500 gap-4 mb-3">
           {course.duration_hours > 0 && (
-            <div className="flex items-center space-x-1">
-              <Clock size={16} />
+            <div className="flex items-center gap-1">
+              <Clock size={15} />
               <span>{course.duration_hours}h</span>
             </div>
           )}
           {course.enrollmentCount !== undefined && (
-            <div className="flex items-center space-x-1">
-              <Users size={16} />
+            <div className="flex items-center gap-1">
+              <Users size={15} />
               <span>{course.enrollmentCount}</span>
             </div>
           )}
           {course.averageRating !== undefined && course.averageRating > 0 && (
-            <div className="flex items-center space-x-1">
-              <Star size={16} className="fill-yellow-400 text-yellow-400" />
+            <div className="flex items-center gap-1">
+              <Star size={15} className="fill-primary-500 text-primary-500" />
               <span>{course.averageRating.toFixed(1)}</span>
             </div>
           )}
         </div>
-        {course.instructor && (
-          <p className="text-sm text-gray-600">
-            by {course.instructor.full_name}
-          </p>
-        )}
-        {course.price > 0 ? (
-          <p className="text-lg font-bold text-primary-700 mt-2">
-            ${course.price.toFixed(2)}
-          </p>
-        ) : (
-          <p className="text-lg font-bold text-green-600 mt-2">Free</p>
-        )}
+        <div className="flex items-center justify-between pt-3 border-t border-canvas-150">
+          {course.instructor && (
+            <p className="text-sm text-gray-500 truncate">
+              {course.instructor.full_name}
+            </p>
+          )}
+          {course.price > 0 ? (
+            <p className="text-base font-bold text-gray-900 flex-shrink-0">
+              ${course.price.toFixed(2)}
+            </p>
+          ) : (
+            <p className="text-base font-bold text-green-600 flex-shrink-0">Free</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -63,52 +63,54 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
-        className="bg-white rounded-lg max-w-md w-full p-6 relative"
+        className="bg-white rounded-[14px] max-w-md w-full p-7 relative"
         role="dialog"
         aria-modal="true"
         aria-label={isLogin ? 'Sign in' : 'Create account'}
       >
         <button
           onClick={handleClose}
-          className="absolute top-2 right-2 p-2.5 text-gray-400 hover:text-gray-600"
+          className="absolute top-3 right-3 p-2.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition"
           aria-label="Close"
         >
-          <X size={24} />
+          <X size={20} />
         </button>
 
         {confirmationPending ? (
           <div className="text-center py-4">
-            <CheckCircle size={48} className="mx-auto text-green-600 mb-4" />
-            <h2 className="text-xl font-bold mb-2 text-gray-800">Check your email</h2>
-            <p className="text-gray-600 text-sm">
-              We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
-              account, then sign in here.
+            <span className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={30} className="text-green-600" />
+            </span>
+            <h2 className="font-display text-2xl mb-2 text-gray-900">Check your email</h2>
+            <p className="text-gray-500 text-sm">
+              We sent a confirmation link to <strong className="text-gray-700">{email}</strong>. Click it to activate
+              your account, then sign in here.
             </p>
             <button
               onClick={handleClose}
-              className="mt-6 w-full bg-primary-500 text-gray-900 py-2 rounded-lg hover:bg-primary-400 transition"
+              className="mt-6 w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold"
             >
               Got it
             </button>
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
-              {isLogin ? 'Sign In' : 'Create Account'}
+            <h2 className="font-display text-2xl mb-6 text-gray-900">
+              {isLogin ? 'Welcome back' : 'Create your account'}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
                   <label htmlFor="auth-full-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    Full name
                   </label>
                   <input
                     id="auth-full-name"
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                     required
                   />
                 </div>
@@ -123,7 +125,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                   required
                 />
               </div>
@@ -137,26 +139,26 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                   required
                   minLength={8}
                 />
                 {!isLogin && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-2xs text-gray-500 mt-1">
                     At least 8 characters, with a mix of uppercase, lowercase and numbers.
                   </p>
                 )}
               </div>
 
               {!isLogin && (
-                <p className="text-xs text-gray-500">
+                <p className="text-2xs text-gray-500">
                   Every account starts as a learner. You can apply to become an
                   instructor from your dashboard once you're signed in.
                 </p>
               )}
 
               {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+                <div className="bg-red-50 text-red-600 p-3 rounded-[10px] text-sm">
                   {error}
                 </div>
               )}
@@ -164,9 +166,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary-500 text-gray-900 py-2 rounded-lg hover:bg-primary-400 transition disabled:opacity-50"
+                className="w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
               >
-                {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
+                {loading ? 'Loading…' : isLogin ? 'Sign in' : 'Create account'}
               </button>
             </form>
 
