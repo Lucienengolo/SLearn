@@ -176,7 +176,7 @@ Keep responses focused on this lesson. If the student asks something unrelated t
 
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Kairos Mind ran into an error';
+        const message = userFacingErrorMessage(err);
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(`[ERROR] ${message}`)}\n\n`));
       } finally {
         controller.close();
@@ -199,4 +199,22 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// Anthropic's raw error text (e.g. "credit balance is too low", billing
+// URLs) is an internal implementation detail -- translate the cases we
+// know about into something a student can actually act on, and fall back
+// to a generic message rather than ever showing raw provider errors.
+function userFacingErrorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (/credit balance is too low/i.test(raw)) {
+    return "Kairos Mind is temporarily out of service — the site owner needs to top up its AI provider. Try again later.";
+  }
+  if (/rate.?limit/i.test(raw) || /429/.test(raw)) {
+    return 'Kairos Mind is getting a lot of requests right now — try again in a moment.';
+  }
+  if (/overloaded/i.test(raw) || /529/.test(raw)) {
+    return "Kairos Mind's AI provider is temporarily overloaded — try again shortly.";
+  }
+  return 'Kairos Mind ran into an unexpected error. Try again in a moment.';
 }

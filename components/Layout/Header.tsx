@@ -70,6 +70,16 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   Dashboard
                 </button>
               )}
+              {profile?.is_reviewer && (
+                <button
+                  onClick={() => onNavigate('review-queue')}
+                  className={`text-md px-3 py-2 rounded-[10px] transition ${
+                    currentPage === 'review-queue' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  Review queue
+                </button>
+              )}
             </nav>
 
             <div className="hidden md:flex items-center space-x-3">
@@ -167,6 +177,17 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
                   Dashboard
+                </button>
+              )}
+              {profile?.is_reviewer && (
+                <button
+                  onClick={() => {
+                    onNavigate('review-queue');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Review queue
                 </button>
               )}
               {user && profile ? (

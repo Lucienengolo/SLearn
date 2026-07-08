@@ -15,6 +15,7 @@ const InstructorDashboard = lazy(() => import('./components/Dashboard/Instructor
 const InstructorApplicationFlow = lazy(() => import('./components/Dashboard/InstructorApplication'));
 const CertificatesPage = lazy(() => import('./components/Certificates/CertificatesPage'));
 const AccountSettings = lazy(() => import('./components/Account/AccountSettings'));
+const ReviewQueue = lazy(() => import('./components/Dashboard/ReviewQueue'));
 
 function PageFallback() {
   return (
@@ -163,6 +164,12 @@ function AppContent() {
         {currentPage === 'account-settings' && profile && (
           <Suspense fallback={<PageFallback />}>
             <AccountSettings onBack={handleBackToDashboard} />
+          </Suspense>
+        )}
+
+        {currentPage === 'review-queue' && profile?.is_reviewer && (
+          <Suspense fallback={<PageFallback />}>
+            <ReviewQueue />
           </Suspense>
         )}
       </main>

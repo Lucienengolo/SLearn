@@ -111,6 +111,58 @@ export async function fetchMyInterview(applicationId: string): Promise<Interview
   return data;
 }
 
+// --- Reviewer-only (profiles.is_reviewer = true; RLS backs this up server
+// side regardless of what the client asks for) --------------------------
+
+export type ApplicationWithApplicant = InstructorApplication & {
+  applicant: { email: string; full_name: string | null } | null;
+};
+
+const REVIEWABLE_STATUSES = ['submitted', 'review', 'interview'] as const;
+
+export async function fetchReviewQueue(): Promise<ApplicationWithApplicant[]> {
+  const { data, error } = await supabase
+    .from('instructor_applications')
+    .select('*, applicant:profiles!applicant_id(email, full_name)')
+    .in('status', REVIEWABLE_STATUSES)
+    .order('submitted_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as ApplicationWithApplicant[];
+}
+
+export async function fetchDecidedApplications(): Promise<ApplicationWithApplicant[]> {
+  const { data, error } = await supabase
+    .from('instructor_applications')
+    .select('*, applicant:profiles!applicant_id(email, full_name)')
+    .in('status', ['approved', 'rejected'])
+    .order('decided_at', { ascending: false })
+    .limit(25);
+
+  if (error) throw error;
+  return (data ?? []) as ApplicationWithApplicant[];
+}
+
+export async function getCredentialFileUrl(storagePath: string): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from('instructor-credentials')
+    .createSignedUrl(storagePath, 300);
+
+  if (error) return null;
+  return data.signedUrl;
+}
+
+export async function decideApplication(
+  applicationId: string,
+  decision: 'approved' | 'rejected',
+  notes?: string
+): Promise<void> {
+  const { error } = await supabase.functions.invoke('instructor-approval', {
+    body: { applicationId, decision, notes },
+  });
+  if (error) throw error;
+}
+
 // Interviews are booked through Cal.com (see supabase/functions/cal-webhook)
 // instead of a DB-native slot picker — this just builds the prefilled
 // booking link. Undefined when VITE_CAL_BOOKING_LINK isn't configured, same

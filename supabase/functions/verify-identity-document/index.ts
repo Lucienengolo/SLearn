@@ -162,8 +162,7 @@ Look at the document image and respond with ONLY a JSON object (no other text, n
     if (jsonStart === -1 || jsonEnd === -1) throw new Error('Model did not return JSON');
     result = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return json({ error: `Document verification failed: ${message}` }, 500);
+    return json({ error: `Document verification failed: ${userFacingErrorMessage(err)}` }, 500);
   }
 
   const { error: updateError } = await admin
@@ -190,4 +189,17 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// See kairos-mind-tutor/index.ts's twin of this function -- same reasoning:
+// don't leak raw provider error text (billing URLs, etc).
+function userFacingErrorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (/credit balance is too low/i.test(raw)) {
+    return 'automated verification is temporarily unavailable (AI provider not funded) — a reviewer will check manually';
+  }
+  if (/rate.?limit/i.test(raw) || /429/.test(raw)) {
+    return 'automated verification is busy right now — a reviewer will check manually';
+  }
+  return 'automated verification is temporarily unavailable — a reviewer will check manually';
 }

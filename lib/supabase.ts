@@ -15,6 +15,7 @@ export type Profile = {
   full_name: string | null;
   role: 'student' | 'instructor';
   verified: boolean;
+  is_reviewer: boolean;
   avatar_url: string | null;
   bio: string | null;
   created_at: string;
