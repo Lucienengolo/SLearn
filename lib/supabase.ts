@@ -164,6 +164,7 @@ export type InstructorCredentialType =
   | 'cv'
   | 'portfolio'
   | 'sample_lesson'
+  | 'selfie'
   | 'other';
 
 export type InstructorCredential = {
@@ -175,6 +176,12 @@ export type InstructorCredential = {
   verified: boolean;
   verified_by: string | null;
   verified_at: string | null;
+  verification_extracted_name: string | null;
+  verification_extracted_address: string | null;
+  verification_name_match: boolean | null;
+  verification_address_match: boolean | null;
+  verification_notes: string | null;
+  verification_checked_at: string | null;
   created_at: string;
 };
 

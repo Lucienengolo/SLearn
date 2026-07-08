@@ -11,6 +11,7 @@ import {
   submitApplication,
   uploadCredential,
 } from '../../../lib/instructorApplications';
+import IdentityCapture from './IdentityCapture';
 
 const STEPS = [
   'Profile & qualifications',
@@ -63,6 +64,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
   }, [application?.id]);
 
   const hasGovernmentId = credentials.some((c) => c.credential_type === 'government_id');
+  const hasSelfie = credentials.some((c) => c.credential_type === 'selfie');
 
   const persist = async (): Promise<InstructorApplication | null> => {
     if (!user) return null;
@@ -107,6 +109,10 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     if (!application?.id) return;
     if (!hasGovernmentId) {
       setError('A government-issued ID is required before you can submit.');
+      return;
+    }
+    if (!hasSelfie) {
+      setError('A live selfie is required before you can submit.');
       return;
     }
     setSaving(true);
@@ -260,13 +266,24 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
         {step === 3 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Upload a government-issued ID (required) plus any degrees, certificates, a CV
-              or a short sample lesson. Files are stored privately and only reviewers can
-              access them.
+              Verify your identity with a document and a live selfie (both required), plus any
+              degrees, certificates, a CV or a short sample lesson. Files are stored privately
+              and only reviewers can access them.
             </p>
+
+            {application?.id && (
+              <IdentityCapture
+                userId={user!.id}
+                applicationId={application.id}
+                fullName={form.full_name ?? ''}
+                address={form.address ?? ''}
+                credentials={credentials}
+                onCredentialUploaded={(credential) => setCredentials((prev) => [...prev, credential])}
+              />
+            )}
+
             {(
               [
-                ['government_id', 'Government-issued ID (required)'],
                 ['degree', 'Degree'],
                 ['certificate', 'Certificate'],
                 ['cv', 'CV / résumé'],
