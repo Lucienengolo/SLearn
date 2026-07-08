@@ -94,6 +94,29 @@ export const deleteLessonPDF = async (pdfUrl: string): Promise<boolean> => {
   }
 };
 
+export const uploadAvatar = async (userId: string, file: File): Promise<string | null> => {
+  try {
+    const fileName = `${userId}/avatar-${Date.now()}.${file.name.split('.').pop()}`;
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Error uploading avatar:', error);
+      return null;
+    }
+
+    const { data: publicUrl } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(data.path);
+
+    return publicUrl.publicUrl;
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    return null;
+  }
+};
+
 export const getFileNameFromUrl = (url: string): string => {
   try {
     const parts = url.split('/');

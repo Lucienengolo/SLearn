@@ -70,7 +70,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               )}
             </nav>
 
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3">
               {user && profile ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600">
@@ -79,14 +79,28 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded">
                     {profile.role}
                   </span>
-                    <button
-                      onClick={handleSignOut}
-                      className="p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                      title="Sign Out"
-                      aria-label="Sign out"
-                    >
-                      <LogOut size={20} />
-                    </button>
+                  <button
+                    onClick={() => onNavigate('account-settings')}
+                    className="rounded-full overflow-hidden border border-gray-200 hover:ring-2 hover:ring-primary-300 transition"
+                    title="Account settings"
+                    aria-label="Account settings"
+                  >
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="w-9 h-9 object-cover" />
+                    ) : (
+                      <span className="w-9 h-9 flex items-center justify-center bg-primary-100 text-primary-700">
+                        <User size={18} />
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                    title="Sign Out"
+                    aria-label="Sign out"
+                  >
+                    <LogOut size={20} />
+                  </button>
                 </div>
               ) : (
                 <>
@@ -158,6 +172,22 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <div className="px-4 py-2 text-sm text-gray-600">
                     {profile.full_name || profile.email}
                   </div>
+                  <button
+                    onClick={() => {
+                      onNavigate('account-settings');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center gap-2"
+                  >
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center">
+                        <User size={14} />
+                      </span>
+                    )}
+                    Account settings
+                  </button>
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"

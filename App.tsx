@@ -14,6 +14,7 @@ const LessonViewer = lazy(() => import('./components/Lessons/LessonViewer'));
 const InstructorDashboard = lazy(() => import('./components/Dashboard/InstructorDashboard'));
 const InstructorApplicationFlow = lazy(() => import('./components/Dashboard/InstructorApplication'));
 const CertificatesPage = lazy(() => import('./components/Certificates/CertificatesPage'));
+const AccountSettings = lazy(() => import('./components/Account/AccountSettings'));
 
 function PageFallback() {
   return (
@@ -156,6 +157,12 @@ function AppContent() {
         {currentPage === 'certificates' && (
           <Suspense fallback={<PageFallback />}>
             <CertificatesPage onBack={handleBackToDashboard} />
+          </Suspense>
+        )}
+
+        {currentPage === 'account-settings' && profile && (
+          <Suspense fallback={<PageFallback />}>
+            <AccountSettings onBack={handleBackToDashboard} />
           </Suspense>
         )}
       </main>
