@@ -5,6 +5,7 @@ import HomePage from './components/Home/HomePage';
 import CourseList from './components/Courses/CourseList';
 import CourseDetail from './components/Courses/CourseDetail';
 import StudentDashboard from './components/Dashboard/StudentDashboard';
+import ResetPasswordPrompt from './components/Auth/ResetPasswordPrompt';
 
 // Code-split the less-frequently-visited surfaces: instructor tooling, the
 // application wizard, lesson playback (pulls in the quiz viewer + Kairos
@@ -26,7 +27,7 @@ function PageFallback() {
 }
 
 function AppContent() {
-  const { profile, loading } = useAuth();
+  const { profile, loading, isPasswordRecovery } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
@@ -106,6 +107,8 @@ function AppContent() {
       </a>
 
       <Header onNavigate={handleNavigate} currentPage={currentPage} />
+
+      {isPasswordRecovery && <ResetPasswordPrompt />}
 
       <main id="main-content">
         {currentPage === 'home' && (
