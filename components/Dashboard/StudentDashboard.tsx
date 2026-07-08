@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Award, TrendingUp, Clock, GraduationCap } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, Zap, GraduationCap, Award } from 'lucide-react';
 import { supabase, Enrollment, Course, Certificate } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCourseCover } from '../../lib/courseCovers';
@@ -21,8 +21,10 @@ type EnrollmentWithCourse = EnrollmentRow & {
 
 type CertificateWithCourse = Certificate & { course: { title: string } };
 
+type Filter = 'in_progress' | 'completed' | 'all';
+
 export default function StudentDashboard({ onCourseSelect, onCertificateView, onBecomeInstructor }: StudentDashboardProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([]);
   const [certificates, setCertificates] = useState<CertificateWithCourse[]>([]);
   const [stats, setStats] = useState({
@@ -31,6 +33,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
     inProgressCourses: 0,
     totalHours: 0,
   });
+  const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -118,94 +121,148 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
     );
   }
 
+  const resumeCourse = enrollments.find((e) => !e.completed_at && e.totalLessons > 0);
+  const visibleEnrollments = enrollments.filter((e) => {
+    if (filter === 'in_progress') return !e.completed_at;
+    if (filter === 'completed') return !!e.completed_at;
+    return true;
+  });
+
+  const statTiles = [
+    { icon: BookOpen, value: stats.totalCourses, label: 'Courses enrolled', tint: 'bg-primary-50 text-primary-700' },
+    { icon: CheckCircle, value: stats.completedCourses, label: 'Completed', tint: 'bg-green-50 text-green-600' },
+    { icon: Clock, value: `${stats.totalHours}h`, label: 'Hours of content', tint: 'bg-gray-100 text-gray-600' },
+    { icon: Zap, value: stats.inProgressCourses, label: 'In progress', tint: 'bg-primary-50 text-primary-700' },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="max-w-[1200px] mx-auto px-6 py-10">
+      {/* Greeting + resume */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mb-7 items-stretch">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">My Learning Dashboard</h1>
-          <p className="text-gray-600 mt-1">Track your progress and continue learning</p>
-        </div>
-        <button
-          onClick={onBecomeInstructor}
-          className="flex items-center gap-2 bg-white border border-primary-200 text-primary-700 px-4 py-2 rounded-lg hover:bg-primary-50 transition font-medium whitespace-nowrap"
-        >
-          <GraduationCap size={18} />
-          Apply to teach
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <BookOpen className="text-primary-600" size={24} />
-            <span className="text-3xl font-bold text-gray-800">{stats.totalCourses}</span>
-          </div>
-          <p className="text-gray-600 text-sm">Total Courses</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <Award className="text-green-600" size={24} />
-            <span className="text-3xl font-bold text-gray-800">{stats.completedCourses}</span>
-          </div>
-          <p className="text-gray-600 text-sm">Completed</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="text-orange-600" size={24} />
-            <span className="text-3xl font-bold text-gray-800">{stats.inProgressCourses}</span>
-          </div>
-          <p className="text-gray-600 text-sm">In Progress</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <Clock className="text-purple-600" size={24} />
-            <span className="text-3xl font-bold text-gray-800">{stats.totalHours}h</span>
-          </div>
-          <p className="text-gray-600 text-sm">Total Hours</p>
-        </div>
-      </div>
-
-      {certificates.length > 0 && (
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg shadow-lg p-6 mb-8 text-gray-900">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-1">Certificates Earned</h3>
-              <p className="text-gray-800">You have {certificates.length} certificate(s)</p>
-            </div>
+          <div className="flex items-center justify-between gap-4 mb-1">
+            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Welcome back</span>
             <button
-              onClick={onCertificateView}
-              className="bg-white text-primary-700 px-6 py-2 rounded-lg hover:bg-primary-50 transition font-medium"
+              onClick={onBecomeInstructor}
+              className="flex items-center gap-2 bg-white border border-primary-200 text-primary-700 px-4 py-2 rounded-[10px] hover:bg-primary-50 transition font-medium text-sm whitespace-nowrap"
             >
-              View All
+              <GraduationCap size={16} />
+              Apply to teach
             </button>
           </div>
+          <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mt-1 mb-2">
+            Good to see you{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
+          </h1>
+          <p className="text-gray-600">
+            {resumeCourse
+              ? 'Pick up where you left off and keep the momentum going.'
+              : 'Browse the catalog to start your first course.'}
+          </p>
+        </div>
+
+        {resumeCourse && (
+          <div
+            className="rounded-[14px] overflow-hidden text-white p-5 flex flex-col justify-between cursor-pointer"
+            style={{ background: 'linear-gradient(135deg,#3C413A,#181B16)' }}
+            onClick={() => onCourseSelect(resumeCourse.course_id)}
+          >
+            <div>
+              <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-white/55">Continue learning</span>
+              <p className="font-semibold mt-1.5 mb-1 line-clamp-1">{resumeCourse.course.title}</p>
+              <p className="text-sm text-white/65">
+                {resumeCourse.completedLessons} of {resumeCourse.totalLessons} lessons done
+              </p>
+            </div>
+            <div className="mt-4">
+              <div className="h-1.5 rounded-full bg-white/20 overflow-hidden mb-3">
+                <div className="h-full bg-primary-400" style={{ width: `${resumeCourse.progress_percentage}%` }} />
+              </div>
+              <button className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-10 rounded-[10px]">
+                Resume — {resumeCourse.progress_percentage}%
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {statTiles.map((tile) => (
+          <div key={tile.label} className="rounded-[14px] border border-canvas-150 p-5">
+            <span className={`w-10 h-10 rounded-[10px] flex items-center justify-center mb-3 ${tile.tint}`}>
+              <tile.icon size={20} />
+            </span>
+            <div className="font-display text-3xl text-gray-900 leading-none">{tile.value}</div>
+            <div className="text-sm text-gray-500 mt-1">{tile.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Certificates -- gold, the design system's reward color */}
+      {certificates.length > 0 && (
+        <div className="rounded-[14px] border border-primary-200 bg-primary-50 p-5 flex items-center gap-4 mb-8">
+          <span
+            className="w-12 h-12 rounded-[10px] flex-shrink-0 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg,#E2A52A,#A66E13)' }}
+          >
+            <Award size={22} className="text-white" />
+          </span>
+          <div className="flex-1">
+            <p className="font-bold text-primary-700">{certificates.length} certificate{certificates.length > 1 ? 's' : ''} earned</p>
+            <p className="text-sm text-gray-600">Share them on your profile or download the PDFs</p>
+          </div>
+          <button
+            onClick={onCertificateView}
+            className="bg-white border border-primary-200 text-primary-700 px-4 py-2 rounded-[10px] hover:bg-primary-50 transition font-medium text-sm whitespace-nowrap"
+          >
+            View certificates
+          </button>
         </div>
       )}
 
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">My Courses</h2>
+      {/* My courses */}
+      <div className="flex items-baseline justify-between mb-4">
+        <h2 className="font-display text-2xl text-gray-900">My courses</h2>
+        <div className="flex gap-1">
+          {(['in_progress', 'completed', 'all'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`text-sm px-3 py-1.5 rounded-[10px] transition ${
+                filter === f ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {f === 'in_progress' ? 'In progress' : f === 'completed' ? 'Completed' : 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {enrollments.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No courses yet</h3>
-            <p className="text-gray-600">Start learning by enrolling in a course</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {enrollments.map((enrollment) => {
-              const cover = getCourseCover(enrollment.course.category?.name);
-              const CoverIcon = cover.icon;
-              return (
+      {visibleEnrollments.length === 0 ? (
+        <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
+          <BookOpen size={40} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">
+            {enrollments.length === 0 ? 'No courses yet' : 'Nothing here yet'}
+          </h3>
+          <p className="text-gray-500 text-sm">
+            {enrollments.length === 0 ? 'Start learning by enrolling in a course' : 'Try a different filter'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {visibleEnrollments.map((enrollment) => {
+            const cover = getCourseCover(enrollment.course.category?.name);
+            const CoverIcon = cover.icon;
+            return (
               <div
                 key={enrollment.id}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+                className="rounded-[14px] border border-canvas-150 p-4 flex gap-4 cursor-pointer hover:border-gray-300 transition"
                 onClick={() => onCourseSelect(enrollment.course_id)}
               >
-                <div className="h-40 rounded-t-lg flex items-center justify-center" style={{ background: cover.gradient }}>
+                <div
+                  className="w-[76px] h-[76px] rounded-[10px] flex-shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{ background: cover.gradient }}
+                >
                   {enrollment.course.thumbnail_url ? (
                     <img
                       src={enrollment.course.thumbnail_url}
@@ -214,57 +271,38 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <CoverIcon size={56} className="text-white/50" />
+                    <CoverIcon size={30} className="text-white/85" />
                   )}
                 </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
                     {enrollment.course.category && (
-                      <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
-                        {enrollment.course.category.name}
-                      </span>
+                      <span className="text-2xs text-gray-500">{enrollment.course.category.name}</span>
                     )}
                     {enrollment.completed_at && (
-                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded flex items-center gap-1">
-                        <Award size={12} />
+                      <span className="inline-flex items-center gap-1 text-2xs font-semibold text-green-700">
+                        <CheckCircle size={12} />
                         Completed
                       </span>
                     )}
                   </div>
-                  <h3 className="font-bold text-lg text-gray-800 mb-2">
-                    {enrollment.course.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    by {enrollment.course.instructor.full_name}
-                  </p>
-
-                  <div className="mb-2">
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Progress</span>
-                      <span>{enrollment.progress_percentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                  <p className="font-semibold text-gray-900 truncate">{enrollment.course.title}</p>
+                  <p className="text-sm text-gray-500 mb-3 truncate">{enrollment.course.instructor.full_name}</p>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex-1 h-[7px] rounded-full bg-canvas-150 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full ${
-                          enrollment.progress_percentage === 100
-                            ? 'bg-green-600'
-                            : 'bg-primary-600'
-                        }`}
+                        className={`h-full ${enrollment.progress_percentage === 100 ? 'bg-green-500' : 'bg-primary-500'}`}
                         style={{ width: `${enrollment.progress_percentage}%` }}
-                      ></div>
+                      />
                     </div>
-                  </div>
-
-                  <div className="text-sm text-gray-600">
-                    {enrollment.completedLessons} of {enrollment.totalLessons} lessons completed
+                    <span className="text-sm font-semibold text-gray-600 flex-shrink-0">{enrollment.progress_percentage}%</span>
                   </div>
                 </div>
               </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
