@@ -5,6 +5,7 @@ import { supabase, Course, Lesson, Review, Enrollment } from '../../lib/supabase
 import { getGuestCourseProgress, isGuestLessonComplete, guestEnroll, isGuestEnrolled } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
 import { getCourseCover } from '../../lib/courseCovers';
+import ReviewForm from './ReviewForm';
 
 type CourseDetailProps = {
   courseId: string;
@@ -193,6 +194,11 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
+  // Matches the "enrolled students write their own review" RLS policy:
+  // signed in, enrolled, and not the course's own instructor account.
+  const myReview = user ? reviews.find((r) => r.student_id === user.id) ?? null : null;
+  const canReview = !!user && isEnrolled && !isInstructor;
+
   const progressPercentage = enrollment
     ? enrollment.progress_percentage
     : getGuestCourseProgress(lessons.map((l) => l.id));
@@ -361,9 +367,19 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             )}
 
             {/* Reviews */}
-            {reviews.length > 0 && (
+            {(reviews.length > 0 || canReview) && (
               <div>
                 <h2 className="font-display text-2xl text-gray-900 mb-4">Student reviews</h2>
+                {canReview && (
+                  <div className="mb-4">
+                    <ReviewForm
+                      courseId={courseId}
+                      userId={user!.id}
+                      existingReview={myReview}
+                      onSubmitted={fetchCourseData}
+                    />
+                  </div>
+                )}
                 <div className="space-y-3">
                   {reviews.slice(0, 5).map((review) => (
                     <div key={review.id} className="rounded-[14px] border border-canvas-150 p-4">
