@@ -9,3 +9,7 @@ backups/
 .vercel
 .env*
 !.env.example
+
+# Old nested SLearn/ clone with unrelated real git history -- never
+# meant to be tracked from the top-level repo (see git history notes).
+SLearn/
