@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, ChevronRight, Download, FileText } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, Lock, PlayCircle } from 'lucide-react';
 import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
@@ -19,6 +19,8 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
   const [progress, setProgress] = useState<LessonProgress | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const [courseProgressPercentage, setCourseProgressPercentage] = useState(0);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
 
@@ -72,8 +74,26 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
           setProgress(progressData);
           setCompleted(progressData.completed);
         }
+
+        if (lessonsData && lessonsData.length > 0) {
+          const { data: allProgressData } = await supabase
+            .from('lesson_progress')
+            .select('lesson_id')
+            .eq('student_id', user.id)
+            .eq('completed', true)
+            .in('lesson_id', lessonsData.map((l) => l.id));
+
+          const doneIds = new Set((allProgressData ?? []).map((p) => p.lesson_id));
+          setCompletedLessonIds(doneIds);
+          setCourseProgressPercentage(Math.round((doneIds.size / lessonsData.length) * 100));
+        }
       } else {
         setCompleted(isGuestLessonComplete(lessonId));
+        if (lessonsData) {
+          const doneIds = new Set(lessonsData.filter((l) => isGuestLessonComplete(l.id)).map((l) => l.id));
+          setCompletedLessonIds(doneIds);
+          setCourseProgressPercentage(Math.round((doneIds.size / lessonsData.length) * 100));
+        }
       }
     }
   };
@@ -86,6 +106,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
     if (!user) {
       completeGuestLesson(lesson.id);
       setCompleted(true);
+      markLessonDoneLocally(lesson.id);
       trackEvent('lesson_completed', { lessonId: lesson.id, courseId: lesson.course_id, guest: true });
       return;
     }
@@ -101,6 +122,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
 
       if (!error) {
         setCompleted(true);
+        markLessonDoneLocally(lesson.id);
         trackEvent('lesson_completed', { lessonId: lesson.id, courseId: lesson.course_id, guest: false });
         await updateCourseProgress();
       }
@@ -119,10 +141,21 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
       if (!error && data) {
         setProgress(data);
         setCompleted(true);
+        markLessonDoneLocally(lesson.id);
         trackEvent('lesson_completed', { lessonId: lesson.id, courseId: lesson.course_id, guest: false });
         await updateCourseProgress();
       }
     }
+  };
+
+  const markLessonDoneLocally = (id: string) => {
+    setCompletedLessonIds((prev) => {
+      const next = new Set(prev).add(id);
+      if (allLessons.length > 0) {
+        setCourseProgressPercentage(Math.round((next.size / allLessons.length) * 100));
+      }
+      return next;
+    });
   };
 
   const updateCourseProgress = async () => {
@@ -184,6 +217,16 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
     }
   };
 
+  const goToPreviousLesson = () => {
+    if (!lesson) return;
+    const currentIndex = allLessons.findIndex((l) => l.id === lesson.id);
+    if (currentIndex > 0) {
+      const prevLesson = allLessons[currentIndex - 1];
+      window.location.hash = `lesson-${prevLesson.id}`;
+      fetchLessonData();
+    }
+  };
+
   if (!lesson || !course) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
@@ -208,143 +251,185 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
     );
   }
 
+  const hasPrevLesson = currentIndex > 0;
+
+  const curriculumList = (
+    <div className="space-y-1">
+      {allLessons.map((l) => {
+        const done = completedLessonIds.has(l.id);
+        const isCurrent = l.id === lesson.id;
+        return (
+          <div
+            key={l.id}
+            onClick={() => {
+              if (l.id !== lesson.id) {
+                window.location.hash = `lesson-${l.id}`;
+              }
+            }}
+            className={`flex items-center gap-3 p-2.5 rounded-[10px] cursor-pointer transition ${
+              isCurrent ? 'bg-primary-50' : 'hover:bg-gray-50'
+            }`}
+          >
+            <span
+              className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                done ? 'bg-green-50 text-green-600' : isCurrent ? 'bg-primary-500 text-gray-900' : 'bg-gray-100 text-gray-400'
+              }`}
+            >
+              {done ? <CheckCircle size={14} /> : isCurrent ? <PlayCircle size={14} /> : <Lock size={14} />}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm truncate ${isCurrent ? 'font-semibold text-primary-700' : 'text-gray-800'}`}>
+                {l.title}
+              </div>
+              <div className="text-2xs text-gray-400">{l.duration_minutes} min</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <button
-        onClick={onBack}
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-6"
-      >
-        <ArrowLeft size={20} />
-        <span>Back to Course</span>
-      </button>
-
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gray-800 text-white p-4">
-          <div className="text-sm text-gray-400 mb-1">{course.title}</div>
-          <h1 className="text-2xl font-bold">
-            Lesson {currentIndex + 1}: {lesson.title}
-          </h1>
+    <div className="lg:grid lg:grid-cols-[264px_1fr_348px] lg:items-start">
+      {/* Curriculum sidebar (desktop) */}
+      <aside className="hidden lg:block border-r border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] overflow-y-auto p-3">
+        <div className="px-2 pb-1 flex items-center justify-between">
+          <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Course content</span>
+          <span className="text-2xs font-semibold text-primary-700">{courseProgressPercentage}%</span>
         </div>
-
-        {lesson.video_file_url ? (
-          <div className="bg-black">
-            <video
-              controls
-              className="w-full h-auto"
-              src={lesson.video_file_url}
-            />
+        <div className="px-2 pb-3">
+          <div className="h-1.5 rounded-full bg-canvas-150 overflow-hidden">
+            <div className="h-full bg-primary-500" style={{ width: `${courseProgressPercentage}%` }} />
           </div>
-        ) : lesson.video_url ? (
-          <div className="aspect-video bg-black">
-            <iframe
-              src={lesson.video_url}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        ) : null}
+        </div>
+        {curriculumList}
+      </aside>
 
-        <div className="p-6 space-y-6">
-          {lesson.description && (
-            <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">About this lesson</h2>
-              <p className="text-gray-600">{lesson.description}</p>
+      {/* Main */}
+      <main className="lg:h-[calc(100vh-66px)] lg:overflow-y-auto">
+        <div className="max-w-[760px] mx-auto px-4 sm:px-6 py-7">
+          <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-5">
+            <ChevronLeft size={16} />
+            Back to course
+          </button>
+
+          {(lesson.video_file_url || lesson.video_url) && (
+            <div className="rounded-[14px] overflow-hidden bg-black mb-5">
+              {lesson.video_file_url ? (
+                <video controls className="w-full h-auto" src={lesson.video_file_url} />
+              ) : (
+                <div className="aspect-video">
+                  <iframe
+                    src={lesson.video_url!}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              )}
             </div>
           )}
 
+          <div className="text-sm text-gray-500 mb-1">{course.title}</div>
+          <h1 className="font-display text-3xl text-gray-900 mb-1">{lesson.title}</h1>
+          <p className="text-sm text-gray-500 mb-6">
+            Lesson {currentIndex + 1} of {allLessons.length}
+            {lesson.duration_minutes > 0 ? ` · ${lesson.duration_minutes} min` : ''}
+          </p>
+
+          {lesson.description && (
+            <p className="text-gray-600 leading-relaxed mb-6">{lesson.description}</p>
+          )}
+
           {lesson.content && (
-            <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Lesson Content</h2>
-              <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {lesson.content}
-              </div>
+            <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap mb-6">
+              {lesson.content}
             </div>
           )}
 
           {lesson.pdf_notes_url && (
-            <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <FileText size={24} className="text-primary-600" />
-                  <div>
-                    <h3 className="font-semibold text-gray-800">PDF Notes</h3>
-                    <p className="text-sm text-gray-600">Lesson notes and materials</p>
-                  </div>
-                </div>
-                <a
-                  href={lesson.pdf_notes_url}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition"
-                >
-                  <Download size={18} />
-                  <span>Download</span>
-                </a>
+            <div className="flex items-center gap-3.5 border border-canvas-150 rounded-[10px] p-3.5 mb-8">
+              <span className="w-10 h-10 rounded-[10px] bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <FileText size={20} className="text-gray-600" />
+              </span>
+              <div className="flex-1">
+                <div className="font-semibold text-sm text-gray-900">Lesson notes (PDF)</div>
+                <div className="text-2xs text-gray-500">Slides &amp; materials</div>
               </div>
+              <a
+                href={lesson.pdf_notes_url}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition rounded-[10px] h-9 px-3.5"
+              >
+                <Download size={15} />
+                Download
+              </a>
             </div>
           )}
 
-          <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between gap-3 pt-6 border-t border-canvas-150">
+            <button
+              onClick={goToPreviousLesson}
+              disabled={!hasPrevLesson}
+              className="flex items-center gap-1.5 border border-gray-200 text-gray-700 rounded-[10px] h-11 px-4 hover:bg-gray-50 transition font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={18} />
+              Previous
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              {quiz && (
+                <button
+                  onClick={() => setShowQuiz(true)}
+                  className="bg-white border border-primary-200 text-primary-700 rounded-[10px] h-11 px-4 hover:bg-primary-50 transition font-medium"
+                >
+                  Take quiz
+                </button>
+              )}
               {completed ? (
-                <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
-                  <CheckCircle size={20} />
-                  <span className="font-medium">Completed</span>
+                <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-[10px] h-11 px-4 font-medium">
+                  <CheckCircle size={18} />
+                  Completed
                 </div>
               ) : (
                 <button
                   onClick={markAsComplete}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-medium"
+                  className="flex items-center gap-1.5 bg-green-600 text-white rounded-[10px] h-11 px-4 hover:bg-green-700 transition font-medium"
                 >
-                  Mark as Complete
+                  <CheckCircle size={18} />
+                  Mark complete
                 </button>
               )}
-
-              {quiz && (
+              {hasNextLesson && (
                 <button
-                  onClick={() => setShowQuiz(true)}
-                  className="bg-primary-500 text-gray-900 px-6 py-2 rounded-lg hover:bg-primary-400 transition font-medium"
+                  onClick={goToNextLesson}
+                  className="flex items-center gap-1.5 bg-primary-500 text-gray-900 rounded-[10px] h-11 px-4 hover:bg-primary-400 transition font-medium"
                 >
-                  Take Quiz
+                  Next lesson
+                  <ChevronRight size={18} />
                 </button>
               )}
             </div>
-
-            {hasNextLesson && (
-              <button
-                onClick={goToNextLesson}
-                className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition font-medium"
-              >
-                <span>Next Lesson</span>
-                <ChevronRight size={20} />
-              </button>
-            )}
           </div>
         </div>
-      </div>
 
-      <KairosMindTutor lessonId={lesson.id} />
-
-      <div className="mt-6 bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold text-gray-800 mb-3">Course Progress</h3>
-        <div className="space-y-2">
-          {allLessons.map((l, index) => (
-            <div
-              key={l.id}
-              className={`flex items-center space-x-3 p-2 rounded ${
-                l.id === lesson.id ? 'bg-primary-50' : ''
-              }`}
-            >
-              <span className="text-sm text-gray-500">{index + 1}</span>
-              <span className={`text-sm flex-1 ${l.id === lesson.id ? 'font-medium text-primary-700' : 'text-gray-700'}`}>
-                {l.title}
-              </span>
-            </div>
-          ))}
+        {/* Mobile: curriculum + Kairos Mind inline (the docked 3rd column
+            is desktop-only -- see lg:grid breakpoint above) */}
+        <div className="lg:hidden border-t border-canvas-150 mt-2 px-4 sm:px-6 py-6">
+          <div className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500 mb-2">Course content</div>
+          {curriculumList}
         </div>
-      </div>
+        <div className="lg:hidden border-t border-canvas-150 h-[520px]">
+          <KairosMindTutor lessonId={lesson.id} />
+        </div>
+      </main>
+
+      {/* Kairos Mind (desktop, docked) */}
+      <aside className="hidden lg:flex lg:flex-col border-l border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px]">
+        <KairosMindTutor lessonId={lesson.id} />
+      </aside>
     </div>
   );
 }
