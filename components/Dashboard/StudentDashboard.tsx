@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, CheckCircle, Clock, Zap, GraduationCap, Award } from 'lucide-react';
-import { supabase, Enrollment, Course, Certificate } from '../../lib/supabase';
+import { supabase, Enrollment, Course, Certificate, CourseStats, StudentCourseProgress } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCourseCover } from '../../lib/courseCovers';
 
@@ -57,33 +57,30 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
       .order('enrolled_at', { ascending: false });
 
     if (enrollmentsData) {
-      const enrichedEnrollments = await Promise.all(
-        (enrollmentsData as EnrollmentRow[]).map(async (enrollment) => {
-          const { count: totalLessons } = await supabase
-            .from('lessons')
-            .select('*', { count: 'exact', head: true })
-            .eq('course_id', enrollment.course_id);
+      // Two follow-up queries total (not 3 per enrollment -- see
+      // course_stats/student_course_progress in 0020/0021_*.sql).
+      const courseIds = (enrollmentsData as EnrollmentRow[]).map((e) => e.course_id);
+      const [{ data: statsRows }, { data: progressRows }] = await Promise.all([
+        supabase.from('course_stats').select('course_id, lesson_count').in('course_id', courseIds),
+        supabase
+          .from('student_course_progress')
+          .select('*')
+          .eq('student_id', user.id)
+          .in('course_id', courseIds),
+      ]);
 
-          const { count: completedLessons } = await supabase
-            .from('lesson_progress')
-            .select('*', { count: 'exact', head: true })
-            .eq('student_id', user.id)
-            .eq('completed', true)
-            .in(
-              'lesson_id',
-              (await supabase
-                .from('lessons')
-                .select('id')
-                .eq('course_id', enrollment.course_id)).data?.map((l: { id: string }) => l.id) || []
-            );
-
-          return {
-            ...enrollment,
-            totalLessons: totalLessons || 0,
-            completedLessons: completedLessons || 0,
-          };
-        })
+      const lessonCountByCourseId = new Map(
+        (statsRows ?? []).map((s: Pick<CourseStats, 'course_id' | 'lesson_count'>) => [s.course_id, s.lesson_count])
       );
+      const completedByCourseId = new Map(
+        (progressRows ?? []).map((p: StudentCourseProgress) => [p.course_id, p.completed_lesson_count])
+      );
+
+      const enrichedEnrollments = (enrollmentsData as EnrollmentRow[]).map((enrollment) => ({
+        ...enrollment,
+        totalLessons: lessonCountByCourseId.get(enrollment.course_id) ?? 0,
+        completedLessons: completedByCourseId.get(enrollment.course_id) ?? 0,
+      }));
 
       setEnrollments(enrichedEnrollments);
 

@@ -126,6 +126,23 @@ export type Review = {
   created_at: string;
 };
 
+// Backed by the course_stats / student_course_progress views
+// (0020/0021_*.sql) -- aggregates computed in the DB instead of N+1
+// per-row client queries.
+export type CourseStats = {
+  course_id: string;
+  lesson_count: number;
+  enrollment_count: number;
+  review_count: number;
+  average_rating: number;
+};
+
+export type StudentCourseProgress = {
+  student_id: string;
+  course_id: string;
+  completed_lesson_count: number;
+};
+
 export type InstructorApplicationStatus =
   | 'draft'
   | 'submitted'

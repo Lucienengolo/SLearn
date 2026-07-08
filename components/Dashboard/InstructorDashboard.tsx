@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, BookOpen, Users, Edit, Trash2 } from 'lucide-react';
-import { supabase, Course } from '../../lib/supabase';
+import { supabase, Course, CourseStats } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import CourseEditor from './CourseEditor';
 
@@ -32,26 +32,25 @@ export default function InstructorDashboard() {
     if (error) {
       console.error('Error fetching courses:', error);
     } else if (data) {
-      const coursesWithStats = await Promise.all(
-        data.map(async (course: Course) => {
-          const { count: enrollmentCount } = await supabase
-            .from('enrollments')
-            .select('*', { count: 'exact', head: true })
-            .eq('course_id', course.id);
+      // One follow-up query for all of the instructor's courses' stats
+      // instead of 2 per course (see course_stats in 0020/0021_*.sql).
+      const { data: statsRows } = await supabase
+        .from('course_stats')
+        .select('*')
+        .in('course_id', data.map((c: Course) => c.id));
 
-          const { count: lessonCount } = await supabase
-            .from('lessons')
-            .select('*', { count: 'exact', head: true })
-            .eq('course_id', course.id);
+      const statsByCourseId = new Map((statsRows ?? []).map((s: CourseStats) => [s.course_id, s]));
 
+      setCourses(
+        data.map((course: Course) => {
+          const stats = statsByCourseId.get(course.id);
           return {
             ...course,
-            enrollmentCount: enrollmentCount || 0,
-            lessonCount: lessonCount || 0,
+            enrollmentCount: stats?.enrollment_count ?? 0,
+            lessonCount: stats?.lesson_count ?? 0,
           };
         })
       );
-      setCourses(coursesWithStats);
     }
     setLoading(false);
   };

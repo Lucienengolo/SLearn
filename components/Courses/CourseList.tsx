@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { supabase, Course, Category } from '../../lib/supabase';
+import { supabase, Course, Category, CourseStats } from '../../lib/supabase';
 import CourseCard from './CourseCard';
 import { getCourseCover } from '../../lib/courseCovers';
 
@@ -60,30 +60,26 @@ export default function CourseList({ onCourseSelect }: CourseListProps) {
     if (error) {
       console.error('Error fetching courses:', error);
     } else if (data) {
-      const coursesWithStats = await Promise.all(
-        data.map(async (course: Course) => {
-          const { count: enrollmentCount } = await supabase
-            .from('enrollments')
-            .select('*', { count: 'exact', head: true })
-            .eq('course_id', course.id);
+      // One follow-up query for every course's stats, instead of 2 per
+      // course (previously enrollment count + reviews, N+1 -- see
+      // course_stats in 0020/0021_*.sql).
+      const { data: statsRows } = await supabase
+        .from('course_stats')
+        .select('*')
+        .in('course_id', data.map((c: Course) => c.id));
 
-          const { data: reviews } = await supabase
-            .from('reviews')
-            .select('rating')
-            .eq('course_id', course.id);
+      const statsByCourseId = new Map((statsRows ?? []).map((s: CourseStats) => [s.course_id, s]));
 
-          const averageRating = reviews && reviews.length > 0
-            ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-            : 0;
-
+      setCourses(
+        data.map((course: Course) => {
+          const stats = statsByCourseId.get(course.id);
           return {
             ...course,
-            enrollmentCount: enrollmentCount || 0,
-            averageRating,
+            enrollmentCount: stats?.enrollment_count ?? 0,
+            averageRating: stats?.average_rating ?? 0,
           };
         })
       );
-      setCourses(coursesWithStats);
     }
     setLoading(false);
   };

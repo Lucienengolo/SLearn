@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, BookOpen, Users, Award, Wifi, ArrowRight, CheckCircle } from 'lucide-react';
-import { supabase, Course } from '../../lib/supabase';
+import { supabase, Course, CourseStats } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import CourseCard from '../Courses/CourseCard';
 import { CATEGORY_COVERS } from '../../lib/courseCovers';
@@ -40,30 +40,25 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
       .limit(6);
 
     if (coursesData) {
-      const coursesWithStats = await Promise.all(
-        (coursesData as CourseRow[]).map(async (course) => {
-          const { count: enrollmentCount } = await supabase
-            .from('enrollments')
-            .select('*', { count: 'exact', head: true })
-            .eq('course_id', course.id);
+      // One follow-up query for all featured courses' stats instead of 2
+      // per course (see course_stats in 0020/0021_*.sql).
+      const { data: statsRows } = await supabase
+        .from('course_stats')
+        .select('*')
+        .in('course_id', (coursesData as CourseRow[]).map((c) => c.id));
 
-          const { data: reviews } = await supabase
-            .from('reviews')
-            .select('rating')
-            .eq('course_id', course.id);
+      const statsByCourseId = new Map((statsRows ?? []).map((s: CourseStats) => [s.course_id, s]));
 
-          const averageRating = reviews && reviews.length > 0
-            ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-            : 0;
-
+      setFeaturedCourses(
+        (coursesData as CourseRow[]).map((course) => {
+          const stats = statsByCourseId.get(course.id);
           return {
             ...course,
-            enrollmentCount: enrollmentCount || 0,
-            averageRating,
+            enrollmentCount: stats?.enrollment_count ?? 0,
+            averageRating: stats?.average_rating ?? 0,
           };
         })
       );
-      setFeaturedCourses(coursesWithStats);
     }
 
     const { count: coursesCount } = await supabase
