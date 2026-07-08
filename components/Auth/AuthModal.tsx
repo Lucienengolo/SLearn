@@ -86,7 +86,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </p>
             <button
               onClick={handleClose}
-              className="mt-6 w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition"
+              className="mt-6 w-full bg-primary-500 text-gray-900 py-2 rounded-lg hover:bg-primary-400 transition"
             >
               Got it
             </button>
@@ -108,7 +108,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                 </div>
@@ -123,7 +123,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   required
                 />
               </div>
@@ -137,7 +137,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   required
                   minLength={8}
                 />
@@ -164,7 +164,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                className="w-full bg-primary-500 text-gray-900 py-2 rounded-lg hover:bg-primary-400 transition disabled:opacity-50"
               >
                 {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
               </button>
@@ -176,7 +176,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   setIsLogin(!isLogin);
                   setError('');
                 }}
-                className="text-blue-600 hover:underline text-sm"
+                className="text-primary-700 hover:underline text-sm"
               >
                 {isLogin
                   ? "Don't have an account? Sign up"

@@ -67,7 +67,7 @@ export default function VerificationPipeline({ application }: Props) {
                 key={stage}
                 className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full capitalize ${
                   active
-                    ? 'bg-primary-600 text-white'
+                    ? 'bg-primary-500 text-gray-900'
                     : done
                     ? 'bg-primary-50 text-primary-700'
                     : 'bg-gray-100 text-gray-500'
@@ -133,7 +133,7 @@ export default function VerificationPipeline({ application }: Props) {
                 href={calLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium"
+                className="inline-block px-4 py-2 rounded-lg bg-primary-500 text-gray-900 hover:bg-primary-400 text-sm font-medium"
               >
                 Schedule your interview on Cal.com
               </a>

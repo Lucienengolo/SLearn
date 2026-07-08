@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <script src="icons.js"></script>
+  <link rel="stylesheet" href="_ds/longrich-design-system-bfba56ca-e15a-4258-8cac-7e2be36b7e26/styles.css">
+  <style>
+    body { margin: 0; }
+    .sl { --color-primary:var(--gold-500); --color-primary-hover:var(--gold-400); --on-primary:var(--gray-900); --text-link:var(--gold-700);
+      font-family:var(--font-body); color:var(--text-primary); background:var(--surface-page); -webkit-font-smoothing:antialiased; }
+    .sl *,.sl *::before,.sl *::after { box-sizing:border-box; }
+    .ico { display:inline-block; flex-shrink:0; background-color:currentColor; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-position:center; mask-position:center; -webkit-mask-size:contain; mask-size:contain; }
+    .serif { font-family:var(--font-display); font-weight:400; letter-spacing:var(--tracking-tight); }
+    .eyebrow { font-size:var(--text-2xs); font-weight:600; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--color-reward-strong); }
+    .h2 { font-size:var(--text-sm); font-weight:600; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-tertiary); margin:0 0 16px; }
+    .tile { display:flex; flex-direction:column; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden; text-decoration:none; color:inherit; box-shadow:var(--shadow-sm); transition:box-shadow var(--duration-base),transform var(--duration-base),border-color var(--duration-base); }
+    .tile:hover { box-shadow:var(--shadow-md); transform:translateY(-3px); border-color:var(--border-default); }
+    .card { background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    @media (max-width:820px){ .grid4{ grid-template-columns:1fr 1fr !important; } .grid2{ grid-template-columns:1fr !important; } }
+  </style>
+</helmet>
+<div class="sl" style="min-height:100vh" data-screen-label="Design Review Hub">
+  <div style="max-width:1080px;margin:0 auto;padding:56px 28px 96px">
+
+    <span class="eyebrow">S@Learn · Design review</span>
+    <h1 class="serif" style="font-size:var(--text-5xl);line-height:1.05;margin:8px 0 14px">A more modern, fluid SLearn</h1>
+    <p style="font-size:var(--text-lg);line-height:var(--leading-relaxed);color:var(--text-secondary);max-width:680px;margin:0 0 20px">Rebuilt on the Longrich design system — Instrument Serif + DM Sans, a 4px spacing grid, soft elevation and quiet neutrals — while keeping your yellow brand, now expressed through the system's accessible gold ramp. Mobile-first, with the two production bugs fixed and a surface reserved for the coming AI assistant.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:48px">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:var(--text-sm);font-weight:600;color:var(--color-reward-strong);background:var(--gold-50);border:1px solid var(--gold-200);padding:6px 12px;border-radius:var(--radius-full)"><span class="ico" style="width:15px;height:15px;-webkit-mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M9.937%2015.5A2%202%200%200%200%208.5%2014.063l-6.135-1.582a.5.5%200%200%201%200-.962L8.5%209.936A2%202%200%200%200%209.937%208.5l1.582-6.135a.5.5%200%200%201%20.962%200L14.063%208.5A2%202%200%200%200%2015.5%209.937l6.135%201.581a.5.5%200%200%201%200%20.964L15.5%2014.063a2%202%200%200%200-1.437%201.437l-1.582%206.135a.5.5%200%200%201-.962%200z%22%2F%3E%3Cpath%20d%3D%22M20%203v4%22%2F%3E%3Cpath%20d%3D%22M22%205h-4%22%2F%3E%3Cpath%20d%3D%22M4%2017v2%22%2F%3E%3Cpath%20d%3D%22M5%2018H3%22%2F%3E%3C%2Fsvg%3E');mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M9.937%2015.5A2%202%200%200%200%208.5%2014.063l-6.135-1.582a.5.5%200%200%201%200-.962L8.5%209.936A2%202%200%200%200%209.937%208.5l1.582-6.135a.5.5%200%200%201%20.962%200L14.063%208.5A2%202%200%200%200%2015.5%209.937l6.135%201.581a.5.5%200%200%201%200%20.964L15.5%2014.063a2%202%200%200%200-1.437%201.437l-1.582%206.135a.5.5%200%200%201-.962%200z%22%2F%3E%3Cpath%20d%3D%22M20%203v4%22%2F%3E%3Cpath%20d%3D%22M22%205h-4%22%2F%3E%3Cpath%20d%3D%22M4%2017v2%22%2F%3E%3Cpath%20d%3D%22M5%2018H3%22%2F%3E%3C%2Fsvg%3E')"></span>Yellow brand kept</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:var(--text-sm);font-weight:600;color:var(--success-700);background:var(--success-50);border:1px solid var(--green-200);padding:6px 12px;border-radius:var(--radius-full)"><span class="ico" style="width:15px;height:15px;-webkit-mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2210%22%2F%3E%3Cpath%20d%3D%22m9%2012%202%202%204-4%22%2F%3E%3C%2Fsvg%3E');mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2210%22%2F%3E%3Cpath%20d%3D%22m9%2012%202%202%204-4%22%2F%3E%3C%2Fsvg%3E')"></span>2 bugs fixed</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:var(--text-sm);font-weight:600;color:var(--text-secondary);background:var(--surface-card);border:1px solid var(--border-default);padding:6px 12px;border-radius:var(--radius-full)"><span class="ico" style="width:15px;height:15px;-webkit-mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20width%3D%2214%22%20height%3D%2220%22%20x%3D%225%22%20y%3D%222%22%20rx%3D%222%22%20ry%3D%222%22%2F%3E%3Cpath%20d%3D%22M12%2018h.01%22%2F%3E%3C%2Fsvg%3E');mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20width%3D%2214%22%20height%3D%2220%22%20x%3D%225%22%20y%3D%222%22%20rx%3D%222%22%20ry%3D%222%22%2F%3E%3Cpath%20d%3D%22M12%2018h.01%22%2F%3E%3C%2Fsvg%3E')"></span>Mobile-first</span>
+    </div>
+
+    <!-- FULL PLATFORM -->
+    <a href="SLearn Platform.dc.html" class="tile" style="flex-direction:row;align-items:stretch;margin-bottom:40px">
+      <div style="width:200px;flex-shrink:0;background:linear-gradient(135deg,#3C413A,#181B16);display:flex;align-items:center;justify-content:center">
+        <span class="ico" style="width:52px;height:52px;color:var(--gold-400);-webkit-mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M21.42%2010.922a1%201%200%200%200-.019-1.838L12.83%205.18a2%202%200%200%200-1.66%200L2.6%209.08a1%201%200%200%200%200%201.832l8.57%203.908a2%202%200%200%200%201.66%200z%22%2F%3E%3Cpath%20d%3D%22M22%2010v6%22%2F%3E%3Cpath%20d%3D%22M6%2012.5V16a6%203%200%200%200%2012%200v-3.5%22%2F%3E%3C%2Fsvg%3E');mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M21.42%2010.922a1%201%200%200%200-.019-1.838L12.83%205.18a2%202%200%200%200-1.66%200L2.6%209.08a1%201%200%200%200%200%201.832l8.57%203.908a2%202%200%200%200%201.66%200z%22%2F%3E%3Cpath%20d%3D%22M22%2010v6%22%2F%3E%3Cpath%20d%3D%22M6%2012.5V16a6%203%200%200%200%2012%200v-3.5%22%2F%3E%3C%2Fsvg%3E')"></span>
+      </div>
+      <div style="padding:26px 28px;flex:1">
+        <span class="eyebrow">Start here · full prototype</span>
+        <div class="serif" style="font-size:var(--text-3xl);margin:6px 0 8px">The complete SLearn platform</div>
+        <p style="font-size:var(--text-md);color:var(--text-secondary);margin:0 0 12px;max-width:560px">One navigable app: sidebar routing, a learner ⇄ instructor role switch, catalog → course → lesson → Aria flow, dashboards, grading queue and certificates — all wired together.</p>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:var(--text-md);font-weight:600;color:var(--text-link)">Open the platform<span class="ico" style="width:16px;height:16px;-webkit-mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012h14%22%2F%3E%3Cpath%20d%3D%22m12%205%207%207-7%207%22%2F%3E%3C%2Fsvg%3E');mask-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012h14%22%2F%3E%3Cpath%20d%3D%22m12%205%207%207-7%207%22%2F%3E%3C%2Fsvg%3E')"></span></span>
+      </div>
+    </a>
+
+    <!-- IMPROVED SCREENS -->
+    <p class="h2">Individual screens · open them</p>
+    <div class="grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
+      <sc-for list="{{ improved }}" as="s" hint-placeholder-count="4">
+        <a href="{{ s.href }}" class="tile">
+          <div style="height:96px;background:{{ s.cover }};display:flex;align-items:center;justify-content:center">
+            <span class="ico" style="width:30px;height:30px;color:rgba(255,255,255,0.9);-webkit-mask-image:url('{{ s.icon }}');mask-image:url('{{ s.icon }}')"></span>
+          </div>
+          <div style="padding:14px 16px">
+            <div style="font-weight:600;font-size:var(--text-md)">{{ s.title }}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:2px">{{ s.note }}</div>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+    <p style="font-size:var(--text-sm);color:var(--text-tertiary);margin:0 0 48px">The Lesson viewer's Aria panel and the three-column layout appear on screens wider than ~1100px.</p>
+
+    <!-- WHAT CHANGED -->
+    <p class="h2">What changed</p>
+    <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:48px">
+      <sc-for list="{{ changes }}" as="c" hint-placeholder-count="6">
+        <div class="card" style="padding:18px 20px;display:flex;gap:14px;align-items:flex-start">
+          <span style="width:36px;height:36px;border-radius:var(--radius-md);flex-shrink:0;background:{{ c.bg }};display:inline-flex;align-items:center;justify-content:center">
+            <span class="ico" style="width:18px;height:18px;color:{{ c.color }};-webkit-mask-image:url('{{ c.icon }}');mask-image:url('{{ c.icon }}')"></span>
+          </span>
+          <div>
+            <div style="font-weight:600;font-size:var(--text-md);margin-bottom:3px">{{ c.title }}</div>
+            <div style="font-size:var(--text-sm);line-height:var(--leading-normal);color:var(--text-secondary)">{{ c.detail }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- CURRENT (before) -->
+    <p class="h2">The current app, recreated (before)</p>
+    <div class="grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:48px">
+      <sc-for list="{{ current }}" as="s" hint-placeholder-count="8">
+        <a href="{{ s.href }}" style="display:block;background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px 16px;text-decoration:none;color:inherit">
+          <div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-bottom:4px">{{ s.n }}</div>
+          <div style="font-weight:500;font-size:var(--text-md)">{{ s.title }}</div>
+        </a>
+      </sc-for>
+    </div>
+
+    <!-- AUDIT -->
+    <p class="h2">Full audit — findings from the codebase</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <sc-for list="{{ findings }}" as="f" hint-placeholder-count="6">
+        <div class="card" style="padding:18px 20px;display:flex;gap:16px;align-items:flex-start">
+          <span style="flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:4px 10px;border-radius:var(--radius-full);background:{{ f.tagBg }};color:{{ f.tagColor }};margin-top:2px">{{ f.tag }}</span>
+          <div>
+            <div style="font-weight:600;font-size:var(--text-md);margin-bottom:3px">{{ f.title }}</div>
+            <div style="font-size:var(--text-sm);line-height:var(--leading-relaxed);color:var(--text-secondary)">{{ f.detail }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const I = (n) => (window.SL_ICONS && window.SL_ICONS[n]) || '';
+    const covers = {
+      web: 'linear-gradient(135deg,#3C413A,#181B16)', gold: 'linear-gradient(135deg,#C8881C,#835611)',
+      green: 'linear-gradient(135deg,#157A4D,#0A4329)', ink: 'linear-gradient(135deg,#555B51,#262A24)',
+    };
+    const improved = [
+      { href: 'improved/01 Home.dc.html', title: 'Home', note: 'Search-first hero, real covers', cover: covers.gold, icon: I('search') },
+      { href: 'improved/03 Course Detail.dc.html', title: 'Course detail', note: 'Sticky enroll, mobile bar', cover: covers.web, icon: I('book-open') },
+      { href: 'improved/04 Lesson Viewer.dc.html', title: 'Lesson + Aria', note: 'Sidebar + AI assistant', cover: covers.green, icon: I('sparkles') },
+      { href: 'improved/06 Student Dashboard.dc.html', title: 'Dashboard', note: 'Resume, streak, progress', cover: covers.ink, icon: I('bar-chart-3') },
+      { href: 'improved/09 Learner Dashboard.dc.html', title: 'Learner workspace', note: 'Sidebar · stats · leaderboard', cover: covers.gold, icon: I('graduation-cap') },
+      { href: 'improved/10 Teacher Dashboard.dc.html', title: 'Teacher studio', note: 'Grading · analytics · reviews', cover: covers.green, icon: I('users') },
+    ];
+    const current = [
+      { n: '01', title: 'Home', href: 'current/01 Home.dc.html' },
+      { n: '02', title: 'Courses', href: 'current/02 Courses.dc.html' },
+      { n: '03', title: 'Course Detail', href: 'current/03 Course Detail.dc.html' },
+      { n: '04', title: 'Lesson Viewer', href: 'current/04 Lesson Viewer.dc.html' },
+      { n: '05', title: 'Quiz', href: 'current/05 Quiz.dc.html' },
+      { n: '06', title: 'Student Dashboard', href: 'current/06 Student Dashboard.dc.html' },
+      { n: '07', title: 'Instructor Dashboard', href: 'current/07 Instructor Dashboard.dc.html' },
+      { n: '08', title: 'Certificates', href: 'current/08 Certificates.dc.html' },
+    ];
+    const g = { bg: 'var(--gold-50)', color: 'var(--color-reward-strong)' };
+    const grn = { bg: 'var(--success-50)', color: 'var(--success-500)' };
+    const nu = { bg: 'var(--gray-100)', color: 'var(--text-secondary)' };
+    const changes = [
+      Object.assign({ icon: I('check-circle'), title: 'Bug fixed · hero is visible', detail: 'The hero referenced a missing image, leaving white text on nothing. Now a solid dark-gold gradient surface with a real search bar.' }, grn),
+      Object.assign({ icon: I('check-circle'), title: 'Bug fixed · header stays readable', detail: 'The old header turned transparent on scroll-up. Now a solid blurred bar with a quiet border — legible over any content.' }, grn),
+      Object.assign({ icon: I('palette'), title: 'One accessible accent', detail: 'Yellow kept, but as dark-ink-on-gold buttons (passes WCAG AA). Leftover Tailwind blue removed; green now means "success" only.' }, g),
+      Object.assign({ icon: I('smartphone'), title: 'Mobile-first patterns', detail: 'Sticky enroll bar on phones, a curriculum sidebar that becomes a drawer, 44px+ tap targets, and fluid grids that reflow.' }, g),
+      Object.assign({ icon: I('sparkles'), title: 'Aria — AI assistant surface', detail: 'A docked panel on the lesson screen (with quick actions and a working mock chat) and a launcher everywhere, ready for the real agent.' }, g),
+      Object.assign({ icon: I('graduation-cap'), title: 'Real course covers', detail: 'The identical emoji-on-gradient thumbnails are replaced by per-category gradient covers with a Lucide glyph and category label.' }, nu),
+    ];
+    const red = { tag: 'Bug', tagBg: 'var(--danger-50)', tagColor: 'var(--danger-700)' };
+    const amber = { tag: 'Design', tagBg: 'var(--gold-50)', tagColor: 'var(--color-reward-strong)' };
+    const blue = { tag: 'SEO/UX', tagBg: 'var(--info-50)', tagColor: 'var(--info-700)' };
+    const findings = [
+      Object.assign({ title: 'Hero background image was missing', detail: 'HomePage referenced /banner-p.png, absent from the repo — the hero rendered invisible in production. Fixed in the redesign.' }, red),
+      Object.assign({ title: 'Header went transparent on scroll-up', detail: 'Nav text floated unreadably over content. Fixed with a solid blurred header.' }, red),
+      Object.assign({ tag: 'Design', tagBg: 'var(--gold-50)', tagColor: 'var(--color-reward-strong)', title: 'Leftover blue palette & contrast failures', detail: 'Quiz, auth, focus rings and stat icons used Tailwind blue; yellow-600 text on white failed AA. Unified to one accessible gold accent + neutrals.' }),
+      Object.assign({ tag: 'Design', tagBg: 'var(--gold-50)', tagColor: 'var(--color-reward-strong)', title: 'Identical emoji thumbnails read as "template"', detail: 'Every course showed a 50%-opacity book emoji on the same gradient. Replaced with per-category covers.' }),
+      Object.assign({ title: 'SPA hash-routing blocks SEO', detail: 'Courses are #id states in one client-rendered app — no real URLs, per-page titles or meta. For your SEO goal, move to path-based routes with SSR/prerender (Next or Astro) and per-course meta + OpenGraph.' }, blue),
+      Object.assign({ title: 'Feedback: alert()/confirm() and bare spinners', detail: 'Errors use alert(), delete uses confirm(), loads show a lone spinner. Add toasts, skeletons and a styled confirm dialog to lift perceived quality.' }, blue),
+    ];
+    return { improved, current, changes, findings };
+  }
+}
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase, Course, Lesson, Review, Enrollment } from '../../lib/supabase';
 import { getGuestCourseProgress, guestEnroll, isGuestEnrolled } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
+import { getCourseCover } from '../../lib/courseCovers';
 
 type CourseDetailProps = {
   courseId: string;
@@ -181,6 +182,9 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
     ? enrollment.progress_percentage
     : getGuestCourseProgress(lessons.map((l) => l.id));
 
+  const cover = getCourseCover(course.category?.name);
+  const CoverIcon = cover.icon;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
@@ -193,7 +197,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg h-64 flex items-center justify-center text-white">
+          <div className="rounded-lg h-64 flex items-center justify-center" style={{ background: cover.gradient }}>
             {course.thumbnail_url ? (
               <img
                 src={course.thumbnail_url}
@@ -202,7 +206,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
-              <span className="text-8xl opacity-50">📚</span>
+              <CoverIcon size={96} className="text-white/50" />
             )}
           </div>
 
@@ -350,7 +354,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 )}
                 <button
                   onClick={() => lessons.length > 0 && onStartLesson(lessons[0].id)}
-                  className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium"
+                  className="w-full bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium"
                 >
                   Continue Learning
                 </button>
@@ -363,7 +367,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               <button
                 onClick={handleEnroll}
                 disabled={startingCheckout}
-                className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {startingCheckout
                   ? 'Redirecting to checkout…'

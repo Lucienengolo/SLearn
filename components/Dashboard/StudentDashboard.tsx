@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Award, TrendingUp, Clock, GraduationCap } from 'lucide-react';
 import { supabase, Enrollment, Course, Certificate } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { getCourseCover } from '../../lib/courseCovers';
 
 type StudentDashboardProps = {
   onCourseSelect: (courseId: string) => void;
@@ -168,11 +169,11 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
       </div>
 
       {certificates.length > 0 && (
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg shadow-lg p-6 mb-8 text-white">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg shadow-lg p-6 mb-8 text-gray-900">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold mb-1">Certificates Earned</h3>
-              <p className="text-primary-100">You have {certificates.length} certificate(s)</p>
+              <p className="text-gray-800">You have {certificates.length} certificate(s)</p>
             </div>
             <button
               onClick={onCertificateView}
@@ -195,13 +196,16 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {enrollments.map((enrollment) => (
+            {enrollments.map((enrollment) => {
+              const cover = getCourseCover(enrollment.course.category?.name);
+              const CoverIcon = cover.icon;
+              return (
               <div
                 key={enrollment.id}
                 className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer"
                 onClick={() => onCourseSelect(enrollment.course_id)}
               >
-                <div className="h-40 bg-gradient-to-br from-primary-400 to-primary-600 rounded-t-lg flex items-center justify-center">
+                <div className="h-40 rounded-t-lg flex items-center justify-center" style={{ background: cover.gradient }}>
                   {enrollment.course.thumbnail_url ? (
                     <img
                       src={enrollment.course.thumbnail_url}
@@ -210,13 +214,13 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-6xl text-white opacity-50">📚</span>
+                    <CoverIcon size={56} className="text-white/50" />
                   )}
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     {enrollment.course.category && (
-                      <span className="text-xs bg-blue-100 text-primary-600 px-2 py-1 rounded">
+                      <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded">
                         {enrollment.course.category.name}
                       </span>
                     )}
@@ -256,7 +260,8 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -559,7 +559,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
             <button
               onClick={handleSaveCourse}
               disabled={saving || !title || !description}
-              className="flex-1 bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50"
+              className="flex-1 bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Course'}
             </button>

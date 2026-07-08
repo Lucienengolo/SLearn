@@ -1,5 +1,6 @@
 import { Clock, Users, Star } from 'lucide-react';
 import { Course } from '../../lib/supabase';
+import { getCourseCover } from '../../lib/courseCovers';
 
 type CourseCardProps = {
   course: Course & {
@@ -12,12 +13,15 @@ type CourseCardProps = {
 };
 
 export default function CourseCard({ course, onClick }: CourseCardProps) {
+  const cover = getCourseCover(course.category?.name);
+  const CoverIcon = cover.icon;
+
   return (
     <div
       onClick={onClick}
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer"
     >
-      <div className="h-48 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+      <div className="h-48 flex items-center justify-center" style={{ background: cover.gradient }}>
         {course.thumbnail_url ? (
           <img
             src={course.thumbnail_url}
@@ -26,7 +30,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-6xl text-white opacity-50">📚</span>
+          <CoverIcon size={56} className="text-white/50" />
         )}
       </div>
       <div className="p-4">

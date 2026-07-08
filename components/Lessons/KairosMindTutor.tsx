@@ -89,7 +89,7 @@ export default function KairosMindTutor({ lessonId }: KairosMindTutorProps) {
                 key={m.value}
                 onClick={() => setMode(m.value)}
                 className={`text-sm px-3 py-1.5 rounded-full transition ${
-                  mode === m.value ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  mode === m.value ? 'bg-primary-500 text-gray-900' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 {m.label}
@@ -146,7 +146,7 @@ export default function KairosMindTutor({ lessonId }: KairosMindTutorProps) {
             <button
               onClick={handleSend}
               disabled={sending || !input.trim()}
-              className="bg-primary-600 text-white px-4 py-3.5 rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+              className="bg-primary-500 text-gray-900 px-4 py-3.5 rounded-lg hover:bg-primary-400 transition disabled:opacity-50"
               aria-label="Send message"
             >
               <Send size={16} />

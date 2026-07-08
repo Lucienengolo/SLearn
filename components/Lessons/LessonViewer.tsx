@@ -277,7 +277,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
                   download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
+                  className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition"
                 >
                   <Download size={18} />
                   <span>Download</span>
@@ -305,7 +305,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
               {quiz && (
                 <button
                   onClick={() => setShowQuiz(true)}
-                  className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition font-medium"
+                  className="bg-primary-500 text-gray-900 px-6 py-2 rounded-lg hover:bg-primary-400 transition font-medium"
                 >
                   Take Quiz
                 </button>

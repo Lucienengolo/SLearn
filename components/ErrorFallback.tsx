@@ -11,7 +11,7 @@ export default function ErrorFallback() {
         </p>
         <button
           onClick={() => window.location.reload()}
-          className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition"
+          className="w-full bg-primary-500 text-gray-900 py-2 rounded-lg hover:bg-primary-400 transition"
         >
           Reload
         </button>

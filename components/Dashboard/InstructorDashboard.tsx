@@ -111,7 +111,7 @@ export default function InstructorDashboard() {
             setSelectedCourse(null);
             setShowEditor(true);
           }}
-          className="flex items-center space-x-2 bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition font-medium"
+          className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-6 py-3 rounded-lg hover:bg-primary-400 transition font-medium"
         >
           <Plus size={20} />
           <span>Create Course</span>
@@ -129,7 +129,7 @@ export default function InstructorDashboard() {
           <p className="text-gray-600 mb-6">Create your first course to get started</p>
           <button
             onClick={() => setShowEditor(true)}
-            className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition"
+            className="bg-primary-500 text-gray-900 px-6 py-2 rounded-lg hover:bg-primary-400 transition"
           >
             Create Your First Course
           </button>
@@ -186,7 +186,7 @@ export default function InstructorDashboard() {
                       setSelectedCourse(course.id);
                       setShowEditor(true);
                     }}
-                    className="flex-1 flex items-center justify-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
+                    className="flex-1 flex items-center justify-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition"
                   >
                     <Edit size={16} />
                     <span>Edit</span>

@@ -135,7 +135,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
             key={label}
             className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full ${
               i === step
-                ? 'bg-primary-600 text-white'
+                ? 'bg-primary-500 text-gray-900'
                 : i < step
                 ? 'bg-primary-50 text-primary-700'
                 : 'bg-gray-100 text-gray-500'
@@ -309,7 +309,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                     href={calLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium"
+                    className="inline-block px-4 py-2 rounded-lg bg-primary-500 text-gray-900 hover:bg-primary-400 text-sm font-medium"
                   >
                     Schedule interview on Cal.com
                   </a>
@@ -339,7 +339,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
             <button
               onClick={goNext}
               disabled={saving}
-              className="px-6 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+              className="px-6 py-2 rounded-lg bg-primary-500 text-gray-900 hover:bg-primary-400 disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save & continue'}
             </button>
@@ -347,7 +347,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="px-6 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+              className="px-6 py-2 rounded-lg bg-primary-500 text-gray-900 hover:bg-primary-400 disabled:opacity-50"
             >
               {saving ? 'Submitting…' : 'Submit application'}
             </button>

@@ -104,7 +104,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
             {!user && (
               <button
                 onClick={() => onNavigate('courses')}
-                className="bg-white text-primary-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition font-semibold text-lg"
+                className="bg-white text-primary-600 px-8 py-3 rounded-lg hover:bg-primary-50 transition font-semibold text-lg"
               >
                 Explore Courses
               </button>
@@ -112,7 +112,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
             {user && (
               <button
                 onClick={() => onNavigate('dashboard')}
-                className="bg-white text-primary-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition font-semibold text-lg"
+                className="bg-white text-primary-600 px-8 py-3 rounded-lg hover:bg-primary-50 transition font-semibold text-lg"
               >
                 Go to Dashboard
               </button>
@@ -125,7 +125,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
                 <BookOpen className="text-primary-600" size={32} />
               </div>
               <h2 className="text-3xl font-bold text-gray-800 mb-2">{stats.totalCourses}+</h2>
@@ -199,14 +199,14 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
                   <TrendingUp className="flex-shrink-0 mt-1" size={24} />
                   <div>
                     <h3 className="font-semibold text-lg">Learn at Your Own Pace</h3>
-                    <p className="text-blue-100">Access courses anytime, anywhere</p>
+                    <p className="text-primary-100">Access courses anytime, anywhere</p>
                   </div>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Award className="flex-shrink-0 mt-1" size={24} />
                   <div>
                     <h3 className="font-semibold text-lg">Earn Certificates</h3>
-                    <p className="text-blue-100">Get recognized for your achievements</p>
+                    <p className="text-primary-100">Get recognized for your achievements</p>
                   </div>
                 </li>
                 <li className="flex items-start space-x-3">

@@ -103,7 +103,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
           <div className="mt-8 p-6 bg-gray-50 rounded-lg">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-3xl font-bold text-blue-600">{result.score}%</p>
+                <p className="text-3xl font-bold text-primary-600">{result.score}%</p>
                 <p className="text-gray-600">Your Score</p>
               </div>
               <div>
@@ -154,7 +154,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
                   setAnswers({});
                   setResult(null);
                 }}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                className="w-full bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium"
               >
                 Retake Quiz
               </button>
@@ -206,7 +206,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
                     key={option}
                     className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${
                       answers[question.id] === option
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-primary-500 bg-primary-50'
                         : 'border-gray-200 hover:bg-gray-50'
                     }`}
                   >
@@ -218,7 +218,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
                       onChange={(e) =>
                         setAnswers({ ...answers, [question.id]: e.target.value })
                       }
-                      className="text-blue-600 focus:ring-blue-500"
+                      className="text-primary-600 focus:ring-primary-500"
                     />
                     <span className="text-gray-700">{option}</span>
                   </label>
@@ -232,7 +232,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
           <button
             onClick={handleSubmit}
             disabled={!allAnswered}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {allAnswered ? 'Submit Quiz' : `Answer All Questions (${Object.keys(answers).length}/${questions.length})`}
           </button>
