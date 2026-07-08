@@ -20,7 +20,13 @@ async function auditCurrentPage(page, label) {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({ headless: true });
+  // --no-sandbox/--disable-setuid-sandbox: Chromium's own sandbox needs
+  // user-namespace privileges GitHub Actions' containers don't grant.
+  // Harmless (and unnecessary) locally, required in that CI environment.
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
   const page = await browser.newPage();
   await page.setViewport({ width: 1280, height: 900 });
 
