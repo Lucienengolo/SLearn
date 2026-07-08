@@ -28,32 +28,34 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
   return (
     <>
-  <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+  <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-canvas-150">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="flex justify-between items-center h-[66px]">
             <div
-              className="flex items-center space-x-2 cursor-pointer"
+              className="flex items-center space-x-2.5 cursor-pointer"
               onClick={() => onNavigate('home')}
             >
               <img src="/3D_S-Logo-removebg.png"
               alt="S@Learn logo"
-              className="h-10 w-auto" />
-              <span className="text-xl font-bold text-gray-800">@Learn</span>
+              className="h-9 w-auto" />
+              <span className="text-xl font-bold text-gray-900">
+                <span className="text-primary-600">@</span>Learn
+              </span>
             </div>
 
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex items-center gap-1">
               <button
                 onClick={() => onNavigate('home')}
-                className={`font-medium transition ${
-                  currentPage === 'home' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-800'
+                className={`text-md px-3 py-2 rounded-[10px] transition ${
+                  currentPage === 'home' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 Home
               </button>
               <button
                 onClick={() => onNavigate('courses')}
-                className={`font-medium transition ${
-                  currentPage === 'courses' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-800'
+                className={`text-md px-3 py-2 rounded-[10px] transition ${
+                  currentPage === 'courses' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 Courses
@@ -61,8 +63,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               {user && (
                 <button
                   onClick={() => onNavigate('dashboard')}
-                  className={`font-medium transition ${
-                    currentPage === 'dashboard' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-800'
+                  className={`text-md px-3 py-2 rounded-[10px] transition ${
+                    currentPage === 'dashboard' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   Dashboard

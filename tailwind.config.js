@@ -38,10 +38,29 @@ export default {
           600: '#A66E13',
           700: '#835611',
         },
+        // New, non-colliding addition (design system tokens the app's
+        // pages are being ported to page-by-page -- see README §5.E). We
+        // deliberately do NOT override gray-*/rounded-lg/shadow-md/text-3xl
+        // etc.: those are used by every not-yet-rebuilt page, and changing
+        // them globally would shift every page at once instead of the one
+        // currently being ported. Pages being rebuilt reference exact
+        // design-system values directly via arbitrary-value syntax
+        // (e.g. rounded-[var(--radius-lg)]) instead.
+        canvas: {
+          25: '#FBFCFB',
+          150: '#E6E9E3',
+        },
       },
       fontFamily: {
         display: ['Instrument Serif', 'Georgia', 'Times New Roman', 'serif'],
         sans: ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      },
+      fontSize: {
+        '2xs': '11px',
+        md: '14px',
+      },
+      borderRadius: {
+        xs: '4px',
       },
     },
   },
