@@ -104,7 +104,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
             {!user && (
               <button
                 onClick={() => onNavigate('courses')}
-                className="bg-white text-primary-600 px-8 py-3 rounded-lg hover:bg-primary-50 transition font-semibold text-lg"
+                className="bg-white text-primary-700 px-8 py-3 rounded-lg hover:bg-primary-50 transition font-semibold text-lg"
               >
                 Explore Courses
               </button>
@@ -112,7 +112,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
             {user && (
               <button
                 onClick={() => onNavigate('dashboard')}
-                className="bg-white text-primary-600 px-8 py-3 rounded-lg hover:bg-primary-50 transition font-semibold text-lg"
+                className="bg-white text-primary-700 px-8 py-3 rounded-lg hover:bg-primary-50 transition font-semibold text-lg"
               >
                 Go to Dashboard
               </button>
@@ -160,7 +160,7 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
             </div>
             <button
               onClick={() => onNavigate('courses')}
-              className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium"
+              className="flex items-center space-x-2 text-primary-700 hover:text-primary-800 font-medium"
             >
               <span>View All</span>
               <ArrowRight size={20} />
@@ -226,14 +226,14 @@ export default function HomePage({ onNavigate, onCourseSelect }: HomePageProps) 
               {!user ? (
                 <button
                   onClick={() => onNavigate('courses')}
-                  className="w-full bg-white text-primary-600 px-6 py-3 rounded-lg hover:bg-primary-50 transition font-semibold"
+                  className="w-full bg-white text-primary-700 px-6 py-3 rounded-lg hover:bg-primary-50 transition font-semibold"
                 >
                   Get Started Today
                 </button>
               ) : (
                 <button
                   onClick={() => onNavigate('courses')}
-                  className="w-full bg-white text-primary-600 px-6 py-3 rounded-lg hover:bg-primary-50 transition font-semibold"
+                  className="w-full bg-white text-primary-700 px-6 py-3 rounded-lg hover:bg-primary-50 transition font-semibold"
                 >
                   Browse Courses
                 </button>

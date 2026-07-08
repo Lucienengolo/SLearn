@@ -76,6 +76,16 @@ grant select on storage.buckets to anon, authenticated, service_role;
 -- still compile and can be exercised.
 create schema if not exists net;
 
+-- Real pg_net's composite types (confirmed directly against the live
+-- project's pg_attribute catalog) -- needed because 0011/0012 declare
+-- plpgsql variables of these types, and variable *declarations* are
+-- type-resolved at CREATE FUNCTION time, not deferred like most of a
+-- function body. Without these, those migrations fail to even compile
+-- in CI, despite being valid on a real Supabase project.
+create type net.request_status as enum ('PENDING', 'SUCCESS', 'ERROR');
+create type net.http_response as (status_code integer, headers jsonb, body text);
+create type net.http_response_result as (status net.request_status, message text, response net.http_response);
+
 create or replace function net.http_post(
   url text,
   body jsonb default null,
@@ -90,8 +100,17 @@ begin
 end;
 $$;
 
+create or replace function net.http_collect_response(request_id bigint, async boolean default true)
+returns net.http_response_result
+language plpgsql as $$
+begin
+  return row('SUCCESS'::net.request_status, null::text, row(200, '{}'::jsonb, '')::net.http_response)::net.http_response_result;
+end;
+$$;
+
 grant usage on schema net to anon, authenticated, service_role;
 grant execute on function net.http_post to anon, authenticated, service_role;
+grant execute on function net.http_collect_response to anon, authenticated, service_role;
 
 -- supabase_vault stand-in: real projects ship the actual extension
 -- (encrypted at rest via pgsodium). This stub just mimics the interface
@@ -133,3 +152,77 @@ $$;
 grant usage on schema vault to service_role;
 grant select on vault.decrypted_secrets to service_role;
 grant execute on function vault.create_secret to service_role;
+
+-- pg_cron stand-in: real Supabase Cloud projects ship the actual
+-- extension; CI strips `create extension pg_cron` (see workflow) and
+-- relies on this stub so cron.schedule(...) calls in migrations compile
+-- and can be exercised. Doesn't actually schedule anything.
+create schema if not exists cron;
+
+create or replace function cron.schedule(job_name text, schedule text, command text) returns bigint
+language plpgsql as $$
+begin
+  raise notice 'cron.schedule called: job_name=%, schedule=%', job_name, schedule;
+  return 1;
+end;
+$$;
+
+grant usage on schema cron to service_role;
+grant execute on function cron.schedule(text, text, text) to service_role;
+
+-- pgmq stand-in: real Supabase Cloud projects ship the actual extension;
+-- CI strips `create extension pgmq` (see workflow) and relies on this
+-- stub so the queue calls in migrations compile and can be exercised.
+-- Minimal in-memory-via-table behavior, not the real thing.
+create schema if not exists pgmq;
+
+create table if not exists pgmq._stub_messages (
+  msg_id bigserial primary key,
+  queue_name text not null,
+  message jsonb not null,
+  read_ct int not null default 0
+);
+
+create or replace function pgmq.create(queue_name text) returns void
+  language sql as $$ select 1 $$;
+
+create or replace function pgmq.send(queue_name text, msg jsonb) returns bigint
+language plpgsql as $$
+declare
+  new_id bigint;
+begin
+  insert into pgmq._stub_messages (queue_name, message) values (queue_name, msg) returning msg_id into new_id;
+  return new_id;
+end;
+$$;
+
+create or replace function pgmq.read(queue_name text, vt int, qty int)
+returns table (msg_id bigint, read_ct int, message jsonb)
+language sql as $$
+  select msg_id, read_ct, message from pgmq._stub_messages where queue_name = $1 limit qty;
+$$;
+
+create or replace function pgmq.delete(queue_name text, msg_id bigint) returns boolean
+language plpgsql as $$
+begin
+  delete from pgmq._stub_messages where msg_id = $2;
+  return true;
+end;
+$$;
+
+create or replace function pgmq.archive(queue_name text, msg_id bigint) returns boolean
+language plpgsql as $$
+begin
+  delete from pgmq._stub_messages where msg_id = $2;
+  return true;
+end;
+$$;
+
+grant usage on schema pgmq to service_role;
+grant all on pgmq._stub_messages to service_role;
+grant all on sequence pgmq._stub_messages_msg_id_seq to service_role;
+grant execute on function pgmq.create(text) to service_role;
+grant execute on function pgmq.send(text, jsonb) to service_role;
+grant execute on function pgmq.read(text, int, int) to service_role;
+grant execute on function pgmq.delete(text, bigint) to service_role;
+grant execute on function pgmq.archive(text, bigint) to service_role;

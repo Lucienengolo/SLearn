@@ -162,7 +162,7 @@ export default function InstructorDashboard() {
                     <div className="flex items-center justify-center mb-1">
                       <Users size={18} className="text-primary-600" />
                     </div>
-                    <p className="text-2xl font-bold text-primary-600">{course.enrollmentCount}</p>
+                    <p className="text-2xl font-bold text-primary-700">{course.enrollmentCount}</p>
                     <p className="text-xs text-gray-600">Students</p>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-lg">

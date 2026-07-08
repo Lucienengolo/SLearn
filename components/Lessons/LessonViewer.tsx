@@ -338,7 +338,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
               }`}
             >
               <span className="text-sm text-gray-500">{index + 1}</span>
-              <span className={`text-sm flex-1 ${l.id === lesson.id ? 'font-medium text-primary-600' : 'text-gray-700'}`}>
+              <span className={`text-sm flex-1 ${l.id === lesson.id ? 'font-medium text-primary-700' : 'text-gray-700'}`}>
                 {l.title}
               </span>
             </div>

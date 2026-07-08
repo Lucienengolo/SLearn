@@ -177,7 +177,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
             </div>
             <button
               onClick={onCertificateView}
-              className="bg-white text-primary-600 px-6 py-2 rounded-lg hover:bg-primary-50 transition font-medium"
+              className="bg-white text-primary-700 px-6 py-2 rounded-lg hover:bg-primary-50 transition font-medium"
             >
               View All
             </button>
@@ -220,7 +220,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     {enrollment.course.category && (
-                      <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded">
+                      <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
                         {enrollment.course.category.name}
                       </span>
                     )}

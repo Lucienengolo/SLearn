@@ -131,7 +131,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
           <div className="mt-8 p-6 bg-gray-50 rounded-lg">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-3xl font-bold text-primary-600">{result.score}%</p>
+                <p className="text-3xl font-bold text-primary-700">{result.score}%</p>
                 <p className="text-gray-600">Your Score</p>
               </div>
               <div>

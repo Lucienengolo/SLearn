@@ -45,7 +45,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               <button
                 onClick={() => onNavigate('home')}
                 className={`font-medium transition ${
-                  currentPage === 'home' ? 'text-primary-600' : 'text-gray-600 hover:text-gray-800'
+                  currentPage === 'home' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
                 Home
@@ -53,7 +53,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               <button
                 onClick={() => onNavigate('courses')}
                 className={`font-medium transition ${
-                  currentPage === 'courses' ? 'text-primary-600' : 'text-gray-600 hover:text-gray-800'
+                  currentPage === 'courses' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
                 Courses
@@ -62,7 +62,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 <button
                   onClick={() => onNavigate('dashboard')}
                   className={`font-medium transition ${
-                    currentPage === 'dashboard' ? 'text-primary-600' : 'text-gray-600 hover:text-gray-800'
+                    currentPage === 'dashboard' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
                   Dashboard
@@ -76,7 +76,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <span className="text-sm text-gray-600">
                     {profile.full_name || profile.email}
                   </span>
-                  <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded">
+                  <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
                     {profile.role}
                   </span>
                   <button

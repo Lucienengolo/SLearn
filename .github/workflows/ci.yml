@@ -133,16 +133,12 @@ jobs:
           set -e
           for f in supabase/migrations/*.sql; do
             echo "::group::Applying $f"
-            if [[ "$f" == *0004_reviewer_and_notifications.sql ]]; then
-              # pg_net ships on every real Supabase project but isn't an
-              # installable package on plain Postgres. CI validates the rest
-              # of this migration's SQL with that one line stripped and
-              # relies on the net.http_post stub above for the trigger
-              # bodies that call it.
-              sed '/^create extension if not exists pg_net;/d' "$f" | psql -v ON_ERROR_STOP=1
-            else
-              psql -v ON_ERROR_STOP=1 -f "$f"
-            fi
+            # pg_net/pg_cron/pgmq ship on every real Supabase project but
+            # aren't installable packages on plain Postgres. CI validates
+            # the rest of each migration's SQL with those extension lines
+            # stripped, relying on the net/cron/pgmq stubs above for the
+            # functions that use them.
+            sed -E '/^create extension if not exists (pg_net|pg_cron|pgmq);$/d' "$f" | psql -v ON_ERROR_STOP=1
             echo "::endgroup::"
           done
 

@@ -213,7 +213,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
           <div>
             <div className="flex items-center gap-2 mb-2">
               {course.category?.name && (
-                <span className="text-sm bg-primary-100 text-primary-600 px-3 py-1 rounded">
+                <span className="text-sm bg-primary-100 text-primary-700 px-3 py-1 rounded">
  {course.category?.name}
                 </span>
               )}
