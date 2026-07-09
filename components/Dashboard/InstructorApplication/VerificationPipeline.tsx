@@ -9,9 +9,10 @@ const STAGES = ['submitted', 'review', 'interview', 'approved'] as const;
 
 type Props = {
   application: InstructorApplication;
+  onEdit: () => void;
 };
 
-export default function VerificationPipeline({ application }: Props) {
+export default function VerificationPipeline({ application, onEdit }: Props) {
   const { user } = useAuth();
   const [credentials, setCredentials] = useState<InstructorCredential[]>([]);
   const [interview, setInterview] = useState<Interview | null>(null);
@@ -43,9 +44,20 @@ export default function VerificationPipeline({ application }: Props) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">Instructor verification</h1>
+      <div className="flex items-start justify-between gap-4 mb-1">
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900">Instructor verification</h1>
+        {application.status !== 'approved' && (
+          <button
+            onClick={onEdit}
+            className="flex-shrink-0 text-sm font-medium text-primary-700 hover:text-primary-800 border border-primary-200 hover:bg-primary-50 transition rounded-[10px] h-9 px-3.5"
+          >
+            Edit information
+          </button>
+        )}
+      </div>
       <p className="text-gray-500 mb-8">
         Track your application through review, the compulsory interview, and the final decision.
+        {application.status !== 'approved' && ' You can update your information or documents at any point before a final decision.'}
       </p>
 
       {rejected ? (

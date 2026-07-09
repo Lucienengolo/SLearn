@@ -29,6 +29,8 @@ export type Category = {
   created_at: string;
 };
 
+export type CourseModerationStatus = 'pending' | 'approved' | 'rejected';
+
 export type Course = {
   id: string;
   title: string;
@@ -40,6 +42,8 @@ export type Course = {
   duration_hours: number;
   price: number;
   is_published: boolean;
+  moderation_status: CourseModerationStatus;
+  moderation_notes: string | null;
   created_at: string;
   updated_at: string;
 };

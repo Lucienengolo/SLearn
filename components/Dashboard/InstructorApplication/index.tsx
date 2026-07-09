@@ -9,6 +9,7 @@ export default function InstructorApplicationFlow() {
   const { user } = useAuth();
   const [application, setApplication] = useState<InstructorApplication | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   const reload = () => {
     if (!user) return;
@@ -28,9 +29,17 @@ export default function InstructorApplicationFlow() {
     );
   }
 
-  if (!application || application.status === 'draft') {
-    return <ApplicationWizard initialApplication={application} onSubmitted={reload} />;
+  if (!application || application.status === 'draft' || editing) {
+    return (
+      <ApplicationWizard
+        initialApplication={application}
+        onSubmitted={() => {
+          setEditing(false);
+          reload();
+        }}
+      />
+    );
   }
 
-  return <VerificationPipeline application={application} />;
+  return <VerificationPipeline application={application} onEdit={() => setEditing(true)} />;
 }

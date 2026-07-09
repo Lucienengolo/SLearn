@@ -140,19 +140,24 @@ export default function InstructorDashboard() {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900">{course.title}</h3>
-                      <span
-                        className={`text-2xs font-semibold px-2 py-1 rounded-full ${
-                          course.is_published
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {course.is_published ? 'Published' : 'Draft'}
-                      </span>
+                      {!course.is_published ? (
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">Draft</span>
+                      ) : course.moderation_status === 'approved' ? (
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">Live</span>
+                      ) : course.moderation_status === 'rejected' ? (
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-red-50 text-red-600">Changes requested</span>
+                      ) : (
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">Pending review</span>
+                      )}
                     </div>
                     <p className="text-gray-500 text-sm line-clamp-2">{course.description}</p>
+                    {course.moderation_status === 'rejected' && course.moderation_notes && (
+                      <p className="text-sm text-red-600 mt-2">
+                        <strong>Reviewer notes:</strong> {course.moderation_notes}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -194,7 +199,7 @@ export default function InstructorDashboard() {
                         : 'bg-green-600 text-white hover:bg-green-700'
                     }`}
                   >
-                    {course.is_published ? 'Unpublish' : 'Publish'}
+                    {course.is_published ? 'Unpublish' : 'Submit for review'}
                   </button>
                   <button
                     onClick={() => handleDeleteCourse(course.id)}
