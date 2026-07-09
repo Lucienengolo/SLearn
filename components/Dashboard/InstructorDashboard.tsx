@@ -164,7 +164,7 @@ export default function InstructorDashboard() {
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-[10px]">
                     <BookOpen size={16} className="text-green-600 mx-auto mb-1" />
-                    <p className="font-display text-xl text-green-600">{course.lessonCount}</p>
+                    <p className="font-display text-xl text-green-700">{course.lessonCount}</p>
                     <p className="text-2xs text-gray-500">Lessons</p>
                   </div>
                   <div className="text-center p-3 bg-gray-50 rounded-[10px]">

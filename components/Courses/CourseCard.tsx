@@ -79,7 +79,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
               ${course.price.toFixed(2)}
             </p>
           ) : (
-            <p className="text-base font-bold text-green-600 flex-shrink-0">Free</p>
+            <p className="text-base font-bold text-green-700 flex-shrink-0">Free</p>
           )}
         </div>
       </div>
