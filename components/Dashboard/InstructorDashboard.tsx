@@ -3,6 +3,7 @@ import { Plus, BookOpen, Users, Edit, Trash2 } from 'lucide-react';
 import { supabase, Course, CourseStats } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import CourseEditor from './CourseEditor';
+import CourseStudents from './CourseStudents';
 
 type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number };
 
@@ -11,6 +12,7 @@ export default function InstructorDashboard() {
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [studentsCourseId, setStudentsCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -98,6 +100,10 @@ export default function InstructorDashboard() {
     );
   }
 
+  if (studentsCourseId) {
+    return <CourseStudents courseId={studentsCourseId} onBack={() => setStudentsCourseId(null)} />;
+  }
+
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10">
       <div className="flex justify-between items-center mb-8 gap-4">
@@ -179,6 +185,14 @@ export default function InstructorDashboard() {
                     <p className="text-2xs text-gray-500">Price</p>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => setStudentsCourseId(course.id)}
+                  className="w-full flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-700 h-10 rounded-[10px] hover:bg-gray-50 transition font-medium mb-2"
+                >
+                  <Users size={15} />
+                  <span>{course.enrollmentCount} student{course.enrollmentCount === 1 ? '' : 's'}</span>
+                </button>
 
                 <div className="flex gap-2">
                   <button
