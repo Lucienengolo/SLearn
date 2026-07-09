@@ -42,14 +42,14 @@ export default function VerificationPipeline({ application }: Props) {
   const hasSampleLesson = credentials.some((c) => c.credential_type === 'sample_lesson');
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-1">Instructor verification</h1>
-      <p className="text-gray-600 mb-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">Instructor verification</h1>
+      <p className="text-gray-500 mb-8">
         Track your application through review, the compulsory interview, and the final decision.
       </p>
 
       {rejected ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+        <div className="bg-red-50 border border-red-200 rounded-[10px] p-6 mb-8">
           <div className="flex items-center gap-2 text-red-700 font-semibold mb-2">
             <XCircle size={20} /> Application not approved
           </div>
@@ -82,13 +82,13 @@ export default function VerificationPipeline({ application }: Props) {
       )}
 
       {application.status === 'approved' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 text-green-800">
+        <div className="bg-green-50 border border-green-200 rounded-[10px] p-6 mb-8 text-green-800">
           <p className="font-semibold mb-1">You're verified!</p>
           <p className="text-sm">Sign out and back in (or refresh) to unlock your instructor studio.</p>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow divide-y">
+      <div className="rounded-[14px] border border-canvas-150 divide-y divide-canvas-150">
         <ChecklistRow label="Government ID verified" done={hasGovernmentId} />
         <ChecklistRow label="Credentials verified" done={hasCredentialsVerified} />
         <ChecklistRow
@@ -117,7 +117,7 @@ export default function VerificationPipeline({ application }: Props) {
       </div>
 
       {interview?.meeting_url && interview.outcome === 'pending' && (
-        <div className="mt-4 bg-primary-50 border border-primary-100 rounded-lg p-4 text-sm text-primary-800">
+        <div className="mt-4 bg-primary-50 border border-primary-100 rounded-[10px] p-4 text-sm text-primary-800">
           <a href={interview.meeting_url} target="_blank" rel="noopener noreferrer" className="font-medium underline">
             Join your interview
           </a>
@@ -133,7 +133,7 @@ export default function VerificationPipeline({ application }: Props) {
                 href={calLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block px-4 py-2 rounded-lg bg-primary-500 text-gray-900 hover:bg-primary-400 text-sm font-medium"
+                className="inline-flex items-center h-11 px-4 rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 text-sm font-semibold"
               >
                 Schedule your interview on Cal.com
               </a>

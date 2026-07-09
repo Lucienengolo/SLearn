@@ -121,27 +121,27 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <button
         onClick={onBack}
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-6"
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-6"
       >
-        <ArrowLeft size={20} />
+        <ArrowLeft size={16} />
         <span>Back</span>
       </button>
 
-      <h1 className="text-3xl font-bold text-gray-800 mb-1">Account settings</h1>
-      <p className="text-gray-600 mb-8">Manage your profile, email, and password.</p>
+      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">Account settings</h1>
+      <p className="text-gray-500 mb-8">Manage your profile, email, and password.</p>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Profile</h2>
+      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Profile</h2>
         <div className="flex items-center gap-5 mb-6">
           <div className="relative">
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt="Your avatar"
-                className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                className="w-20 h-20 rounded-full object-cover border border-canvas-150"
               />
             ) : (
               <div className="w-20 h-20 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center">
@@ -166,7 +166,7 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
               />
             </label>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-500">
             {uploadingAvatar ? 'Uploading…' : 'PNG or JPG, square images look best.'}
             {avatarError && <p className="text-red-600 mt-1">{avatarError}</p>}
           </div>
@@ -182,7 +182,7 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
             />
           </div>
           <div>
@@ -194,7 +194,7 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
               rows={3}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
             />
           </div>
           {profileMessage && <p className="text-sm text-primary-700">{profileMessage}</p>}
@@ -202,38 +202,38 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
           <button
             onClick={handleProfileSave}
             disabled={savingProfile}
-            className="bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition font-medium disabled:opacity-50"
+            className="bg-primary-500 text-gray-900 h-11 px-4 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
           >
             {savingProfile ? 'Saving…' : 'Save profile'}
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Email</h2>
-        <p className="text-sm text-gray-600 mb-4">Current: {user.email}</p>
+      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Email</h2>
+        <p className="text-sm text-gray-500 mb-4">Current: {user.email}</p>
         <div className="space-y-3">
           <input
             type="email"
             placeholder="New email address"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
           />
           {emailMessage && <p className="text-sm text-primary-700">{emailMessage}</p>}
           {emailError && <p className="text-sm text-red-600">{emailError}</p>}
           <button
             onClick={handleEmailChange}
             disabled={savingEmail}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium disabled:opacity-50"
+            className="bg-white border border-gray-200 text-gray-700 h-11 px-4 rounded-[10px] hover:bg-gray-50 transition font-medium disabled:opacity-50"
           >
             {savingEmail ? 'Sending…' : 'Change email'}
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Password</h2>
+      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Password</h2>
         <div className="space-y-3">
           <input
             type="password"
@@ -241,7 +241,7 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             minLength={8}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
           />
           <input
             type="password"
@@ -249,14 +249,14 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
           />
           {passwordMessage && <p className="text-sm text-primary-700">{passwordMessage}</p>}
           {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
           <button
             onClick={handlePasswordChange}
             disabled={savingPassword}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium disabled:opacity-50"
+            className="bg-white border border-gray-200 text-gray-700 h-11 px-4 rounded-[10px] hover:bg-gray-50 transition font-medium disabled:opacity-50"
           >
             {savingPassword ? 'Updating…' : 'Update password'}
           </button>
@@ -265,7 +265,7 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
 
       <button
         onClick={signOut}
-        className="flex items-center gap-2 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition font-medium"
+        className="flex items-center gap-2 text-red-600 hover:bg-red-50 h-11 px-4 rounded-[10px] transition font-medium"
       >
         <LogOut size={18} />
         Sign out

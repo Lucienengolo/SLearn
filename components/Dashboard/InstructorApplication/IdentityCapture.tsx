@@ -136,11 +136,11 @@ export default function IdentityCapture({
 
   return (
     <div className="space-y-4">
-      <div className="border border-gray-200 rounded-lg p-4">
+      <div className="border border-canvas-150 rounded-[10px] p-4">
         <div className="flex items-center justify-between mb-1">
           <p className="font-medium text-gray-800 text-sm">Government-issued ID (required)</p>
           {governmentId && (
-            <label className="flex items-center gap-2 text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg cursor-pointer">
+            <label className="flex items-center gap-2 text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-[10px] cursor-pointer">
               <Upload size={12} />
               Replace
               <input
@@ -166,7 +166,7 @@ export default function IdentityCapture({
           <p className="text-xs text-gray-500 mb-3">A national ID, passport, or driver's license. JPG or PNG.</p>
         )}
         {!governmentId && (
-          <label className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-lg cursor-pointer font-medium">
+          <label className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] cursor-pointer font-medium">
             <Upload size={14} />
             {uploadingDoc ? 'Uploading…' : 'Upload document'}
             <input
@@ -192,7 +192,7 @@ export default function IdentityCapture({
           </p>
         )}
         {verification && (
-          <div className="mt-3 text-xs bg-gray-50 rounded-lg p-3 space-y-1">
+          <div className="mt-3 text-xs bg-gray-50 rounded-[10px] p-3 space-y-1">
             <p className="font-medium text-gray-700">Automated check (not a final decision — a reviewer confirms):</p>
             <MatchRow label="Name" typed={fullName} extracted={verification.extracted_name} match={verification.name_match} />
             <MatchRow label="Address" typed={address} extracted={verification.extracted_address} match={verification.address_match} />
@@ -201,7 +201,7 @@ export default function IdentityCapture({
         )}
       </div>
 
-      <div className="border border-gray-200 rounded-lg p-4">
+      <div className="border border-canvas-150 rounded-[10px] p-4">
         <p className="font-medium text-gray-800 text-sm mb-1">Live selfie (required)</p>
         {selfie ? (
           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1 mb-2">
@@ -217,18 +217,18 @@ export default function IdentityCapture({
 
         {cameraOpen ? (
           <div className="space-y-2">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full max-w-xs rounded-lg bg-black" />
+            <video ref={videoRef} autoPlay playsInline muted className="w-full max-w-xs rounded-[10px] bg-black" />
             <div className="flex gap-2">
               <button
                 onClick={captureSelfie}
-                className="flex items-center gap-2 bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-lg text-sm font-medium"
+                className="flex items-center gap-2 bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] text-sm font-medium"
               >
                 <Camera size={14} />
                 Capture
               </button>
               <button
                 onClick={closeCamera}
-                className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm"
+                className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-[10px] text-sm"
               >
                 Cancel
               </button>
@@ -238,7 +238,7 @@ export default function IdentityCapture({
           <button
             onClick={openCamera}
             disabled={uploadingSelfie}
-            className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] font-medium disabled:opacity-50"
           >
             <Camera size={14} />
             {uploadingSelfie ? 'Uploading…' : selfie ? 'Retake selfie' : 'Open camera'}
