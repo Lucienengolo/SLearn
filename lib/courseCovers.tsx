@@ -1,4 +1,4 @@
-import { Code, Megaphone, BarChart3, Palette, Briefcase, BookOpen, LucideIcon } from 'lucide-react';
+import { Code, Megaphone, BarChart3, Palette, Briefcase, Compass, BookOpen, LucideIcon } from 'lucide-react';
 
 // Per-category gradient + icon covers, replacing the identical
 // emoji-on-gradient course thumbnails (Design Review finding: "every
@@ -11,6 +11,7 @@ export const CATEGORY_COVERS: Record<string, { gradient: string; icon: LucideIco
   'Data Science': { gradient: 'linear-gradient(135deg,#2D6FE0,#1B4FA8)', icon: BarChart3 },
   Design: { gradient: 'linear-gradient(135deg,#C8881C,#835611)', icon: Palette },
   Business: { gradient: 'linear-gradient(135deg,#555B51,#262A24)', icon: Briefcase },
+  'Personal Development': { gradient: 'linear-gradient(135deg,#6D4E9C,#3C2A63)', icon: Compass },
 };
 
 const FALLBACK = { gradient: 'linear-gradient(135deg,#3C413A,#181B16)', icon: BookOpen };

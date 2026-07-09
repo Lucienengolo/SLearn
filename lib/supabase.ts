@@ -143,6 +143,13 @@ export type StudentCourseProgress = {
   completed_lesson_count: number;
 };
 
+export type SavedCourse = {
+  id: string;
+  student_id: string;
+  course_id: string;
+  created_at: string;
+};
+
 export type InstructorApplicationStatus =
   | 'draft'
   | 'submitted'

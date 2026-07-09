@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Bookmark } from 'lucide-react';
 import { supabase, Course, Category, CourseStats } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import CourseCard from './CourseCard';
 import { getCourseCover } from '../../lib/courseCovers';
 
@@ -17,13 +18,26 @@ type CourseWithStats = Course & {
   averageRating: number;
 };
 
+type SortOption = 'newest' | 'price_low' | 'price_high' | 'title';
+
 const PAGE_SIZE = 12;
 
+const SORT_LABELS: Record<SortOption, string> = {
+  newest: 'Newest',
+  price_low: 'Price: low to high',
+  price_high: 'Price: high to low',
+  title: 'Title A-Z',
+};
+
 export default function CourseList({ onCourseSelect, initialSearch, initialCategory }: CourseListProps) {
+  const { user } = useAuth();
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory ?? 'all');
   const [searchQuery, setSearchQuery] = useState(initialSearch ?? '');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [savedCourseIds, setSavedCourseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
@@ -34,10 +48,19 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
   }, []);
 
   useEffect(() => {
+    if (user) fetchSavedCourseIds();
+    else setSavedCourseIds(new Set());
+  }, [user]);
+
+  useEffect(() => {
     setPage(0);
-    fetchCourses(0, false);
+    if (savedOnly) {
+      fetchSavedCourses();
+    } else {
+      fetchCourses(0, false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, sortBy, savedOnly]);
 
   const fetchCategories = async () => {
     const { data } = await supabase
@@ -46,6 +69,55 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
       .order('name');
 
     if (data) setCategories(data);
+  };
+
+  const fetchSavedCourseIds = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('saved_courses').select('course_id').eq('student_id', user.id);
+    setSavedCourseIds(new Set((data ?? []).map((r) => r.course_id)));
+  };
+
+  const attachStats = async (rows: Course[]): Promise<CourseWithStats[]> => {
+    const { data: statsRows } = await supabase
+      .from('course_stats')
+      .select('*')
+      .in('course_id', rows.map((c) => c.id));
+
+    const statsByCourseId = new Map((statsRows ?? []).map((s: CourseStats) => [s.course_id, s]));
+
+    return rows.map((course) => {
+      const stats = statsByCourseId.get(course.id);
+      return {
+        ...course,
+        enrollmentCount: stats?.enrollment_count ?? 0,
+        averageRating: stats?.average_rating ?? 0,
+      };
+    });
+  };
+
+  // "Saved" is a small, personal list -- fetched in full (no pagination)
+  // rather than folded into the paginated/filtered query above, since a
+  // student's saved list realistically never approaches page-size volume.
+  const fetchSavedCourses = async () => {
+    if (!user) {
+      setCourses([]);
+      setTotalCount(0);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data } = await supabase
+      .from('saved_courses')
+      .select('course:courses(*, instructor:profiles!instructor_id(full_name), category:categories(name))')
+      .eq('student_id', user.id);
+
+    const rows = (data ?? [])
+      .map((r) => (Array.isArray(r.course) ? r.course[0] : r.course))
+      .filter(Boolean) as unknown as Course[];
+    const withStats = await attachStats(rows);
+    setCourses(withStats);
+    setTotalCount(withStats.length);
+    setLoading(false);
   };
 
   const fetchCourses = async (targetPage: number, append: boolean) => {
@@ -75,36 +147,25 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
 
+    if (sortBy === 'price_low') {
+      query = query.order('price', { ascending: true });
+    } else if (sortBy === 'price_high') {
+      query = query.order('price', { ascending: false });
+    } else if (sortBy === 'title') {
+      query = query.order('title', { ascending: true });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
     const from = targetPage * PAGE_SIZE;
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
+    const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
 
     if (error) {
       console.error('Error fetching courses:', error);
     } else if (data) {
       setTotalCount(count ?? data.length);
-
-      // One follow-up query for every course's stats, instead of 2 per
-      // course (previously enrollment count + reviews, N+1 -- see
-      // course_stats in 0020/0021_*.sql).
-      const { data: statsRows } = await supabase
-        .from('course_stats')
-        .select('*')
-        .in('course_id', data.map((c: Course) => c.id));
-
-      const statsByCourseId = new Map((statsRows ?? []).map((s: CourseStats) => [s.course_id, s]));
-
-      const page = data.map((course: Course) => {
-        const stats = statsByCourseId.get(course.id);
-        return {
-          ...course,
-          enrollmentCount: stats?.enrollment_count ?? 0,
-          averageRating: stats?.average_rating ?? 0,
-        };
-      });
-
-      setCourses((prev) => (append ? [...prev, ...page] : page));
+      const withStats = await attachStats(data as Course[]);
+      setCourses((prev) => (append ? [...prev, ...withStats] : withStats));
     }
     setLoading(false);
     setLoadingMore(false);
@@ -114,6 +175,25 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
     const nextPage = page + 1;
     setPage(nextPage);
     fetchCourses(nextPage, true);
+  };
+
+  const handleToggleSave = async (courseId: string) => {
+    if (!user) return;
+    const isSaved = savedCourseIds.has(courseId);
+
+    setSavedCourseIds((prev) => {
+      const next = new Set(prev);
+      if (isSaved) next.delete(courseId);
+      else next.add(courseId);
+      return next;
+    });
+
+    if (isSaved) {
+      await supabase.from('saved_courses').delete().eq('student_id', user.id).eq('course_id', courseId);
+      if (savedOnly) setCourses((prev) => prev.filter((c) => c.id !== courseId));
+    } else {
+      await supabase.from('saved_courses').insert({ student_id: user.id, course_id: courseId });
+    }
   };
 
   return (
@@ -133,35 +213,68 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
           />
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition ${
-              selectedCategory === 'all'
-                ? 'border-primary-200 bg-primary-50 text-primary-700'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
-            }`}
-          >
-            All categories
-          </button>
-          {categories.map((category) => {
-            const CategoryIcon = getCourseCover(category.name).icon;
-            const active = selectedCategory === category.id;
-            return (
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition ${
+                selectedCategory === 'all'
+                  ? 'border-primary-200 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
+              }`}
+            >
+              All categories
+            </button>
+            {categories.map((category) => {
+              const CategoryIcon = getCourseCover(category.name).icon;
+              const active = selectedCategory === category.id;
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition whitespace-nowrap ${
+                    active
+                      ? 'border-primary-200 bg-primary-50 text-primary-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
+                  }`}
+                >
+                  <CategoryIcon size={15} />
+                  {category.name}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {user && (
               <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => setSavedOnly((v) => !v)}
+                aria-pressed={savedOnly}
                 className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition whitespace-nowrap ${
-                  active
+                  savedOnly
                     ? 'border-primary-200 bg-primary-50 text-primary-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
                 }`}
               >
-                <CategoryIcon size={15} />
-                {category.name}
+                <Bookmark size={15} className={savedOnly ? 'fill-primary-600' : ''} />
+                Saved
               </button>
-            );
-          })}
+            )}
+            {!savedOnly && (
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                aria-label="Sort courses"
+                className="h-9 pl-3.5 pr-8 border border-gray-200 rounded-full text-sm font-medium text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-primary-300"
+              >
+                {Object.entries(SORT_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
       </div>
 
@@ -172,7 +285,9 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
         </div>
       ) : courses.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 text-lg">No courses found</p>
+          <p className="text-gray-600 text-lg">
+            {savedOnly ? "You haven't saved any courses yet" : 'No courses found'}
+          </p>
         </div>
       ) : (
         <>
@@ -182,10 +297,12 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
                 key={course.id}
                 course={course}
                 onClick={() => onCourseSelect(course.id)}
+                isSaved={savedCourseIds.has(course.id)}
+                onToggleSave={user ? () => handleToggleSave(course.id) : undefined}
               />
             ))}
           </div>
-          {courses.length < totalCount && (
+          {!savedOnly && courses.length < totalCount && (
             <div className="text-center mt-8">
               <button
                 onClick={handleLoadMore}

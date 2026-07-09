@@ -1,4 +1,4 @@
-import { Clock, Users, Star } from 'lucide-react';
+import { Clock, Users, Star, Bookmark } from 'lucide-react';
 import { Course } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
 
@@ -10,16 +10,18 @@ type CourseCardProps = {
     averageRating?: number;
   };
   onClick: () => void;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
 };
 
-export default function CourseCard({ course, onClick }: CourseCardProps) {
+export default function CourseCard({ course, onClick, isSaved, onToggleSave }: CourseCardProps) {
   const cover = getCourseCover(course.category?.name);
   const CoverIcon = cover.icon;
 
   return (
     <div
       onClick={onClick}
-      className="rounded-[14px] border border-canvas-150 overflow-hidden hover:border-gray-300 hover:shadow-md transition cursor-pointer bg-white"
+      className="relative rounded-[14px] border border-canvas-150 overflow-hidden hover:border-gray-300 hover:shadow-md transition cursor-pointer bg-white"
     >
       <div className="h-44 flex items-center justify-center" style={{ background: cover.gradient }}>
         {course.thumbnail_url ? (
@@ -33,6 +35,19 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
           <CoverIcon size={48} className="text-white/50" />
         )}
       </div>
+      {onToggleSave && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSave();
+          }}
+          aria-label={isSaved ? 'Remove from saved courses' : 'Save course for later'}
+          aria-pressed={isSaved}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition"
+        >
+          <Bookmark size={15} className={isSaved ? 'fill-primary-600 text-primary-600' : 'text-gray-500'} />
+        </button>
+      )}
       <div className="p-4">
         <div className="flex items-center justify-between mb-2.5">
           {course.category && (
