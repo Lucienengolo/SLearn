@@ -13,3 +13,13 @@ backups/
 # Old nested SLearn/ clone with unrelated real git history -- never
 # meant to be tracked from the top-level repo (see git history notes).
 SLearn/
+
+# TypeScript incremental build cache -- machine-local, regenerated on
+# every build, was accidentally tracked and kept showing up as "modified"
+# after every single build.
+*.tsbuildinfo
+
+# Local Lighthouse CI run state -- lighthouserc.json's own report output
+# goes to ./lighthouse-reports; this directory is lhci's internal scratch
+# state and was committed by accident in the initial commit.
+.lighthouseci/
