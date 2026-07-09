@@ -141,7 +141,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="What do you want to learn?"
+                placeholder="Search courses..."
                 className="flex-1 min-w-0 border-none outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
               />
               <button
