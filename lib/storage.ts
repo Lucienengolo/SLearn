@@ -94,6 +94,29 @@ export const deleteLessonPDF = async (pdfUrl: string): Promise<boolean> => {
   }
 };
 
+export const uploadCourseThumbnail = async (instructorId: string, file: File): Promise<string | null> => {
+  try {
+    const fileName = `${instructorId}/thumbnail-${Date.now()}.${file.name.split('.').pop()}`;
+    const { data, error } = await supabase.storage
+      .from('course-thumbnails')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Error uploading course thumbnail:', error);
+      return null;
+    }
+
+    const { data: publicUrl } = supabase.storage
+      .from('course-thumbnails')
+      .getPublicUrl(data.path);
+
+    return publicUrl.publicUrl;
+  } catch (error) {
+    console.error('Error uploading course thumbnail:', error);
+    return null;
+  }
+};
+
 export const uploadAvatar = async (userId: string, file: File): Promise<string | null> => {
   try {
     const fileName = `${userId}/avatar-${Date.now()}.${file.name.split('.').pop()}`;

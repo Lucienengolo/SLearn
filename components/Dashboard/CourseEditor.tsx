@@ -2,7 +2,11 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import { ArrowLeft, Plus, Trash2, GripVertical, Upload, X, FileText, Video } from 'lucide-react';
 import { supabase, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { uploadLessonVideo, uploadLessonPDF } from '../../lib/storage';
+import { uploadLessonVideo, uploadLessonPDF, uploadCourseThumbnail } from '../../lib/storage';
+
+const MAX_THUMBNAIL_MB = 5;
+const MAX_VIDEO_MB = 500;
+const MAX_PDF_MB = 50;
 
 type Lesson = {
   id: string;
@@ -28,12 +32,18 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [durationHours, setDurationHours] = useState(0);
   const [price, setPrice] = useState(0);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -49,6 +59,40 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
       .order('name');
 
     if (data) setCategories(data);
+  };
+
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+
+    const existing = categories.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      setCategoryId(existing.id);
+      setAddingCategory(false);
+      setNewCategoryName('');
+      return;
+    }
+
+    setCreatingCategory(true);
+    setError('');
+    try {
+      const { data, error: insertError } = await supabase
+        .from('categories')
+        .insert({ name })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      setCategories((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setCategoryId(data.id);
+      setAddingCategory(false);
+      setNewCategoryName('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create category');
+    } finally {
+      setCreatingCategory(false);
+    }
   };
 
   const fetchCourse = async () => {
@@ -79,9 +123,27 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
     }
   };
 
+  const validate = (): string | null => {
+    if (!title.trim()) return 'Course title is required.';
+    if (!description.trim()) return 'Course description is required.';
+    for (let i = 0; i < lessons.length; i++) {
+      const l = lessons[i];
+      if (!l.title.trim()) return `Lesson ${i + 1} needs a title.`;
+      if (!l.content?.trim() && !l.video_url?.trim() && !l.video_file_url && !l.pdf_notes_url) {
+        return `Lesson ${i + 1} ("${l.title}") needs at least one of: text content, video, or PDF notes.`;
+      }
+    }
+    return null;
+  };
+
   const handleSaveCourse = async () => {
-    if (!user || !title || !description) {
-      alert('Please fill in all required fields');
+    if (!user) return;
+    setError('');
+    setSuccess('');
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -91,7 +153,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
       let finalCourseId = courseId;
 
       if (courseId) {
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('courses')
           .update({
             title,
@@ -104,9 +166,9 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
           })
           .eq('id', courseId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
       } else {
-        const { data, error } = await supabase
+        const { data, error: insertError } = await supabase
           .from('courses')
           .insert({
             title,
@@ -121,42 +183,34 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
           .select()
           .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
         finalCourseId = data.id;
       }
 
       for (let i = 0; i < lessons.length; i++) {
         const lesson = lessons[i];
+        const payload = {
+          title: lesson.title,
+          description: lesson.description,
+          content: lesson.content,
+          video_url: lesson.video_url || null,
+          video_file_url: lesson.video_file_url || null,
+          pdf_notes_url: lesson.pdf_notes_url || null,
+          order_index: i,
+          duration_minutes: lesson.duration_minutes,
+        };
         if (lesson.id && lesson.id.startsWith('temp-')) {
-          await supabase.from('lessons').insert({
-            course_id: finalCourseId,
-            title: lesson.title,
-            description: lesson.description,
-            content: lesson.content,
-            video_url: lesson.video_url,
-            order_index: i,
-            duration_minutes: lesson.duration_minutes,
-          });
+          await supabase.from('lessons').insert({ course_id: finalCourseId, ...payload });
         } else if (lesson.id) {
-          await supabase
-            .from('lessons')
-            .update({
-              title: lesson.title,
-              description: lesson.description,
-              content: lesson.content,
-              video_url: lesson.video_url,
-              order_index: i,
-              duration_minutes: lesson.duration_minutes,
-            })
-            .eq('id', lesson.id);
+          await supabase.from('lessons').update(payload).eq('id', lesson.id);
         }
       }
 
-      alert('Course saved successfully!');
-      onBack();
-    } catch (error) {
-      console.error('Error saving course:', error);
-      alert('Failed to save course');
+      setSuccess('Course saved.');
+      setTimeout(onBack, 700);
+    } catch (err) {
+      console.error('Error saving course:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save course');
     } finally {
       setSaving(false);
     }
@@ -188,33 +242,56 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const removeLesson = async (index: number) => {
     const lesson = lessons[index];
     if (lesson.id && !lesson.id.startsWith('temp-')) {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('lessons')
         .delete()
         .eq('id', lesson.id);
 
-      if (error) {
-        alert('Failed to delete lesson');
+      if (deleteError) {
+        setError('Failed to delete lesson');
         return;
       }
     }
     setLessons(lessons.filter((_, i) => i !== index));
   };
 
+  const handleThumbnailUpload = async (file: File) => {
+    if (!user) return;
+    if (file.size > MAX_THUMBNAIL_MB * 1024 * 1024) {
+      setError(`Thumbnail must be under ${MAX_THUMBNAIL_MB}MB.`);
+      return;
+    }
+    setError('');
+    setUploadingThumbnail(true);
+    try {
+      const url = await uploadCourseThumbnail(user.id, file);
+      if (url) {
+        setThumbnailUrl(url);
+      } else {
+        setError('Failed to upload thumbnail');
+      }
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <button
         onClick={onBack}
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-6"
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-6"
       >
-        <ArrowLeft size={20} />
-        <span>Back to Dashboard</span>
+        <ArrowLeft size={16} />
+        <span>Back to dashboard</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          {courseId ? 'Edit Course' : 'Create New Course'}
+      <div className="rounded-[14px] border border-canvas-150 p-6 md:p-8">
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-8">
+          {courseId ? 'Edit course' : 'Create new course'}
         </h1>
+
+        {error && <div className="bg-red-50 text-red-600 p-3 rounded-[10px] text-sm mb-6">{error}</div>}
+        {success && <div className="bg-green-50 text-green-700 p-3 rounded-[10px] text-sm mb-6">{success}</div>}
 
         <div className="space-y-6">
           <div>
@@ -226,7 +303,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               placeholder="Introduction to Web Development"
               required
             />
@@ -240,7 +317,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               id="course-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               rows={4}
               placeholder="Describe what students will learn..."
               required
@@ -252,20 +329,63 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               <label htmlFor="course-category" className="block text-sm font-medium text-gray-700 mb-2">
                 Category
               </label>
-              <select
-                id="course-category"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                title="Select a course category"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+              {addingCategory ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
+                    placeholder="New category name"
+                    autoFocus
+                    className="flex-1 px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={creatingCategory || !newCategoryName.trim()}
+                    className="px-3.5 rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-medium text-sm disabled:opacity-50 flex-shrink-0"
+                  >
+                    {creatingCategory ? 'Adding…' : 'Add'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingCategory(false);
+                      setNewCategoryName('');
+                    }}
+                    className="px-3 rounded-[10px] text-gray-500 hover:bg-gray-100 transition flex-shrink-0"
+                    aria-label="Cancel new category"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <select
+                    id="course-category"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    title="Select a course category"
+                    className="flex-1 px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setAddingCategory(true)}
+                    className="flex items-center gap-1 px-3 rounded-[10px] border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition flex-shrink-0 whitespace-nowrap"
+                  >
+                    <Plus size={14} />
+                    New
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
@@ -277,7 +397,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 title="Select course level"
                 value={level}
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => setLevel(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               >
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
@@ -294,7 +414,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 type="number"
                 value={durationHours}
                 onChange={(e) => setDurationHours(parseInt(e.target.value) || 0)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 min="0"
               />
             </div>
@@ -308,7 +428,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 min="0"
                 step="0.01"
               />
@@ -317,12 +437,12 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
             <div>
               <p className="block text-sm font-medium text-gray-700 mb-2">
-                Course Thumbnail
+                Course thumbnail
               </p>
               {thumbnailUrl ? (
-                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-300">
-                  <div className="flex items-center space-x-2">
-                    <img src={thumbnailUrl} alt="Thumbnail preview" className="w-12 h-12 rounded object-cover" />
+                <div className="flex items-center justify-between bg-white p-3 rounded-[10px] border border-green-300">
+                  <div className="flex items-center gap-2">
+                    <img src={thumbnailUrl} alt="Thumbnail preview" className="w-12 h-12 rounded-[10px] object-cover" />
                     <span className="text-sm text-gray-700">Thumbnail ready</span>
                   </div>
                   <button
@@ -336,46 +456,44 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                   </button>
                 </div>
               ) : (
-                <label className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-[10px] p-6 cursor-pointer hover:bg-gray-50">
                   <div className="text-center">
-                    <Upload size={24} className="mx-auto text-gray-600 mb-2" />
-                    <span className="text-sm text-gray-700">Click to upload thumbnail</span>
-                    <span className="text-xs text-gray-500 block mt-1">JPG, PNG (Max 5MB)</span>
+                    <Upload size={24} className="mx-auto text-gray-500 mb-2" />
+                    <span className="text-sm text-gray-700">{uploadingThumbnail ? 'Uploading…' : 'Click to upload thumbnail'}</span>
+                    <span className="text-2xs text-gray-500 block mt-1">JPG, PNG (Max {MAX_THUMBNAIL_MB}MB)</span>
                   </div>
                   <input
                     type="file"
                     accept="image/jpeg,image/png"
                     className="hidden"
+                    disabled={uploadingThumbnail}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => setThumbnailUrl(reader.result as string);
-                        reader.readAsDataURL(file);
-                      }
+                      if (file) handleThumbnailUpload(file);
+                      e.target.value = '';
                     }}
                   />
                 </label>
               )}
             </div>
 
-          <div className="border-t pt-6">
+          <div className="border-t border-canvas-150 pt-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Lessons</h2>
+              <h2 className="font-display text-2xl text-gray-900">Lessons</h2>
               <button
                 onClick={addLesson}
-                className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                className="flex items-center gap-1.5 bg-primary-500 text-gray-900 h-10 px-4 rounded-[10px] hover:bg-primary-400 transition font-medium"
               >
-                <Plus size={18} />
-                <span>Add Lesson</span>
+                <Plus size={16} />
+                <span>Add lesson</span>
               </button>
             </div>
 
             <div className="space-y-4">
               {lessons.map((lesson, index) => (
-                <div key={lesson.id} className="border rounded-lg p-4 bg-gray-50">
+                <div key={lesson.id} className="border border-canvas-150 rounded-[10px] p-4 bg-canvas-25">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <GripVertical size={20} className="text-gray-400" />
                       <span className="font-medium text-gray-700">Lesson {index + 1}</span>
                     </div>
@@ -394,7 +512,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       type="text"
                       value={lesson.title}
                       onChange={(e) => updateLesson(index, 'title', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                       placeholder="Lesson title"
                       aria-label={`Lesson ${index + 1} title`}
                       required
@@ -402,26 +520,32 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                     <textarea
                       value={lesson.description}
                       onChange={(e) => updateLesson(index, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                       rows={2}
                       placeholder="Lesson description"
                       aria-label={`Lesson ${index + 1} description`}
                     />
 
-                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                    <div className="bg-primary-50 border border-primary-200 rounded-[10px] p-4">
                       <p className="text-sm font-semibold text-gray-800 mb-3">
-                        Lesson Content *
+                        Lesson content *
                       </p>
+                      {!courseId && (
+                        <p className="text-2xs text-primary-700 bg-white border border-primary-200 rounded-[10px] px-3 py-2 mb-3">
+                          Save the course once (with a title and description) to unlock video/PDF uploads for this lesson.
+                          Text content works right away.
+                        </p>
+                      )}
                       <div className="space-y-3">
                         <div>
                           <label htmlFor={`lesson-content-${lesson.id}`} className="text-sm text-gray-700 font-medium mb-1 block">
-                            Text Content
+                            Text content
                           </label>
                           <textarea
                             id={`lesson-content-${lesson.id}`}
                             value={lesson.content}
                             onChange={(e) => updateLesson(index, 'content', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                             rows={3}
                             placeholder="Enter lesson text content (optional)"
                           />
@@ -429,11 +553,11 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
                         <div className="border-t border-primary-200 pt-3">
                           <p className="text-sm text-gray-700 font-medium mb-2 block">
-                            Upload Video File (Optional)
+                            Upload video file (optional)
                           </p>
                           {lesson.video_file_url ? (
-                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-300">
-                              <div className="flex items-center space-x-2">
+                            <div className="flex items-center justify-between bg-white p-3 rounded-[10px] border border-green-300">
+                              <div className="flex items-center gap-2">
                                 <Video size={18} className="text-green-600" />
                                 <span className="text-sm text-gray-700">Video uploaded</span>
                               </div>
@@ -445,31 +569,39 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X size={18} />
-                                Remove video file
                               </button>
                             </div>
                           ) : (
-                            <label className="flex items-center justify-center border-2 border-dashed border-primary-300 rounded-lg p-4 cursor-pointer hover:bg-primary-50">
+                            <label
+                              className={`flex items-center justify-center border-2 border-dashed rounded-[10px] p-4 transition ${
+                                courseId ? 'border-primary-300 cursor-pointer hover:bg-primary-50' : 'border-gray-200 cursor-not-allowed opacity-60'
+                              }`}
+                            >
                               <div className="text-center">
-                                <Upload size={24} className="mx-auto text-primary-600 mb-1" />
+                                <Upload size={24} className={`mx-auto mb-1 ${courseId ? 'text-primary-600' : 'text-gray-400'}`} />
                                 <span className="text-sm text-gray-700">Click to upload video</span>
-                                <span className="text-xs text-gray-500 block mt-1">MP4, WebM (Max 500MB)</span>
+                                <span className="text-2xs text-gray-500 block mt-1">MP4, WebM (Max {MAX_VIDEO_MB}MB)</span>
                               </div>
                               <input
                                 type="file"
                                 accept="video/mp4,video/webm"
                                 className="hidden"
+                                disabled={!courseId}
                                 title="Upload video file"
-                                placeholder="Upload video file"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
-                                  if (file && courseId) {
-                                    const url = await uploadLessonVideo(courseId, lesson.id, file);
-                                    if (url) {
-                                      updateLesson(index, 'video_file_url', url);
-                                    } else {
-                                      alert('Failed to upload video');
-                                    }
+                                  e.target.value = '';
+                                  if (!file || !courseId) return;
+                                  if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+                                    setError(`Video must be under ${MAX_VIDEO_MB}MB.`);
+                                    return;
+                                  }
+                                  setError('');
+                                  const url = await uploadLessonVideo(courseId, lesson.id, file);
+                                  if (url) {
+                                    updateLesson(index, 'video_file_url', url);
+                                  } else {
+                                    setError('Failed to upload video');
                                   }
                                 }}
                               />
@@ -479,11 +611,11 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
                         <div>
                           <p className="text-sm text-gray-700 font-medium mb-2 block">
-                            Upload PDF Notes (Optional)
+                            Upload PDF notes (optional)
                           </p>
                           {lesson.pdf_notes_url ? (
-                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-300">
-                              <div className="flex items-center space-x-2">
+                            <div className="flex items-center justify-between bg-white p-3 rounded-[10px] border border-green-300">
+                              <div className="flex items-center gap-2">
                                 <FileText size={18} className="text-green-600" />
                                 <span className="text-sm text-gray-700">PDF uploaded</span>
                               </div>
@@ -499,25 +631,35 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                               </button>
                             </div>
                           ) : (
-                            <label className="flex items-center justify-center border-2 border-dashed border-primary-300 rounded-lg p-4 cursor-pointer hover:bg-primary-50">
+                            <label
+                              className={`flex items-center justify-center border-2 border-dashed rounded-[10px] p-4 transition ${
+                                courseId ? 'border-primary-300 cursor-pointer hover:bg-primary-50' : 'border-gray-200 cursor-not-allowed opacity-60'
+                              }`}
+                            >
                               <div className="text-center">
-                                <Upload size={24} className="mx-auto text-primary-600 mb-1" />
+                                <Upload size={24} className={`mx-auto mb-1 ${courseId ? 'text-primary-600' : 'text-gray-400'}`} />
                                 <span className="text-sm text-gray-700">Click to upload PDF notes</span>
-                                <span className="text-xs text-gray-500 block mt-1">PDF only (Max 50MB)</span>
+                                <span className="text-2xs text-gray-500 block mt-1">PDF only (Max {MAX_PDF_MB}MB)</span>
                               </div>
                               <input
                                 type="file"
                                 accept="application/pdf"
                                 className="hidden"
+                                disabled={!courseId}
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
-                                  if (file && courseId) {
-                                    const url = await uploadLessonPDF(courseId, lesson.id, file);
-                                    if (url) {
-                                      updateLesson(index, 'pdf_notes_url', url);
-                                    } else {
-                                      alert('Failed to upload PDF');
-                                    }
+                                  e.target.value = '';
+                                  if (!file || !courseId) return;
+                                  if (file.size > MAX_PDF_MB * 1024 * 1024) {
+                                    setError(`PDF must be under ${MAX_PDF_MB}MB.`);
+                                    return;
+                                  }
+                                  setError('');
+                                  const url = await uploadLessonPDF(courseId, lesson.id, file);
+                                  if (url) {
+                                    updateLesson(index, 'pdf_notes_url', url);
+                                  } else {
+                                    setError('Failed to upload PDF');
                                   }
                                 }}
                               />
@@ -525,8 +667,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                           )}
                         </div>
 
-                        <p className="text-xs text-gray-600 italic">
-                          At least one of text content, video, or PDF notes should be provided
+                        <p className="text-2xs text-gray-500 italic">
+                          At least one of text content, video, or PDF notes is required
                         </p>
                       </div>
                     </div>
@@ -535,7 +677,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       type="url"
                       value={lesson.video_url}
                       onChange={(e) => updateLesson(index, 'video_url', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                       placeholder="Embed URL (YouTube, Vimeo) - Optional"
                       aria-label={`Lesson ${index + 1} embed URL`}
                     />
@@ -544,7 +686,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       type="number"
                       value={lesson.duration_minutes}
                       onChange={(e) => updateLesson(index, 'duration_minutes', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                       placeholder="Duration (min)"
                       aria-label={`Lesson ${index + 1} duration in minutes`}
                       min="0"
@@ -558,14 +700,14 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
           <div className="flex gap-4 pt-6">
             <button
               onClick={handleSaveCourse}
-              disabled={saving || !title || !description}
-              className="flex-1 bg-primary-500 text-gray-900 py-3 rounded-lg hover:bg-primary-400 transition font-medium disabled:opacity-50"
+              disabled={saving}
+              className="flex-1 bg-primary-500 text-gray-900 h-12 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Course'}
+              {saving ? 'Saving…' : 'Save course'}
             </button>
             <button
               onClick={onBack}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
+              className="px-6 h-12 bg-gray-100 text-gray-700 rounded-[10px] hover:bg-gray-200 transition font-medium"
             >
               Cancel
             </button>
