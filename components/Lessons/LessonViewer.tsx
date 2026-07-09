@@ -4,7 +4,7 @@ import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supaba
 import { useAuth } from '../../contexts/AuthContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
-import { notifySelf } from '../../lib/notifications';
+import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
 import QuizViewer from '../Quiz/QuizViewer';
 import KairosMindTutor from './KairosMindTutor';
 
@@ -205,34 +205,29 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
       .maybeSingle();
 
     if (enrollment) {
+      // A course final exam (if one exists) gates completed_at/the
+      // certificate even once every lesson is done -- lessons-100% still
+      // updates progress_percentage so the UI reflects real progress, but
+      // completed_at only flips once the exam is passed too (see
+      // CourseDetail's final-exam CTA, which is where that exam is taken).
+      let allDone = progressPercentage === 100;
+      if (allDone) {
+        const finalExam = await getCourseFinalExam(course.id);
+        if (finalExam) {
+          allDone = await hasPassedQuiz(user.id, finalExam.id);
+        }
+      }
+
       await supabase
         .from('enrollments')
         .update({
           progress_percentage: progressPercentage,
-          completed_at: progressPercentage === 100 ? new Date().toISOString() : null,
+          completed_at: allDone ? new Date().toISOString() : null,
         })
         .eq('id', enrollment.id);
 
-      if (progressPercentage === 100) {
-        const { data: existingCert } = await supabase
-          .from('certificates')
-          .select('*')
-          .eq('student_id', user.id)
-          .eq('course_id', course.id)
-          .maybeSingle();
-
-        if (!existingCert) {
-          await supabase.from('certificates').insert({
-            student_id: user.id,
-            course_id: course.id,
-          });
-          await notifySelf(
-            user.id,
-            'Certificate earned!',
-            `You completed "${course.title}" — view your certificate.`,
-            'certificates'
-          );
-        }
+      if (allDone) {
+        await issueCertificateIfEligible(user.id, course);
       }
     }
   };
@@ -445,19 +440,18 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             </button>
 
             <div className="flex items-center gap-2.5">
-              {quiz && (
-                <button
-                  onClick={() => setShowQuiz(true)}
-                  className="bg-white border border-primary-200 text-primary-700 rounded-[10px] h-11 px-4 hover:bg-primary-50 transition font-medium"
-                >
-                  Take quiz
-                </button>
-              )}
               {completed ? (
                 <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-[10px] h-11 px-4 font-medium">
                   <CheckCircle size={18} />
                   Completed
                 </div>
+              ) : quiz ? (
+                <button
+                  onClick={() => setShowQuiz(true)}
+                  className="bg-white border border-primary-200 text-primary-700 rounded-[10px] h-11 px-4 hover:bg-primary-50 transition font-medium"
+                >
+                  Take completion quiz to finish
+                </button>
               ) : (
                 <button
                   onClick={markAsComplete}

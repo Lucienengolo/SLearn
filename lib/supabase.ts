@@ -84,7 +84,8 @@ export type LessonProgress = {
 
 export type Quiz = {
   id: string;
-  lesson_id: string;
+  lesson_id: string | null;
+  course_id: string | null;
   title: string;
   description: string | null;
   passing_score: number;

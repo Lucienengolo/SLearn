@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Clock, Users, Star, BookOpen, CheckCircle, Lock, PlayCircle, ChevronRight, Wifi, Award } from 'lucide-react';
+import { Clock, Users, Star, BookOpen, CheckCircle, Lock, PlayCircle, ChevronRight, Wifi, Award, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase, Course, Lesson, Review, Enrollment } from '../../lib/supabase';
+import { supabase, Course, Lesson, Review, Enrollment, Quiz } from '../../lib/supabase';
 import { getGuestCourseProgress, isGuestLessonComplete, guestEnroll, isGuestEnrolled } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
 import { getCourseCover } from '../../lib/courseCovers';
+import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
 import ReviewForm from './ReviewForm';
+import QuizViewer from '../Quiz/QuizViewer';
 
 type CourseDetailProps = {
   courseId: string;
@@ -32,6 +34,9 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   const [checkoutNotice, setCheckoutNotice] = useState<'success' | 'cancel' | null>(null);
   const [startingCheckout, setStartingCheckout] = useState(false);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const [finalExam, setFinalExam] = useState<Quiz | null>(null);
+  const [finalExamPassed, setFinalExamPassed] = useState(false);
+  const [showFinalExam, setShowFinalExam] = useState(false);
 
   useEffect(() => {
     fetchCourseData();
@@ -80,6 +85,9 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
     if (courseData) {
       setCourse(courseData);
 
+      const exam = await getCourseFinalExam(courseId);
+      setFinalExam(exam);
+
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select('*')
@@ -110,6 +118,10 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
         if (enrollmentData) {
           setIsEnrolled(true);
           setEnrollment(enrollmentData);
+        }
+
+        if (exam) {
+          setFinalExamPassed(await hasPassedQuiz(user.id, exam.id));
         }
 
         if (lessonsData && lessonsData.length > 0) {
@@ -180,6 +192,17 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
     }
   };
 
+  const handleFinalExamPassed = async () => {
+    if (!user || !enrollment || !course) return;
+    await supabase
+      .from('enrollments')
+      .update({ completed_at: new Date().toISOString() })
+      .eq('id', enrollment.id);
+    await issueCertificateIfEligible(user.id, course);
+    setShowFinalExam(false);
+    fetchCourseData();
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
@@ -189,6 +212,16 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   }
 
   if (!course) return null;
+
+  if (showFinalExam && finalExam) {
+    return (
+      <QuizViewer
+        quizId={finalExam.id}
+        onBack={() => setShowFinalExam(false)}
+        onComplete={handleFinalExamPassed}
+      />
+    );
+  }
 
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
@@ -206,6 +239,8 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   const cover = getCourseCover(course.category?.name);
   const CoverIcon = cover.icon;
   const firstAvailableLessonId = lessons.find((l) => !completedLessonIds.has(l.id))?.id ?? lessons[0]?.id;
+  const finalExamPending =
+    !!user && !!finalExam && !finalExamPassed && !enrollment?.completed_at && progressPercentage === 100;
 
   const enrollButton = (className: string) => (
     <button
@@ -437,12 +472,27 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                       Browsing as guest — your progress is only saved for this session.
                     </p>
                   )}
-                  <button
-                    onClick={() => firstAvailableLessonId && onStartLesson(firstAvailableLessonId)}
-                    className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-12 rounded-[10px]"
-                  >
-                    Continue learning
-                  </button>
+                  {finalExamPending ? (
+                    <>
+                      <p className="text-2xs text-gray-500">
+                        All lessons complete — pass the final exam to earn your certificate.
+                      </p>
+                      <button
+                        onClick={() => setShowFinalExam(true)}
+                        className="w-full flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-12 rounded-[10px]"
+                      >
+                        <GraduationCap size={18} />
+                        Take final exam
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => firstAvailableLessonId && onStartLesson(firstAvailableLessonId)}
+                      className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-12 rounded-[10px]"
+                    >
+                      Continue learning
+                    </button>
+                  )}
                 </div>
               ) : isInstructor ? (
                 <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-[10px] text-center">
@@ -477,8 +527,10 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
           <div className="flex-1 min-w-0">
             {isEnrolled ? (
               <>
-                <div className="text-2xs text-gray-500">{progressPercentage}% complete</div>
-                <div className="font-bold text-gray-900">Continue learning</div>
+                <div className="text-2xs text-gray-500">
+                  {finalExamPending ? 'Final exam remaining' : `${progressPercentage}% complete`}
+                </div>
+                <div className="font-bold text-gray-900">{finalExamPending ? 'Take final exam' : 'Continue learning'}</div>
               </>
             ) : (
               <div className="font-bold text-lg text-gray-900">
@@ -488,10 +540,12 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
           </div>
           {isEnrolled ? (
             <button
-              onClick={() => firstAvailableLessonId && onStartLesson(firstAvailableLessonId)}
+              onClick={() =>
+                finalExamPending ? setShowFinalExam(true) : firstAvailableLessonId && onStartLesson(firstAvailableLessonId)
+              }
               className="bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-11 px-5 rounded-[10px] flex-shrink-0"
             >
-              Continue
+              {finalExamPending ? 'Take exam' : 'Continue'}
             </button>
           ) : (
             enrollButton('h-11 px-5 rounded-[10px] flex-shrink-0')

@@ -3,6 +3,7 @@ import { ArrowLeft, Plus, Trash2, GripVertical, Upload, X, FileText, Video } fro
 import { supabase, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadLessonVideo, uploadLessonPDF, uploadCourseThumbnail } from '../../lib/storage';
+import QuizBuilder, { QuizDraft, emptyQuizDraft } from './QuizBuilder';
 
 const MAX_THUMBNAIL_MB = 5;
 const MAX_VIDEO_MB = 500;
@@ -19,6 +20,89 @@ type Lesson = {
   file_upload_type?: string;
   duration_minutes: number;
   order_index?: number;
+  quiz: QuizDraft;
+};
+
+const loadQuizDraft = async (defaultTitle: string, filter: { lesson_id: string } | { course_id: string }): Promise<QuizDraft> => {
+  const { data: quizRow } = await supabase
+    .from('quizzes')
+    .select('*')
+    .match(filter)
+    .maybeSingle();
+
+  if (!quizRow) return emptyQuizDraft(defaultTitle);
+
+  const { data: questionRows } = await supabase
+    .from('quiz_questions')
+    .select('*')
+    .eq('quiz_id', quizRow.id)
+    .order('order_index');
+
+  return {
+    enabled: true,
+    title: quizRow.title,
+    passing_score: quizRow.passing_score,
+    questions: (questionRows ?? []).map((q) => ({
+      key: q.id,
+      question_text: q.question_text,
+      question_type: q.question_type,
+      options: q.question_type === 'true_false' ? ['True', 'False'] : (q.options?.length ? q.options : ['', '', '', '']),
+      correct_answer: q.correct_answer,
+      points: q.points,
+    })),
+  };
+};
+
+const validateQuizDraft = (quiz: QuizDraft, label: string): string | null => {
+  if (!quiz.enabled) return null;
+  if (!quiz.title.trim()) return `${label} needs a title.`;
+  if (quiz.questions.length === 0) return `${label} needs at least one question.`;
+  for (let i = 0; i < quiz.questions.length; i++) {
+    const q = quiz.questions[i];
+    if (!q.question_text.trim()) return `${label}: question ${i + 1} needs text.`;
+    if (!q.correct_answer.trim()) return `${label}: question ${i + 1} needs a correct answer selected.`;
+    if (q.question_type === 'multiple_choice' && q.options.filter((o) => o.trim()).length < 2) {
+      return `${label}: question ${i + 1} needs at least 2 options.`;
+    }
+  }
+  return null;
+};
+
+const saveQuizDraft = async (quiz: QuizDraft, filter: { lesson_id: string } | { course_id: string }) => {
+  const { data: existing } = await supabase.from('quizzes').select('id').match(filter).maybeSingle();
+
+  if (!quiz.enabled) {
+    if (existing) await supabase.from('quizzes').delete().eq('id', existing.id);
+    return;
+  }
+
+  let quizId = existing?.id as string | undefined;
+  if (quizId) {
+    await supabase.from('quizzes').update({ title: quiz.title, passing_score: quiz.passing_score }).eq('id', quizId);
+    await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
+  } else {
+    const { data: inserted, error: insertError } = await supabase
+      .from('quizzes')
+      .insert({ ...filter, title: quiz.title, passing_score: quiz.passing_score })
+      .select()
+      .single();
+    if (insertError) throw insertError;
+    quizId = inserted.id;
+  }
+
+  if (quiz.questions.length > 0) {
+    await supabase.from('quiz_questions').insert(
+      quiz.questions.map((q, i) => ({
+        quiz_id: quizId,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options: q.question_type === 'multiple_choice' ? q.options.filter((o) => o.trim()) : ['True', 'False'],
+        correct_answer: q.correct_answer,
+        points: q.points,
+        order_index: i,
+      }))
+    );
+  }
 };
 
 type CourseEditorProps = {
@@ -41,6 +125,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [courseQuiz, setCourseQuiz] = useState<QuizDraft>(emptyQuizDraft('Final exam'));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -119,7 +204,17 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         .eq('course_id', courseId)
         .order('order_index');
 
-      if (lessonsData) setLessons(lessonsData);
+      if (lessonsData) {
+        const lessonsWithQuizzes = await Promise.all(
+          lessonsData.map(async (l) => ({
+            ...l,
+            quiz: await loadQuizDraft('Completion quiz', { lesson_id: l.id }),
+          }))
+        );
+        setLessons(lessonsWithQuizzes);
+      }
+
+      setCourseQuiz(await loadQuizDraft('Final exam', { course_id: courseId }));
     }
   };
 
@@ -132,8 +227,10 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
       if (!l.content?.trim() && !l.video_url?.trim() && !l.video_file_url && !l.pdf_notes_url) {
         return `Lesson ${i + 1} ("${l.title}") needs at least one of: text content, video, or PDF notes.`;
       }
+      const quizError = validateQuizDraft(l.quiz, `Lesson ${i + 1} completion quiz`);
+      if (quizError) return quizError;
     }
-    return null;
+    return validateQuizDraft(courseQuiz, 'Course final exam');
   };
 
   const handleSaveCourse = async () => {
@@ -199,12 +296,22 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
           order_index: i,
           duration_minutes: lesson.duration_minutes,
         };
+        let lessonId = lesson.id;
         if (lesson.id && lesson.id.startsWith('temp-')) {
-          await supabase.from('lessons').insert({ course_id: finalCourseId, ...payload });
+          const { data: insertedLesson, error: lessonInsertError } = await supabase
+            .from('lessons')
+            .insert({ course_id: finalCourseId, ...payload })
+            .select()
+            .single();
+          if (lessonInsertError) throw lessonInsertError;
+          lessonId = insertedLesson.id;
         } else if (lesson.id) {
           await supabase.from('lessons').update(payload).eq('id', lesson.id);
         }
+        await saveQuizDraft(lesson.quiz, { lesson_id: lessonId });
       }
+
+      await saveQuizDraft(courseQuiz, { course_id: finalCourseId! });
 
       setSuccess('Course saved.');
       setTimeout(onBack, 700);
@@ -229,6 +336,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         pdf_notes_url: '',
         file_upload_type: '',
         duration_minutes: 0,
+        quiz: emptyQuizDraft('Completion quiz'),
       },
     ]);
   };
@@ -477,6 +585,18 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               )}
             </div>
 
+            <div>
+              <p className="block text-sm font-medium text-gray-700 mb-2">
+                Course final exam
+              </p>
+              <QuizBuilder
+                label="Final exam"
+                description="Optional. If added, students must pass this quiz to earn a certificate, in addition to completing every lesson."
+                quiz={courseQuiz}
+                onChange={setCourseQuiz}
+              />
+            </div>
+
           <div className="border-t border-canvas-150 pt-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-display text-2xl text-gray-900">Lessons</h2>
@@ -690,6 +810,13 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       placeholder="Duration (min)"
                       aria-label={`Lesson ${index + 1} duration in minutes`}
                       min="0"
+                    />
+
+                    <QuizBuilder
+                      label="Completion quiz"
+                      description="Optional. If added, the student must pass it before this lesson can be marked complete."
+                      quiz={lesson.quiz}
+                      onChange={(quiz) => updateLesson(index, 'quiz', quiz)}
                     />
                   </div>
                 </div>

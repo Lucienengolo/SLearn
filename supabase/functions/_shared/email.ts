@@ -25,11 +25,11 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   }
 }
 
-const wrap = (title: string, body: string) => `
+const wrap = (title: string, body: string, footer = 'S@Learn Instructor Verification') => `
   <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto;">
     <h2 style="color: #157A4D;">${title}</h2>
     ${body}
-    <p style="color: #767C72; font-size: 12px; margin-top: 32px;">S@Learn Instructor Verification</p>
+    <p style="color: #767C72; font-size: 12px; margin-top: 32px;">${footer}</p>
   </div>
 `;
 
@@ -58,5 +58,12 @@ export const emailTemplates = {
       `<p>Hi ${fullName},</p>
        <p>Thanks for your interest in teaching on S@Learn. We're not able to move forward with your application at this time.</p>
        ${notes ? `<p><em>${notes}</em></p>` : ''}`
+    ),
+  certificateEarned: (fullName: string, courseTitle: string) =>
+    wrap(
+      'Certificate earned!',
+      `<p>Hi ${fullName},</p>
+       <p>Congratulations — you've successfully completed <strong>${courseTitle}</strong>. Your certificate is ready to view in your S@Learn dashboard.</p>`,
+      'S@Learn'
     ),
 };
