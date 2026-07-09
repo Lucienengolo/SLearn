@@ -3,6 +3,7 @@ import { User, LogOut, Menu, X, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getGuestXP, GUEST_XP_EVENT } from '../../lib/guestSession';
 import AuthModal from '../Auth/AuthModal';
+import NotificationBell from './NotificationBell';
 type HeaderProps = {
   onNavigate: (page: string) => void;
   currentPage: string;
@@ -91,6 +92,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
                     {profile.role}
                   </span>
+                  <NotificationBell onNavigate={onNavigate} />
                   <button
                     onClick={() => onNavigate('account-settings')}
                     className="rounded-full overflow-hidden border border-gray-200 hover:ring-2 hover:ring-primary-300 transition"

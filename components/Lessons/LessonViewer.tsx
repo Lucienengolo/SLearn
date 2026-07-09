@@ -4,6 +4,7 @@ import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supaba
 import { useAuth } from '../../contexts/AuthContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
+import { notifySelf } from '../../lib/notifications';
 import QuizViewer from '../Quiz/QuizViewer';
 import KairosMindTutor from './KairosMindTutor';
 
@@ -207,6 +208,12 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             student_id: user.id,
             course_id: course.id,
           });
+          await notifySelf(
+            user.id,
+            'Certificate earned!',
+            `You completed "${course.title}" — view your certificate.`,
+            'certificates'
+          );
         }
       }
     }

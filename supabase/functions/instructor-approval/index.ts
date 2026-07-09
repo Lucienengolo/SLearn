@@ -131,6 +131,23 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // In-app notification (separate from the email above) -- uses the
+  // admin client since this is a cross-user write (the reviewer's
+  // session notifying the applicant), which the RLS insert policy on
+  // notifications deliberately doesn't allow from a client session.
+  const { error: notifyError } = await admin.from('notifications').insert({
+    user_id: application.applicant_id,
+    title: body.decision === 'approved' ? "You're verified — welcome to teaching!" : 'Instructor application update',
+    body:
+      body.decision === 'approved'
+        ? 'Your instructor application was approved. Your studio is ready.'
+        : body.notes || 'Your instructor application was not approved this time.',
+    link: 'dashboard',
+  });
+  if (notifyError) {
+    console.error('Failed to create in-app notification:', notifyError);
+  }
+
   return json({ ok: true, applicationId: application.id, decision: body.decision });
 });
 
