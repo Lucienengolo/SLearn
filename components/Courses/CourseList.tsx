@@ -7,6 +7,7 @@ import { getCourseCover } from '../../lib/courseCovers';
 type CourseListProps = {
   onCourseSelect: (courseId: string) => void;
   initialSearch?: string;
+  initialCategory?: string | null;
 };
 
 type CourseWithStats = Course & {
@@ -18,10 +19,10 @@ type CourseWithStats = Course & {
 
 const PAGE_SIZE = 12;
 
-export default function CourseList({ onCourseSelect, initialSearch }: CourseListProps) {
+export default function CourseList({ onCourseSelect, initialSearch, initialCategory }: CourseListProps) {
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory ?? 'all');
   const [searchQuery, setSearchQuery] = useState(initialSearch ?? '');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);

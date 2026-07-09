@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Search, BookOpen, Users, Award, Wifi, ArrowRight, CheckCircle } from 'lucide-react';
-import { supabase, Course, CourseStats } from '../../lib/supabase';
+import { supabase, Course, CourseStats, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import CourseCard from '../Courses/CourseCard';
-import { CATEGORY_COVERS } from '../../lib/courseCovers';
+import { getCourseCover } from '../../lib/courseCovers';
 
 type HomePageProps = {
   onNavigate: (page: string) => void;
   onCourseSelect: (courseId: string) => void;
   onSearchCourses: (term: string) => void;
+  onFilterByCategory: (categoryId: string) => void;
 };
 
 type CourseRow = Course & { instructor?: { full_name: string }; category?: { name: string } };
 type CourseWithStats = CourseRow & { enrollmentCount: number; averageRating: number };
 
-export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses }: HomePageProps) {
+export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, onFilterByCategory }: HomePageProps) {
   const { user } = useAuth();
   const [featuredCourses, setFeaturedCourses] = useState<CourseWithStats[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalStudents: 0,
@@ -26,6 +28,11 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses }
 
   useEffect(() => {
     fetchHomeData();
+    supabase
+      .from('categories')
+      .select('*')
+      .order('name')
+      .then(({ data }) => setCategories(data ?? []));
   }, []);
 
   const fetchHomeData = async () => {
@@ -171,19 +178,25 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses }
       {/* Categories */}
       <section className="max-w-[1200px] mx-auto px-6 pt-14 pb-2">
         <div className="flex gap-2.5 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium">
+          <button
+            onClick={() => onNavigate('courses')}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100 transition"
+          >
             All
-          </span>
-          {Object.entries(CATEGORY_COVERS).map(([name, cover]) => (
-            <button
-              key={name}
-              onClick={() => onNavigate('courses')}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-medium hover:border-primary-200 hover:text-gray-900 transition whitespace-nowrap"
-            >
-              <cover.icon size={16} />
-              {name}
-            </button>
-          ))}
+          </button>
+          {categories.map((category) => {
+            const CategoryIcon = getCourseCover(category.name).icon;
+            return (
+              <button
+                key={category.id}
+                onClick={() => onFilterByCategory(category.id)}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-medium hover:border-primary-200 hover:text-gray-900 transition whitespace-nowrap"
+              >
+                <CategoryIcon size={16} />
+                {category.name}
+              </button>
+            );
+          })}
         </div>
       </section>
 

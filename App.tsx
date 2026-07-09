@@ -32,6 +32,7 @@ function AppContent() {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [courseSearchTerm, setCourseSearchTerm] = useState('');
+  const [courseCategoryFilter, setCourseCategoryFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -57,6 +58,13 @@ function AppContent() {
 
   const handleSearchCourses = (term: string) => {
     setCourseSearchTerm(term);
+    setCourseCategoryFilter(null);
+    handleNavigate('courses');
+  };
+
+  const handleFilterCoursesByCategory = (categoryId: string) => {
+    setCourseCategoryFilter(categoryId);
+    setCourseSearchTerm('');
     handleNavigate('courses');
   };
 
@@ -112,11 +120,20 @@ function AppContent() {
 
       <main id="main-content">
         {currentPage === 'home' && (
-          <HomePage onNavigate={handleNavigate} onCourseSelect={handleCourseSelect} onSearchCourses={handleSearchCourses} />
+          <HomePage
+            onNavigate={handleNavigate}
+            onCourseSelect={handleCourseSelect}
+            onSearchCourses={handleSearchCourses}
+            onFilterByCategory={handleFilterCoursesByCategory}
+          />
         )}
 
         {currentPage === 'courses' && (
-          <CourseList onCourseSelect={handleCourseSelect} initialSearch={courseSearchTerm} />
+          <CourseList
+            onCourseSelect={handleCourseSelect}
+            initialSearch={courseSearchTerm}
+            initialCategory={courseCategoryFilter}
+          />
         )}
 
         {currentPage === 'course-detail' && selectedCourseId && (
