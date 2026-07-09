@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, Lock, PlayCircle, Sparkles } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, ListTree, Lock, PlayCircle, Sparkles } from 'lucide-react';
 import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
@@ -25,11 +25,20 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showKairosMind, setShowKairosMind] = useState(() => localStorage.getItem('kairos-mind-visible') !== 'false');
+  const [showCurriculum, setShowCurriculum] = useState(() => localStorage.getItem('curriculum-visible') !== 'false');
 
   const toggleKairosMind = () => {
     setShowKairosMind((prev) => {
       const next = !prev;
       localStorage.setItem('kairos-mind-visible', String(next));
+      return next;
+    });
+  };
+
+  const toggleCurriculum = () => {
+    setShowCurriculum((prev) => {
+      const next = !prev;
+      localStorage.setItem('curriculum-visible', String(next));
       return next;
     });
   };
@@ -310,21 +319,47 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
     </div>
   );
 
+  const leftCol = showCurriculum ? '264px' : 'auto';
+  const rightCol = showKairosMind ? '348px' : 'auto';
+
   return (
-    <div className={`lg:grid lg:items-start ${showKairosMind ? 'lg:grid-cols-[264px_1fr_348px]' : 'lg:grid-cols-[264px_1fr_auto]'}`}>
-      {/* Curriculum sidebar (desktop) */}
-      <aside className="hidden lg:block border-r border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] overflow-y-auto p-3">
-        <div className="px-2 pb-1 flex items-center justify-between">
-          <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Course content</span>
-          <span className="text-2xs font-semibold text-primary-700">{courseProgressPercentage}%</span>
-        </div>
-        <div className="px-2 pb-3">
-          <div className="h-1.5 rounded-full bg-canvas-150 overflow-hidden">
-            <div className="h-full bg-primary-500" style={{ width: `${courseProgressPercentage}%` }} />
+    <div className="lg:grid lg:items-start" style={{ gridTemplateColumns: `${leftCol} 1fr ${rightCol}` }}>
+      {/* Curriculum sidebar (desktop, toggleable) */}
+      {showCurriculum ? (
+        <aside className="hidden lg:block border-r border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] overflow-y-auto p-3">
+          <div className="px-2 pb-1 flex items-center justify-between">
+            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Course content</span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xs font-semibold text-primary-700">{courseProgressPercentage}%</span>
+              <button
+                onClick={toggleCurriculum}
+                aria-label="Hide course content"
+                title="Hide course content"
+                className="text-gray-400 hover:text-gray-700 transition"
+              >
+                <ChevronLeft size={16} />
+              </button>
+            </div>
           </div>
+          <div className="px-2 pb-3">
+            <div className="h-1.5 rounded-full bg-canvas-150 overflow-hidden">
+              <div className="h-full bg-primary-500" style={{ width: `${courseProgressPercentage}%` }} />
+            </div>
+          </div>
+          {curriculumList}
+        </aside>
+      ) : (
+        <div className="hidden lg:flex lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] border-r border-canvas-150 items-start justify-center pt-5 w-12">
+          <button
+            onClick={toggleCurriculum}
+            aria-label="Show course content"
+            title="Show course content"
+            className="w-9 h-9 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-100 transition"
+          >
+            <ListTree size={16} />
+          </button>
         </div>
-        {curriculumList}
-      </aside>
+      )}
 
       {/* Main */}
       <main className="lg:h-[calc(100vh-66px)] lg:overflow-y-auto">
@@ -448,8 +483,15 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
         {/* Mobile: curriculum + Kairos Mind inline (the docked 3rd column
             is desktop-only -- see lg:grid breakpoint above) */}
         <div className="lg:hidden border-t border-canvas-150 mt-2 px-4 sm:px-6 py-6">
-          <div className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500 mb-2">Course content</div>
-          {curriculumList}
+          <button
+            onClick={toggleCurriculum}
+            className="flex items-center justify-between w-full mb-2"
+            aria-expanded={showCurriculum}
+          >
+            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Course content</span>
+            <ChevronRight size={16} className={`text-gray-400 transition-transform ${showCurriculum ? 'rotate-90' : 'rotate-0'}`} />
+          </button>
+          {showCurriculum && curriculumList}
         </div>
         {showKairosMind && (
           <div className="lg:hidden border-t border-canvas-150 h-[520px]">
