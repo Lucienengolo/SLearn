@@ -245,6 +245,17 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 </button>
               )}
             </div>
+
+            {mode !== 'forgot' && (
+              <div className="mt-5 pt-4 border-t border-canvas-150 text-center">
+                <button
+                  onClick={handleClose}
+                  className="text-sm text-gray-500 hover:text-gray-700 transition"
+                >
+                  Not ready? <span className="font-medium text-gray-700 underline">Browse free courses as a guest</span>
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
