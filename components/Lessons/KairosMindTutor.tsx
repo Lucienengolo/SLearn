@@ -13,9 +13,9 @@ const MODES: { value: KairosMindMode; label: string }[] = [
   { value: 'translate', label: 'Translate' },
 ];
 
-// Docked panel, always visible (not a collapsible card) -- matches the
-// "Aria" panel in improved/04 Lesson Viewer.dc.html, which turned out to
-// be exactly this real feature's original mockup name.
+// Docked panel; LessonViewer controls show/hide via its own toggle state.
+// Matches the "Aria" panel in improved/04 Lesson Viewer.dc.html, which
+// turned out to be exactly this real feature's original mockup name.
 export default function KairosMindTutor({ lessonId }: KairosMindTutorProps) {
   const { user } = useAuth();
   const [mode, setMode] = useState<KairosMindMode>('explain');

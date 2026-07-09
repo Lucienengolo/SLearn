@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, Lock, PlayCircle } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, Lock, PlayCircle, Sparkles } from 'lucide-react';
 import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
@@ -24,6 +24,15 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   const [courseProgressPercentage, setCourseProgressPercentage] = useState(0);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showKairosMind, setShowKairosMind] = useState(() => localStorage.getItem('kairos-mind-visible') !== 'false');
+
+  const toggleKairosMind = () => {
+    setShowKairosMind((prev) => {
+      const next = !prev;
+      localStorage.setItem('kairos-mind-visible', String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetchLessonData();
@@ -302,7 +311,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   );
 
   return (
-    <div className="lg:grid lg:grid-cols-[264px_1fr_348px] lg:items-start">
+    <div className={`lg:grid lg:items-start ${showKairosMind ? 'lg:grid-cols-[264px_1fr_348px]' : 'lg:grid-cols-[264px_1fr_auto]'}`}>
       {/* Curriculum sidebar (desktop) */}
       <aside className="hidden lg:block border-r border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] overflow-y-auto p-3">
         <div className="px-2 pb-1 flex items-center justify-between">
@@ -320,10 +329,19 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
       {/* Main */}
       <main className="lg:h-[calc(100vh-66px)] lg:overflow-y-auto">
         <div className="max-w-[760px] mx-auto px-4 sm:px-6 py-7">
-          <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-5">
-            <ChevronLeft size={16} />
-            Back to course
-          </button>
+          <div className="flex items-center justify-between mb-5">
+            <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition">
+              <ChevronLeft size={16} />
+              Back to course
+            </button>
+            <button
+              onClick={toggleKairosMind}
+              className="flex items-center gap-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-[10px] h-9 px-3 hover:bg-primary-50 transition"
+            >
+              <Sparkles size={15} />
+              {showKairosMind ? 'Hide Kairos Mind' : 'Show Kairos Mind'}
+            </button>
+          </div>
 
           {(lesson.video_file_url || lesson.video_url) && (
             <div className="rounded-[14px] overflow-hidden bg-black mb-5">
@@ -433,15 +451,30 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
           <div className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500 mb-2">Course content</div>
           {curriculumList}
         </div>
-        <div className="lg:hidden border-t border-canvas-150 h-[520px]">
-          <KairosMindTutor lessonId={lesson.id} />
-        </div>
+        {showKairosMind && (
+          <div className="lg:hidden border-t border-canvas-150 h-[520px]">
+            <KairosMindTutor lessonId={lesson.id} />
+          </div>
+        )}
       </main>
 
-      {/* Kairos Mind (desktop, docked) */}
-      <aside className="hidden lg:flex lg:flex-col border-l border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px]">
-        <KairosMindTutor lessonId={lesson.id} />
-      </aside>
+      {/* Kairos Mind (desktop, docked, toggleable) */}
+      {showKairosMind ? (
+        <aside className="hidden lg:flex lg:flex-col border-l border-canvas-150 bg-white lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] lg:w-[348px]">
+          <KairosMindTutor lessonId={lesson.id} />
+        </aside>
+      ) : (
+        <div className="hidden lg:flex lg:h-[calc(100vh-66px)] lg:sticky lg:top-[66px] border-l border-canvas-150 items-start justify-center pt-5 w-12">
+          <button
+            onClick={toggleKairosMind}
+            aria-label="Show Kairos Mind"
+            title="Show Kairos Mind"
+            className="w-9 h-9 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center hover:bg-primary-100 transition"
+          >
+            <Sparkles size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
