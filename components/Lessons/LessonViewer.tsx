@@ -366,7 +366,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             </button>
             <button
               onClick={toggleKairosMind}
-              className="flex items-center gap-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-[10px] h-9 px-3 hover:bg-primary-50 transition"
+              className="flex items-center gap-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-full h-9 px-3.5 hover:bg-primary-50 transition"
             >
               <Sparkles size={15} />
               {showKairosMind ? 'Hide Kairos Mind' : 'Show Kairos Mind'}
