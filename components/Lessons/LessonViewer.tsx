@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, ListTree, Lock, PlayCircle, Sparkles } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, ListTree, Lock, PlayCircle, Sparkles, Wifi } from 'lucide-react';
 import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
 import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
+import { isSlowConnection, getNetworkInfo } from '../../lib/connectionDetection';
 import QuizViewer from '../Quiz/QuizViewer';
 import KairosMindTutor from './KairosMindTutor';
+import LowBandwidthVideoPlayer from './LowBandwidthVideoPlayer';
 
 type LessonViewerProps = {
   lessonId: string;
@@ -26,6 +28,22 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showKairosMind, setShowKairosMind] = useState(() => localStorage.getItem('kairos-mind-visible') !== 'false');
   const [showCurriculum, setShowCurriculum] = useState(() => localStorage.getItem('curriculum-visible') !== 'false');
+  // Stored preference wins over auto-detection, same as showKairosMind/
+  // showCurriculum above -- an explicit user choice should never be
+  // silently overridden by a connection-speed guess on the next load.
+  const [lowBandwidthMode, setLowBandwidthMode] = useState(() => {
+    const stored = localStorage.getItem('low-bandwidth-mode');
+    if (stored !== null) return stored === 'true';
+    return isSlowConnection(getNetworkInfo());
+  });
+
+  const toggleLowBandwidthMode = () => {
+    setLowBandwidthMode((prev) => {
+      const next = !prev;
+      localStorage.setItem('low-bandwidth-mode', String(next));
+      return next;
+    });
+  };
 
   const toggleKairosMind = () => {
     setShowKairosMind((prev) => {
@@ -364,31 +382,30 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
               <ChevronLeft size={16} />
               Back to course
             </button>
-            <button
-              onClick={toggleKairosMind}
-              className="flex items-center gap-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-full h-9 px-3.5 hover:bg-primary-50 transition"
-            >
-              <Sparkles size={15} />
-              {showKairosMind ? 'Hide Kairos Mind' : 'Show Kairos Mind'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleLowBandwidthMode}
+                aria-pressed={lowBandwidthMode}
+                className={`flex items-center gap-1.5 text-sm font-medium border rounded-full h-9 px-3.5 transition ${
+                  lowBandwidthMode
+                    ? 'text-gray-900 bg-gray-100 border-gray-300'
+                    : 'text-gray-500 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <Wifi size={15} />
+                {lowBandwidthMode ? 'Low-data mode on' : 'Low-data mode'}
+              </button>
+              <button
+                onClick={toggleKairosMind}
+                className="flex items-center gap-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-full h-9 px-3.5 hover:bg-primary-50 transition"
+              >
+                <Sparkles size={15} />
+                {showKairosMind ? 'Hide Kairos Mind' : 'Show Kairos Mind'}
+              </button>
+            </div>
           </div>
 
-          {(lesson.video_file_url || lesson.video_url) && (
-            <div className="rounded-[14px] overflow-hidden bg-black mb-5">
-              {lesson.video_file_url ? (
-                <video controls className="w-full h-auto" src={lesson.video_file_url} />
-              ) : (
-                <div className="aspect-video">
-                  <iframe
-                    src={lesson.video_url!}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              )}
-            </div>
-          )}
+          <LowBandwidthVideoPlayer lesson={lesson} lowBandwidthMode={lowBandwidthMode} />
 
           <div className="text-sm text-gray-500 mb-1">{course.title}</div>
           <h1 className="font-display text-3xl text-gray-900 mb-1">{lesson.title}</h1>

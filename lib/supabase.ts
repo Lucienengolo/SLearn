@@ -249,3 +249,93 @@ export type Interview = {
   created_at: string;
   updated_at: string;
 };
+
+// Tutor marketplace (supabase/migrations/0030_tutor_marketplace.sql). Parents
+// are plain role='student' profiles -- see 0003_single_role_enforcement.sql,
+// there is no separate parent role.
+export type TutorRequestStatus = 'searching' | 'matched' | 'cancelled';
+
+export type TutorRequest = {
+  id: string;
+  parent_id: string;
+  category_id: string;
+  grade: string;
+  neighborhood: string;
+  budget_min: number | null;
+  budget_max: number | null;
+  whatsapp_contact: string;
+  child_identifier: string | null;
+  preferred_language: 'fr' | 'en';
+  status: TutorRequestStatus;
+  created_at: string;
+};
+
+export type MatchStatusValue =
+  | 'matched'
+  | 'messaging'
+  | 'deposit_paid'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled_refunded'
+  | 'dispute_review'
+  | 'stalled'
+  | 'expired'
+  | 'declined';
+
+export type Match = {
+  id: string;
+  request_id: string;
+  tutor_id: string;
+  status: MatchStatusValue;
+  matched_at: string;
+  tutor_responded_at: string | null;
+  tutor_timeout_at: string | null;
+  decline_reason: string | null;
+  messaging_started_at: string | null;
+  parent_timeout_at: string | null;
+  confirmed_session_date: string | null;
+  deposit_paid_at: string | null;
+  in_progress_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  stalled_at: string | null;
+  created_at: string;
+};
+
+export type TutorProfileFields = {
+  tutor_id: string;
+  teaching_mode: 'online' | 'in_person' | 'both';
+  neighborhood: string;
+  languages: string[];
+  rate_per_session: number;
+  response_time_minutes: number | null;
+  whatsapp_contact: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type TutorSessionPayment = {
+  id: string;
+  match_id: string;
+  deposit_amount: number;
+  deposit_status: 'pending' | 'paid' | 'failed';
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  balance_amount: number;
+  balance_status: 'pending' | 'confirmed';
+  balance_confirmed_at: string | null;
+  balance_confirmed_by: string | null;
+  cancellation_status: 'none' | 'cancelled_refunded' | 'dispute_review';
+  cancelled_at: string | null;
+  refund_status: 'pending' | 'succeeded' | 'failed' | null;
+  created_at: string;
+  updated_at: string;
+};

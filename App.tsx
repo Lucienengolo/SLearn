@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LocaleProvider } from './contexts/LocaleContext';
 import Header from './components/Layout/Header';
 import HomePage from './components/Home/HomePage';
 import CourseList from './components/Courses/CourseList';
@@ -17,6 +18,9 @@ const InstructorApplicationFlow = lazy(() => import('./components/Dashboard/Inst
 const CertificatesPage = lazy(() => import('./components/Certificates/CertificatesPage'));
 const AccountSettings = lazy(() => import('./components/Account/AccountSettings'));
 const ReviewQueue = lazy(() => import('./components/Dashboard/ReviewQueue'));
+const MyRequests = lazy(() => import('./components/Tutors/MyRequests'));
+const RequestForm = lazy(() => import('./components/Tutors/RequestForm'));
+const MatchStatus = lazy(() => import('./components/Tutors/MatchStatus'));
 
 function PageFallback() {
   return (
@@ -27,10 +31,11 @@ function PageFallback() {
 }
 
 function AppContent() {
-  const { profile, loading, isPasswordRecovery } = useAuth();
+  const { user, profile, loading, isPasswordRecovery } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [selectedTutorRequestId, setSelectedTutorRequestId] = useState<string | null>(null);
   const [courseSearchTerm, setCourseSearchTerm] = useState('');
   const [courseCategoryFilter, setCourseCategoryFilter] = useState<string | null>(null);
 
@@ -43,6 +48,9 @@ function AppContent() {
       } else if (hash.startsWith('lesson-')) {
         setSelectedLessonId(hash.replace('lesson-', ''));
         setCurrentPage('lesson-viewer');
+      } else if (hash.startsWith('tutor-request-')) {
+        setSelectedTutorRequestId(hash.replace('tutor-request-', ''));
+        setCurrentPage('tutor-request-detail');
       }
     };
 
@@ -89,6 +97,18 @@ function AppContent() {
   const handleBackToDashboard = () => {
     setCurrentPage('dashboard');
     setSelectedLessonId(null);
+    window.location.hash = '';
+  };
+
+  const handleSelectTutorRequest = (requestId: string) => {
+    setSelectedTutorRequestId(requestId);
+    setCurrentPage('tutor-request-detail');
+    window.location.hash = `tutor-request-${requestId}`;
+  };
+
+  const handleBackToMyRequests = () => {
+    setCurrentPage('my-requests');
+    setSelectedTutorRequestId(null);
     window.location.hash = '';
   };
 
@@ -175,6 +195,37 @@ function AppContent() {
           </>
         )}
 
+        {currentPage === 'my-requests' && user && profile?.role === 'student' && (
+          <Suspense fallback={<PageFallback />}>
+            <div className="max-w-[1200px] mx-auto px-6 py-10">
+              <MyRequests
+                parentId={user.id}
+                onSelectRequest={handleSelectTutorRequest}
+                onNewRequest={() => handleNavigate('tutor-request-new')}
+              />
+            </div>
+          </Suspense>
+        )}
+
+        {currentPage === 'tutor-request-new' && user && profile?.role === 'student' && (
+          <Suspense fallback={<PageFallback />}>
+            <div className="max-w-[1200px] mx-auto px-6 py-10">
+              <RequestForm onSubmitted={(request) => handleSelectTutorRequest(request.id)} />
+            </div>
+          </Suspense>
+        )}
+
+        {currentPage === 'tutor-request-detail' && user && selectedTutorRequestId && (
+          <Suspense fallback={<PageFallback />}>
+            <div className="max-w-[1200px] mx-auto px-6 py-10">
+              <button onClick={handleBackToMyRequests} className="text-sm text-gray-500 hover:text-gray-800 transition mb-5">
+                ← Back to my requests
+              </button>
+              <MatchStatus requestId={selectedTutorRequestId} currentUserId={user.id} />
+            </div>
+          </Suspense>
+        )}
+
         {currentPage === 'become-instructor' && profile && !isVerifiedInstructor && (
           <Suspense fallback={<PageFallback />}>
             <InstructorApplicationFlow />
@@ -205,9 +256,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LocaleProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LocaleProvider>
   );
 }
 

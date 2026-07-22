@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { User, LogOut, Menu, X, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale } from '../../contexts/LocaleContext';
 import { getGuestXP, GUEST_XP_EVENT } from '../../lib/guestSession';
 import AuthModal from '../Auth/AuthModal';
 import NotificationBell from './NotificationBell';
+import LanguageToggle from './LanguageToggle';
 type HeaderProps = {
   onNavigate: (page: string) => void;
   currentPage: string;
@@ -11,6 +13,7 @@ type HeaderProps = {
 
 export default function Header({ onNavigate, currentPage }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
+  const { t } = useLocale();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [guestXp, setGuestXp] = useState(0);
@@ -51,7 +54,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   currentPage === 'home' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                Home
+                {t('nav.home')}
               </button>
               <button
                 onClick={() => onNavigate('courses')}
@@ -59,7 +62,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   currentPage === 'courses' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                Courses
+                {t('nav.courses')}
               </button>
               {user && (
                 <button
@@ -68,7 +71,19 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     currentPage === 'dashboard' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  Dashboard
+                  {t('nav.dashboard')}
+                </button>
+              )}
+              {user && profile?.role === 'student' && (
+                <button
+                  onClick={() => onNavigate('my-requests')}
+                  className={`text-md px-3 py-2 rounded-[10px] transition ${
+                    currentPage === 'my-requests' || currentPage === 'tutor-request-new' || currentPage === 'tutor-request-detail'
+                      ? 'font-semibold text-gray-900'
+                      : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {t('nav.tutors')}
                 </button>
               )}
               {profile?.is_reviewer && (
@@ -78,12 +93,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     currentPage === 'review-queue' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  Review queue
+                  {t('nav.reviewQueue')}
                 </button>
               )}
             </nav>
 
             <div className="hidden md:flex items-center space-x-3">
+              <LanguageToggle />
               {user && profile ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600">
@@ -96,8 +112,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <button
                     onClick={() => onNavigate('account-settings')}
                     className="rounded-full overflow-hidden border border-gray-200 hover:ring-2 hover:ring-primary-300 transition"
-                    title="Account settings"
-                    aria-label="Account settings"
+                    title={t('nav.accountSettings')}
+                    aria-label={t('nav.accountSettings')}
                   >
                     {profile.avatar_url ? (
                       <img src={profile.avatar_url} alt="" className="w-9 h-9 object-cover" />
@@ -110,8 +126,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <button
                     onClick={handleSignOut}
                     className="p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                    title="Sign Out"
-                    aria-label="Sign out"
+                    title={t('nav.signOut')}
+                    aria-label={t('nav.signOut')}
                   >
                     <LogOut size={20} />
                   </button>
@@ -132,7 +148,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition"
                   >
                     <User size={20} />
-                    <span>Sign In</span>
+                    <span>{t('nav.signIn')}</span>
                   </button>
                 </>
               )}
@@ -141,7 +157,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -152,6 +168,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="md:hidden border-t">
             <nav className="px-4 py-4 space-y-2">
+              <div className="px-4 pb-2">
+                <LanguageToggle />
+              </div>
               <button
                 onClick={() => {
                   onNavigate('home');
@@ -159,7 +178,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 }}
                 className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               >
-                Home
+                {t('nav.home')}
               </button>
               <button
                 onClick={() => {
@@ -168,7 +187,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                 }}
                 className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               >
-                Courses
+                {t('nav.courses')}
               </button>
               {user && (
                 <button
@@ -178,7 +197,18 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   }}
                   className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
-                  Dashboard
+                  {t('nav.dashboard')}
+                </button>
+              )}
+              {user && profile?.role === 'student' && (
+                <button
+                  onClick={() => {
+                    onNavigate('my-requests');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  {t('nav.tutors')}
                 </button>
               )}
               {profile?.is_reviewer && (
@@ -189,7 +219,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   }}
                   className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
-                  Review queue
+                  {t('nav.reviewQueue')}
                 </button>
               )}
               {user && profile ? (
@@ -211,13 +241,13 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                         <User size={14} />
                       </span>
                     )}
-                    Account settings
+                    {t('nav.accountSettings')}
                   </button>
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"
                   >
-                    Sign Out
+                    {t('nav.signOut')}
                   </button>
                 </div>
               ) : (
@@ -225,7 +255,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   {guestXp > 0 && (
                     <div className="flex items-center space-x-1 text-xs text-gold-700 px-4">
                       <Zap size={14} />
-                      <span>{guestXp} guest XP (this session)</span>
+                      <span>
+                        {guestXp} {t('guest.xpLabel')}
+                      </span>
                     </div>
                   )}
                   <button
@@ -235,7 +267,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     }}
                     className="w-full bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400"
                   >
-                    Sign In
+                    {t('nav.signIn')}
                   </button>
                 </div>
               )}

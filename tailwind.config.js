@@ -50,10 +50,26 @@ export default {
           25: '#FBFCFB',
           150: '#E6E9E3',
         },
+        // DESIGN.md's ink-and-paper system (approved 2026-07-17), used only
+        // by pages built against it so far (components/Tutors/*) -- same
+        // non-colliding incremental-porting approach as `canvas` above.
+        // Not a replacement for primary/gold/canvas, which existing pages
+        // still use.
+        ink: '#14171F',
+        paper: '#F7F3EA',
+        oxblood: { DEFAULT: '#9C3B2E', hover: '#7C2E23' },
+        forest: '#1F5C4E',
+        'warm-gray': { DEFAULT: '#8A8578', light: '#D8D2C4' },
+        'ink-border': '#E4DDCC',
       },
       fontFamily: {
         display: ['Instrument Serif', 'Georgia', 'Times New Roman', 'serif'],
         sans: ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        // DESIGN.md typography (Fraunces/General Sans/IBM Plex Mono) --
+        // additive, see the `ink`/`paper`/etc. color comment above.
+        fraunces: ['Fraunces', 'serif'],
+        'general-sans': ['General Sans', '-apple-system', 'sans-serif'],
+        'plex-mono': ['IBM Plex Mono', 'monospace'],
       },
       fontSize: {
         '2xs': '11px',

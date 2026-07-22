@@ -23,3 +23,9 @@ SLearn/
 # goes to ./lighthouse-reports; this directory is lhci's internal scratch
 # state and was committed by accident in the initial commit.
 .lighthouseci/
+.gstack/
+
+# Playwright/Vitest local run output
+playwright-report/
+test-results/
+coverage/
