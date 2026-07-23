@@ -73,7 +73,10 @@ Deno.serve(async (req: Request) => {
 
   const { data: application, error: applicationError } = await admin
     .from('instructor_applications')
-    .select('id, applicant_id, status, full_name')
+    .select(
+      `id, applicant_id, status, full_name, offers_tutoring, tutoring_category_ids, tutoring_neighborhood,
+       tutoring_teaching_mode, tutoring_languages, tutoring_rate_per_session, tutoring_response_time_minutes, tutoring_whatsapp`
+    )
     .eq('id', body.applicationId)
     .maybeSingle();
 
@@ -110,6 +113,44 @@ Deno.serve(async (req: Request) => {
 
     if (profileError) {
       return json({ error: `Application approved but role update failed: ${profileError.message}` }, 500);
+    }
+
+    // Founder feedback (2026-07-22): don't make a newly-approved instructor
+    // fill out a second form to start tutoring -- if they opted in during
+    // the application (0034_tutoring_opt_in_application_fields.sql),
+    // populate tutor_profile_fields/tutor_subjects directly from what they
+    // already submitted. TutorProfileForm.tsx remains available afterward
+    // purely as an edit tool, or for an instructor who skipped this and
+    // wants to opt in later.
+    if (application.offers_tutoring) {
+      const { error: tutorFieldsError } = await admin.from('tutor_profile_fields').upsert(
+        {
+          tutor_id: application.applicant_id,
+          teaching_mode: application.tutoring_teaching_mode ?? 'both',
+          neighborhood: application.tutoring_neighborhood ?? '',
+          languages: application.tutoring_languages ?? [],
+          rate_per_session: application.tutoring_rate_per_session ?? 0,
+          response_time_minutes: application.tutoring_response_time_minutes ?? null,
+          whatsapp_contact: application.tutoring_whatsapp ?? '',
+        },
+        { onConflict: 'tutor_id' }
+      );
+      if (tutorFieldsError) {
+        console.error('Failed to auto-populate tutor_profile_fields on approval:', tutorFieldsError.message);
+      }
+
+      if (!tutorFieldsError && application.tutoring_category_ids?.length > 0) {
+        const { error: subjectsError } = await admin.from('tutor_subjects').insert(
+          application.tutoring_category_ids.map((categoryId: string) => ({
+            tutor_id: application.applicant_id,
+            category_id: categoryId,
+            neighborhood: application.tutoring_neighborhood ?? '',
+          }))
+        );
+        if (subjectsError) {
+          console.error('Failed to auto-populate tutor_subjects on approval:', subjectsError.message);
+        }
+      }
     }
   }
 

@@ -17,7 +17,11 @@ type StudentRow = {
   completedAt: string | null;
   progressPercentage: number;
   hasCertificate: boolean;
+  lastActivityAt: string;
+  isStale: boolean;
 };
+
+const STALE_THRESHOLD_DAYS = 14;
 
 type StatusFilter = 'all' | 'completed' | 'in_progress' | 'not_started';
 
@@ -57,6 +61,25 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
 
     const certifiedIds = new Set((certificates ?? []).map((c) => c.student_id));
 
+    // Last activity per student, for the "attention" panel (Slearn classroom
+    // adaptation, 2026-07-23 -- DESIGN.md Patterns) -- derived from real
+    // lesson_progress rows, not a stored "last seen" field.
+    const { data: lessonRows } = await supabase.from('lessons').select('id').eq('course_id', courseId);
+    const lessonIds = (lessonRows ?? []).map((l: { id: string }) => l.id);
+    const { data: progressRows } = lessonIds.length
+      ? await supabase.from('lesson_progress').select('student_id, updated_at').in('lesson_id', lessonIds)
+      : { data: [] as { student_id: string; updated_at: string }[] };
+
+    const lastActivityByStudent = new Map<string, string>();
+    for (const p of (progressRows ?? []) as { student_id: string; updated_at: string }[]) {
+      const current = lastActivityByStudent.get(p.student_id);
+      if (!current || new Date(p.updated_at) > new Date(current)) {
+        lastActivityByStudent.set(p.student_id, p.updated_at);
+      }
+    }
+
+    const staleCutoff = Date.now() - STALE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+
     type EnrollmentWithStudent = {
       id: string;
       student_id: string;
@@ -67,17 +90,22 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
     };
 
     setRows(
-      ((enrollments ?? []) as unknown as EnrollmentWithStudent[]).map((e) => ({
-        enrollmentId: e.id,
-        studentId: e.student_id,
-        fullName: e.student?.full_name || e.student?.email || 'Unknown student',
-        email: e.student?.email || '',
-        avatarUrl: e.student?.avatar_url ?? null,
-        enrolledAt: e.enrolled_at,
-        completedAt: e.completed_at,
-        progressPercentage: e.progress_percentage,
-        hasCertificate: certifiedIds.has(e.student_id),
-      }))
+      ((enrollments ?? []) as unknown as EnrollmentWithStudent[]).map((e) => {
+        const lastActivityAt = lastActivityByStudent.get(e.student_id) ?? e.enrolled_at;
+        return {
+          enrollmentId: e.id,
+          studentId: e.student_id,
+          fullName: e.student?.full_name || e.student?.email || 'Unknown student',
+          email: e.student?.email || '',
+          avatarUrl: e.student?.avatar_url ?? null,
+          enrolledAt: e.enrolled_at,
+          completedAt: e.completed_at,
+          progressPercentage: e.progress_percentage,
+          hasCertificate: certifiedIds.has(e.student_id),
+          lastActivityAt,
+          isStale: !e.completed_at && new Date(lastActivityAt).getTime() < staleCutoff,
+        };
+      })
     );
 
     setLoading(false);
@@ -93,9 +121,23 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
   });
 
   const completedCount = rows.filter((r) => !!r.completedAt).length;
+  const notStartedCount = rows.filter((r) => statusOf(r) === 'not_started').length;
+  const inProgressCount = rows.filter((r) => statusOf(r) === 'in_progress').length;
+  const staleCount = rows.filter((r) => r.isStale).length;
   const averageProgress = rows.length
     ? Math.round(rows.reduce((sum, r) => sum + r.progressPercentage, 0) / rows.length)
     : 0;
+
+  // Slearn classroom adaptation (2026-07-23): same 3 status buckets already
+  // used by statusBadge below, as a bar chart -- one axis (student count),
+  // fixed category order, each bar directly labeled so identity never rests
+  // on color alone (dataviz skill non-negotiable).
+  const progressChartBuckets = [
+    { label: 'Not started', count: notStartedCount, barClass: 'bg-gray-300' },
+    { label: 'In progress', count: inProgressCount, barClass: 'bg-primary-500' },
+    { label: 'Completed', count: completedCount, barClass: 'bg-green-500' },
+  ];
+  const progressChartMax = Math.max(1, ...progressChartBuckets.map((b) => b.count));
 
   const statusBadge = (row: StudentRow) => {
     const status = statusOf(row);
@@ -137,18 +179,63 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="rounded-[10px] border border-canvas-150 p-4">
-              <p className="font-display text-2xl text-gray-900">{rows.length}</p>
-              <p className="text-2xs text-gray-500">Enrolled</p>
+          {(notStartedCount > 0 || staleCount > 0) && (
+            <div className="rounded-[14px] border border-amber-200 bg-amber-50 p-4 mb-6">
+              <p className="font-semibold text-amber-900 mb-1.5">Attention</p>
+              <ul className="text-sm text-amber-800 space-y-0.5">
+                {notStartedCount > 0 && (
+                  <li>
+                    {notStartedCount} student{notStartedCount === 1 ? '' : 's'}{' '}
+                    {notStartedCount === 1 ? "hasn't" : "haven't"} started yet
+                  </li>
+                )}
+                {staleCount > 0 && (
+                  <li>
+                    {staleCount} student{staleCount === 1 ? '' : 's'} inactive for {STALE_THRESHOLD_DAYS}+ days
+                  </li>
+                )}
+              </ul>
             </div>
-            <div className="rounded-[10px] border border-canvas-150 p-4">
-              <p className="font-display text-2xl text-green-700">{completedCount}</p>
-              <p className="text-2xs text-gray-500">Completed</p>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-[10px] border border-canvas-150 p-4">
+                <p className="font-display text-2xl text-gray-900">{rows.length}</p>
+                <p className="text-2xs text-gray-500">Enrolled</p>
+              </div>
+              <div className="rounded-[10px] border border-canvas-150 p-4">
+                <p className="font-display text-2xl text-green-700">{completedCount}</p>
+                <p className="text-2xs text-gray-500">Completed</p>
+              </div>
+              <div className="rounded-[10px] border border-canvas-150 p-4">
+                <p className="font-display text-2xl text-primary-700">{averageProgress}%</p>
+                <p className="text-2xs text-gray-500">Average progress</p>
+              </div>
             </div>
+
             <div className="rounded-[10px] border border-canvas-150 p-4">
-              <p className="font-display text-2xl text-primary-700">{averageProgress}%</p>
-              <p className="text-2xs text-gray-500">Average progress</p>
+              <p className="text-2xs font-semibold text-gray-500 mb-3">Class overall progress</p>
+              <div className="flex items-end justify-between gap-3 h-20">
+                {progressChartBuckets.map((bucket) => (
+                  <div key={bucket.label} className="flex-1 flex flex-col items-center justify-end h-full">
+                    <span className="text-2xs font-semibold text-gray-700 mb-1">{bucket.count}</span>
+                    <div
+                      className={`w-full rounded-t-[4px] ${bucket.barClass}`}
+                      style={{ height: `${Math.max(4, (bucket.count / progressChartMax) * 100)}%` }}
+                      role="img"
+                      aria-label={`${bucket.label}: ${bucket.count} student${bucket.count === 1 ? '' : 's'}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between gap-2 mt-2">
+                {progressChartBuckets.map((bucket) => (
+                  <span key={bucket.label} className="text-2xs text-gray-500 flex-1 text-center leading-tight">
+                    {bucket.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -198,6 +285,11 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
                           Certified
                         </span>
                       )}
+                      {row.isStale && (
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-800">
+                          Needs attention
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 truncate">{row.email}</p>
                   </div>
@@ -207,8 +299,8 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
                     </div>
                     <p className="text-2xs text-gray-500 text-right">{row.progressPercentage}%</p>
                   </div>
-                  <p className="text-2xs text-gray-400 flex-shrink-0 hidden md:block w-24 text-right">
-                    Enrolled {new Date(row.enrolledAt).toLocaleDateString()}
+                  <p className="text-2xs text-gray-400 flex-shrink-0 hidden md:block w-28 text-right">
+                    Last active {new Date(row.lastActivityAt).toLocaleDateString()}
                   </p>
                 </div>
               ))

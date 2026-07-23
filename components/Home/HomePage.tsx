@@ -40,7 +40,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
       .from('courses')
       .select(`
         *,
-        instructor:profiles!instructor_id(full_name),
+        instructor:profiles!instructor_id(full_name, verified),
         category:categories(name)
       `)
       .eq('is_published', true)

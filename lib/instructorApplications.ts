@@ -19,6 +19,14 @@ export type ApplicationDraft = Partial<
     | 'proposed_course_title'
     | 'proposed_course_description'
     | 'proposed_course_category_id'
+    | 'offers_tutoring'
+    | 'tutoring_category_ids'
+    | 'tutoring_neighborhood'
+    | 'tutoring_teaching_mode'
+    | 'tutoring_languages'
+    | 'tutoring_rate_per_session'
+    | 'tutoring_response_time_minutes'
+    | 'tutoring_whatsapp'
   >
 >;
 

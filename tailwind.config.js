@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './App.tsx', './main.tsx', './components/**/*.{ts,tsx}'],
+  // lib/**/*.ts added 2026-07-23: lib/totems.ts holds Tailwind class strings
+  // as plain data (color per totem badge), not JSX -- without this glob the
+  // JIT scanner never sees those literal class names and the badges would
+  // render unstyled in a production build.
+  content: ['./index.html', './App.tsx', './main.tsx', './components/**/*.{ts,tsx}', './lib/**/*.ts'],
   theme: {
     extend: {
       // The design system's own raw default (_ds/.../tokens/colors.css)

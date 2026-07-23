@@ -108,7 +108,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
     setLoading(true);
     const { data } = await supabase
       .from('saved_courses')
-      .select('course:courses(*, instructor:profiles!instructor_id(full_name), category:categories(name))')
+      .select('course:courses(*, instructor:profiles!instructor_id(full_name, verified), category:categories(name))')
       .eq('student_id', user.id);
 
     const rows = (data ?? [])
@@ -132,7 +132,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
       .select(
         `
         *,
-        instructor:profiles!instructor_id(full_name),
+        instructor:profiles!instructor_id(full_name, verified),
         category:categories(name)
       `,
         { count: 'exact' }

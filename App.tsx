@@ -21,6 +21,7 @@ const ReviewQueue = lazy(() => import('./components/Dashboard/ReviewQueue'));
 const MyRequests = lazy(() => import('./components/Tutors/MyRequests'));
 const RequestForm = lazy(() => import('./components/Tutors/RequestForm'));
 const MatchStatus = lazy(() => import('./components/Tutors/MatchStatus'));
+const InstitutionalLandingPage = lazy(() => import('./components/Institutional/InstitutionalLandingPage'));
 
 function PageFallback() {
   return (
@@ -187,6 +188,7 @@ function AppContent() {
               </Suspense>
             ) : (
               <StudentDashboard
+                onNavigate={handleNavigate}
                 onCourseSelect={handleCourseSelect}
                 onCertificateView={() => setCurrentPage('certificates')}
                 onBecomeInstructor={() => handleNavigate('become-instructor')}
@@ -247,6 +249,24 @@ function AppContent() {
         {currentPage === 'review-queue' && profile?.is_reviewer && (
           <Suspense fallback={<PageFallback />}>
             <ReviewQueue />
+          </Suspense>
+        )}
+
+        {currentPage === 'audience-schools' && (
+          <Suspense fallback={<PageFallback />}>
+            <InstitutionalLandingPage accountType="school_university" />
+          </Suspense>
+        )}
+
+        {currentPage === 'audience-business' && (
+          <Suspense fallback={<PageFallback />}>
+            <InstitutionalLandingPage accountType="business" />
+          </Suspense>
+        )}
+
+        {currentPage === 'audience-government' && (
+          <Suspense fallback={<PageFallback />}>
+            <InstitutionalLandingPage accountType="government" />
           </Suspense>
         )}
       </main>

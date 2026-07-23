@@ -177,6 +177,11 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5">Budget par séance (FCFA)</label>
+        {/* min-w-0 on both inputs: number inputs have a browser-default
+            intrinsic minimum width that flexbox respects unless overridden,
+            so two w-full inputs side by side would refuse to shrink below
+            that and overflow a narrow phone screen instead of splitting the
+            row evenly. Found by an actual mobile-width audit. */}
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -185,7 +190,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
             value={budgetMin}
             onChange={(e) => setBudgetMin(e.target.value)}
             placeholder="5000"
-            className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
+            className="w-full min-w-0 px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
           />
           <span className="text-warm-gray">–</span>
           <input
@@ -195,7 +200,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
             value={budgetMax}
             onChange={(e) => setBudgetMax(e.target.value)}
             placeholder="10000"
-            className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
+            className="w-full min-w-0 px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
           />
         </div>
         {errors.budget && <p className="text-[12px] text-oxblood font-medium mt-1">{errors.budget}</p>}

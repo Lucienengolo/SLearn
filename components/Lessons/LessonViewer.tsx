@@ -377,12 +377,17 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
       {/* Main */}
       <main className="lg:h-[calc(100vh-66px)] lg:overflow-y-auto">
         <div className="max-w-[760px] mx-auto px-4 sm:px-6 py-7">
-          <div className="flex items-center justify-between mb-5">
+          {/* flex-wrap: this row grew to 3 text-bearing elements (back link
+              + 2 toggle pills) -- on a narrow phone their combined width
+              exceeds the viewport, so it must wrap instead of overflowing.
+              Found by an actual mobile-width audit, not visible at desktop
+              widths where there's room for all three side by side. */}
+          <div className="flex items-center justify-between flex-wrap gap-y-2 mb-5">
             <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition">
               <ChevronLeft size={16} />
               Back to course
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={toggleLowBandwidthMode}
                 aria-pressed={lowBandwidthMode}

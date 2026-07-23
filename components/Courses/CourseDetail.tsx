@@ -16,7 +16,7 @@ type CourseDetailProps = {
 };
 
 type CourseWithRelations = Course & {
-  instructor?: { full_name: string; bio: string | null };
+  instructor?: { full_name: string; bio: string | null; verified?: boolean };
   category?: { name: string };
 };
 
@@ -76,7 +76,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
       .from('courses')
       .select(`
         *,
-        instructor:profiles!instructor_id(full_name, bio),
+        instructor:profiles!instructor_id(full_name, bio, verified),
         category:categories(name)
       `)
       .eq('id', courseId)
@@ -393,7 +393,18 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 </span>
                 <div>
                   <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Instructor</span>
-                  <p className="text-lg font-semibold text-gray-900 mt-0.5">{course.instructor.full_name}</p>
+                  <p className="text-lg font-semibold text-gray-900 mt-0.5 flex items-center gap-1.5">
+                    {course.instructor.full_name}
+                    {course.instructor.verified && (
+                      <span
+                        className="text-2xs font-semibold bg-green-50 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1 normal-case tracking-normal"
+                        title="Verified instructor"
+                      >
+                        <CheckCircle size={12} />
+                        Verified
+                      </span>
+                    )}
+                  </p>
                   {course.instructor.bio && (
                     <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{course.instructor.bio}</p>
                   )}

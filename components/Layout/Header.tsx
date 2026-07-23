@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { User, LogOut, Menu, X, Zap } from 'lucide-react';
+import { User, LogOut, Menu, X, Zap, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../contexts/LocaleContext';
 import { getGuestXP, GUEST_XP_EVENT } from '../../lib/guestSession';
 import AuthModal from '../Auth/AuthModal';
 import NotificationBell from './NotificationBell';
 import LanguageToggle from './LanguageToggle';
+import AudienceNav from './AudienceNav';
 type HeaderProps = {
   onNavigate: (page: string) => void;
   currentPage: string;
@@ -32,6 +33,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
 
   return (
     <>
+      <AudienceNav onNavigate={onNavigate} currentPage={currentPage} />
   <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-canvas-150">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex justify-between items-center h-[66px]">
@@ -105,9 +107,18 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   <span className="text-sm text-gray-600">
                     {profile.full_name || profile.email}
                   </span>
-                  <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
-                    {profile.role}
-                  </span>
+                  {/* Founder feedback (2026-07-22): account type shouldn't be
+                      a visible label for students -- "instructor" is kept
+                      here only because it's a real, verified trust signal,
+                      not a generic role tag. The public-facing version of
+                      this signal (on course cards, byline) is a separate
+                      change -- see CourseCard.tsx/CourseDetail.tsx. */}
+                  {profile.role === 'instructor' && profile.verified && (
+                    <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded flex items-center gap-1">
+                      <CheckCircle size={12} />
+                      Verified instructor
+                    </span>
+                  )}
                   <NotificationBell onNavigate={onNavigate} />
                   <button
                     onClick={() => onNavigate('account-settings')}

@@ -3,6 +3,7 @@ import { ArrowLeft, Camera, LogOut, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/storage';
+import { TOTEMS } from '../../lib/totems';
 
 type AccountSettingsProps = {
   onBack: () => void;
@@ -18,6 +19,11 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+
+  const [totem, setTotem] = useState(profile?.totem ?? '');
+  const [savingTotem, setSavingTotem] = useState(false);
+  const [totemMessage, setTotemMessage] = useState('');
+  const [totemError, setTotemError] = useState('');
 
   const [newEmail, setNewEmail] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
@@ -70,6 +76,24 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
       setProfileMessage('Profile updated.');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleTotemSave = async (nextTotem: string) => {
+    setTotem(nextTotem);
+    setSavingTotem(true);
+    setTotemMessage('');
+    setTotemError('');
+    try {
+      const { error } = await supabase.from('profiles').update({ totem: nextTotem }).eq('id', user.id);
+      if (error) {
+        setTotemError(error.message);
+        return;
+      }
+      await refreshProfile();
+      setTotemMessage('Totem updated.');
+    } finally {
+      setSavingTotem(false);
     }
   };
 
@@ -207,6 +231,43 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
             {savingProfile ? 'Saving…' : 'Save profile'}
           </button>
         </div>
+      </div>
+
+      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+        <h2 className="font-semibold text-gray-900 mb-1">Totem</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Pick the national team totem that represents you. Shown on your dashboard.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Totem">
+          {TOTEMS.map((t) => (
+            <button
+              key={t.name}
+              type="button"
+              role="radio"
+              aria-checked={totem === t.name}
+              disabled={savingTotem}
+              onClick={() => handleTotemSave(t.name)}
+              className={`flex items-center gap-3 text-left px-3.5 py-2.5 rounded-[10px] border transition ${
+                totem === t.name
+                  ? 'border-primary-400 bg-primary-50'
+                  : 'border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <span
+                className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl flex-shrink-0 ${t.bgClass}`}
+                aria-hidden="true"
+              >
+                {t.emoji}
+              </span>
+              <span>
+                <p className="text-sm font-medium text-gray-900">{t.name}</p>
+                <p className="text-2xs text-gray-500">{t.country}</p>
+              </span>
+            </button>
+          ))}
+        </div>
+        {totemMessage && <p className="text-sm text-primary-700 mt-3">{totemMessage}</p>}
+        {totemError && <p className="text-sm text-red-600 mt-3">{totemError}</p>}
       </div>
 
       <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">

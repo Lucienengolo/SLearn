@@ -1,10 +1,10 @@
-import { Clock, Users, Star, Bookmark } from 'lucide-react';
+import { Clock, Users, Star, Bookmark, CheckCircle } from 'lucide-react';
 import { Course } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
 
 type CourseCardProps = {
   course: Course & {
-    instructor?: { full_name: string };
+    instructor?: { full_name: string; verified?: boolean };
     category?: { name: string };
     enrollmentCount?: number;
     averageRating?: number;
@@ -85,8 +85,15 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
         </div>
         <div className="flex items-center justify-between pt-3 border-t border-canvas-150">
           {course.instructor && (
-            <p className="text-sm text-gray-500 truncate">
-              {course.instructor.full_name}
+            <p className="text-sm text-gray-500 truncate flex items-center gap-1">
+              <span className="truncate">{course.instructor.full_name}</span>
+              {course.instructor.verified && (
+                <CheckCircle
+                  size={13}
+                  className="text-green-600 flex-shrink-0"
+                  aria-label="Verified instructor"
+                />
+              )}
             </p>
           )}
           {course.price > 0 ? (

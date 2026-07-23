@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
   // check -- a parent cannot trigger matching for someone else's request.
   const { data: tutorRequest, error: requestError } = await caller
     .from('tutor_requests')
-    .select('id, category_id, neighborhood, preferred_language, status')
+    .select('id, category_id, grade, neighborhood, preferred_language, status')
     .eq('id', body.requestId)
     .maybeSingle();
 
@@ -184,6 +184,20 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) {
       return json({ error: `Matched but failed to update request status: ${updateError.message}` }, 500);
+    }
+
+    // Real gap found in review: a successful match previously notified
+    // nobody -- the tutor had no way to know they'd been matched short of
+    // manually checking the Matches tab. A match is the actual product
+    // event here, not the zero-match fallback; this is not optional.
+    const { error: tutorNotifyError } = await admin.from('notifications').insert({
+      user_id: outcome.result.tutor_id,
+      title: 'Nouvelle demande de tutorat',
+      body: `Vous avez été mis en relation pour un cours de ${tutorRequest.grade} à ${tutorRequest.neighborhood}. Répondez sous 48h.`,
+      link: `tutor-matches`,
+    });
+    if (tutorNotifyError) {
+      console.error('Failed to notify tutor of new match:', tutorNotifyError.message);
     }
 
     return json({ matched: true, matchId: outcome.result.id, tutorId: outcome.result.tutor_id });

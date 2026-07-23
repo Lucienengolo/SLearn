@@ -94,14 +94,27 @@ export default function IdentityCapture({
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
       streamRef.current = stream;
       setCameraOpen(true);
-      // Wait for the <video> element to mount before attaching the stream.
-      requestAnimationFrame(() => {
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      });
     } catch {
       setCameraError('Could not access your camera. Check your browser permissions and try again.');
     }
   };
+
+  // The <video> element only exists in the DOM once cameraOpen is true (it's
+  // conditionally rendered below) -- a single requestAnimationFrame after
+  // setCameraOpen(true) was a race against React's own commit timing, not a
+  // guarantee, and silently no-op'd whenever the ref wasn't attached yet by
+  // then (permission granted, stream acquired, but nothing ever displayed --
+  // exactly the reported bug). useEffect is the actual guarantee: React only
+  // runs it after the DOM has committed the video element.
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {
+        // Autoplay can be interrupted (e.g. a fast cancel click) -- not a
+        // real failure, nothing to surface to the user for that.
+      });
+    }
+  }, [cameraOpen]);
 
   const closeCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());

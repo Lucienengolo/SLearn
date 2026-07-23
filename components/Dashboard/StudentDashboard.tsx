@@ -3,8 +3,13 @@ import { BookOpen, CheckCircle, Clock, Zap, GraduationCap, Award } from 'lucide-
 import { supabase, Enrollment, Course, Certificate, CourseStats, StudentCourseProgress } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCourseCover } from '../../lib/courseCovers';
+import { fetchStudentProgress, StudentProgress } from '../../lib/gamification';
+import StreakXPCard from './StreakXPCard';
+import DashboardSidebar from './DashboardSidebar';
+import { totemByName } from '../../lib/totems';
 
 type StudentDashboardProps = {
+  onNavigate: (page: string) => void;
   onCourseSelect: (courseId: string) => void;
   onCertificateView: () => void;
   onBecomeInstructor: () => void;
@@ -23,7 +28,12 @@ type CertificateWithCourse = Certificate & { course: { title: string } };
 
 type Filter = 'in_progress' | 'completed' | 'all';
 
-export default function StudentDashboard({ onCourseSelect, onCertificateView, onBecomeInstructor }: StudentDashboardProps) {
+export default function StudentDashboard({
+  onNavigate,
+  onCourseSelect,
+  onCertificateView,
+  onBecomeInstructor,
+}: StudentDashboardProps) {
   const { user, profile } = useAuth();
   const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([]);
   const [certificates, setCertificates] = useState<CertificateWithCourse[]>([]);
@@ -35,9 +45,21 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
   });
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState<StudentProgress | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    fetchStudentProgress(user.id).then((result) => {
+      if (!cancelled) setProgress(result);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const fetchDashboardData = async () => {
@@ -119,6 +141,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
   }
 
   const resumeCourse = enrollments.find((e) => !e.completed_at && e.totalLessons > 0);
+  const totem = totemByName(profile?.totem);
   const visibleEnrollments = enrollments.filter((e) => {
     if (filter === 'in_progress') return !e.completed_at;
     if (filter === 'completed') return !!e.completed_at;
@@ -133,7 +156,9 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
   ];
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-10">
+    <div className="max-w-[1200px] mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
+      <DashboardSidebar current="dashboard" onNavigate={onNavigate} />
+      <div>
       {/* Greeting + resume */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mb-7 items-stretch">
         <div>
@@ -155,6 +180,19 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
               ? 'Pick up where you left off and keep the momentum going.'
               : 'Browse the catalog to start your first course.'}
           </p>
+          {totem && (
+            <div className="flex items-center gap-2 mt-2">
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-base flex-shrink-0 ${totem.bgClass}`}
+                aria-hidden="true"
+              >
+                {totem.emoji}
+              </span>
+              <p className="text-sm text-gray-500">
+                Learning as the <span className="font-semibold text-gray-700">{totem.name}</span>
+              </p>
+            </div>
+          )}
         </div>
 
         {resumeCourse && (
@@ -181,6 +219,14 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
           </div>
         )}
       </div>
+
+      {/* Streak + XP -- DESIGN.md Patterns (2026-07-23), derived from real
+          lesson/quiz completion data, not a stored counter */}
+      {progress && (
+        <div className="mb-6">
+          <StreakXPCard progress={progress} />
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -300,6 +346,7 @@ export default function StudentDashboard({ onCourseSelect, onCertificateView, on
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

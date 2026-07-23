@@ -3,6 +3,7 @@ import { CheckCircle, Upload } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { trackEvent } from '../../../lib/analytics';
 import { supabase, Category, InstructorApplication, InstructorCredential } from '../../../lib/supabase';
+import { isValidWhatsappContact } from '../../../lib/tutorRequests';
 import {
   ApplicationDraft,
   fetchCredentials,
@@ -16,6 +17,7 @@ import IdentityCapture from './IdentityCapture';
 const STEPS = [
   'Profile & qualifications',
   'Experience',
+  'Tutoring (optional)',
   'Course proposal',
   'Credentials & identity',
   'Interview scheduling',
@@ -47,6 +49,14 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     proposed_course_title: initialApplication?.proposed_course_title ?? '',
     proposed_course_description: initialApplication?.proposed_course_description ?? '',
     proposed_course_category_id: initialApplication?.proposed_course_category_id ?? null,
+    offers_tutoring: initialApplication?.offers_tutoring ?? false,
+    tutoring_category_ids: initialApplication?.tutoring_category_ids ?? [],
+    tutoring_neighborhood: initialApplication?.tutoring_neighborhood ?? '',
+    tutoring_teaching_mode: initialApplication?.tutoring_teaching_mode ?? 'both',
+    tutoring_languages: initialApplication?.tutoring_languages ?? ['fr'],
+    tutoring_rate_per_session: initialApplication?.tutoring_rate_per_session ?? undefined,
+    tutoring_response_time_minutes: initialApplication?.tutoring_response_time_minutes ?? undefined,
+    tutoring_whatsapp: initialApplication?.tutoring_whatsapp ?? '',
   });
 
   useEffect(() => {
@@ -114,6 +124,24 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     if (!hasSelfie) {
       setError('A live selfie is required before you can submit.');
       return;
+    }
+    if (form.offers_tutoring) {
+      if (!form.tutoring_category_ids || form.tutoring_category_ids.length === 0) {
+        setError('Select at least one subject to tutor, or turn off tutoring above.');
+        return;
+      }
+      if (!form.tutoring_neighborhood?.trim()) {
+        setError('Add your neighborhood for tutoring, or turn off tutoring above.');
+        return;
+      }
+      if (!form.tutoring_rate_per_session || form.tutoring_rate_per_session <= 0) {
+        setError('Add your per-session tutoring rate, or turn off tutoring above.');
+        return;
+      }
+      if (!form.tutoring_whatsapp || !isValidWhatsappContact(form.tutoring_whatsapp)) {
+        setError('Add a valid WhatsApp number for tutoring (+237 6XX XXX XXX), or turn off tutoring above.');
+        return;
+      }
     }
     setSaving(true);
     setError('');
@@ -231,6 +259,151 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
         {step === 2 && (
           <>
+            <div className="bg-primary-50 border border-primary-100 rounded-[10px] p-3.5 text-sm text-gray-700">
+              This section is used only for matching you with parents looking for a private
+              tutor for their child — it's completely optional and separate from your course.
+              If you turn it on, please fill it in accurately: incomplete or incorrect
+              information here means missed tutoring opportunities, since parents are matched
+              automatically from what you enter.
+            </div>
+
+            <label className="flex items-center gap-2.5 text-sm font-medium text-gray-800">
+              <input
+                type="checkbox"
+                checked={form.offers_tutoring ?? false}
+                onChange={(e) => setForm({ ...form, offers_tutoring: e.target.checked })}
+                className="w-4 h-4"
+              />
+              I also want to be matched with parents for 1-on-1 tutoring
+            </label>
+
+            {form.offers_tutoring && (
+              <>
+                <Field label="Subjects you can tutor">
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.map((c) => {
+                      const selected = (form.tutoring_category_ids ?? []).includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setForm((prev) => {
+                              const current = prev.tutoring_category_ids ?? [];
+                              return {
+                                ...prev,
+                                tutoring_category_ids: selected
+                                  ? current.filter((id) => id !== c.id)
+                                  : [...current, c.id],
+                              };
+                            })
+                          }
+                          className={`text-[13px] px-3 py-1.5 rounded-full border transition ${
+                            selected ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+                <Field label="Neighborhood (for in-person tutoring)">
+                  <input
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                    value={form.tutoring_neighborhood ?? ''}
+                    onChange={(e) => setForm({ ...form, tutoring_neighborhood: e.target.value })}
+                    placeholder="e.g. Bonamoussadi"
+                  />
+                </Field>
+                <Field label="Teaching mode">
+                  <select
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                    value={form.tutoring_teaching_mode ?? 'both'}
+                    onChange={(e) =>
+                      setForm({ ...form, tutoring_teaching_mode: e.target.value as 'online' | 'in_person' | 'both' })
+                    }
+                  >
+                    <option value="both">Online and in-person</option>
+                    <option value="online">Online only</option>
+                    <option value="in_person">In-person only</option>
+                  </select>
+                </Field>
+                <Field label="Languages you can tutor in">
+                  <div className="flex gap-1.5">
+                    {(['fr', 'en'] as const).map((lang) => {
+                      const selected = (form.tutoring_languages ?? []).includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          aria-pressed={selected}
+                          aria-label={`Language: ${lang === 'fr' ? 'French' : 'English'}`}
+                          onClick={() =>
+                            setForm((prev) => {
+                              const current = prev.tutoring_languages ?? [];
+                              return {
+                                ...prev,
+                                tutoring_languages: selected
+                                  ? (current.filter((l) => l !== lang) as ('fr' | 'en')[])
+                                  : ([...current, lang] as ('fr' | 'en')[]),
+                              };
+                            })
+                          }
+                          className={`text-[13px] px-3 py-1.5 rounded-full border transition ${
+                            selected ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          {lang === 'fr' ? 'French' : 'English'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+                <Field label="Rate per tutoring session (FCFA)">
+                  <input
+                    type="number"
+                    min={0}
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                    value={form.tutoring_rate_per_session ?? ''}
+                    onChange={(e) => setForm({ ...form, tutoring_rate_per_session: Number(e.target.value) })}
+                    placeholder="8000"
+                  />
+                </Field>
+                <Field label="Usual response time">
+                  <select
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                    value={form.tutoring_response_time_minutes ?? ''}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        tutoring_response_time_minutes: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                  >
+                    <option value="">Not specified</option>
+                    <option value={60}>Under 1 hour</option>
+                    <option value={240}>1 to 4 hours</option>
+                    <option value={1440}>More than 4 hours</option>
+                  </select>
+                </Field>
+                <Field label="WhatsApp number for tutoring">
+                  <input
+                    type="tel"
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                    value={form.tutoring_whatsapp ?? ''}
+                    onChange={(e) => setForm({ ...form, tutoring_whatsapp: e.target.value })}
+                    placeholder="+237 6XX XXX XXX"
+                  />
+                </Field>
+              </>
+            )}
+          </>
+        )}
+
+        {step === 3 && (
+          <>
             <Field label="Proposed course title">
               <input
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
@@ -263,7 +436,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
           </>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
               Verify your identity with a document and a live selfie (both required), plus any
@@ -321,7 +494,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
           </div>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <div className="space-y-3">
             {(() => {
               const calLink = getCalBookingLink(form.full_name ?? '', user?.email ?? '');

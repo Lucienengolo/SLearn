@@ -1,5 +1,184 @@
 # TODOS
 
+## Founder Review Feedback (2026-07-22) — Priority List
+
+10 items from a full review of the session's work. Ordered by actual severity/dependency,
+not the order raised. P0 = broken right now, fix before anything else. P1 = real corrections
+to what was just built. P2 = genuine new initiatives, each needs its own scoping pass before
+code. P3 = explicitly "let's talk first," not a build item.
+
+### P0 — Broken right now
+
+- [x] **Tutor never notified of a new match.** Fixed in code
+  (`match-tutor-request/index.ts`): a successful match previously notified nobody — only
+  the zero-match staff-alert path inserted a notification. Added a notification insert to
+  the tutor on every successful assignment. **Not live yet** — see the deploy blocker below.
+- [x] **Live selfie camera capture silently does nothing.** Real bug, not a permissions
+  issue: `IdentityCapture.tsx`'s `openCamera()` set `cameraOpen=true` then used a single
+  `requestAnimationFrame` to attach the stream to the `<video>` ref — but that element only
+  exists in the DOM once `cameraOpen` is true, and a RAF firing before vs. after React's own
+  commit isn't guaranteed. Permission would show as granted, stream acquired, and then
+  nothing displays. Fixed with `useEffect(() => {...}, [cameraOpen])`, which React
+  guarantees runs after the DOM commits — no more race.
+- [ ] **P0 — Edge functions were never deployed to the live project.** `supabase db push`
+  (this session) only pushed the 4 SQL migrations — `match-tutor-request`,
+  `create-tutor-deposit-checkout`, `cancel-tutor-booking`, and the modified
+  `stripe-webhook` were never deployed (confirmed: the new function 404s live, an existing
+  one 400s). Deploying functions needs a Management API credential (`supabase login` or a
+  `SUPABASE_ACCESS_TOKEN`), which is a different credential than the DB connection string
+  already used — nothing in this session has it. Until this deploys, the schema exists but
+  none of the actual matching/payment/notification logic runs. **Blocks the notification
+  fix above from taking effect, and blocks the entire tutor marketplace from working
+  end-to-end.**
+
+### P1 — Real corrections to what was just built
+
+- [x] **Tutor profile setup form should not duplicate V2 verification data.** Resolved
+  per founder's direction (not the compromise originally proposed): the genuinely-missing
+  fields (subjects to tutor, neighborhood, teaching mode, languages, rate, response time,
+  tutoring WhatsApp) are now collected as an optional "Tutoring" step directly inside
+  `ApplicationWizard.tsx` (V2's own form), with an explicit notice that this data drives
+  automated parent-matching and should be filled in accurately. `instructor-approval`
+  auto-populates `tutor_profile_fields`/`tutor_subjects` from this at approval time — no
+  second form gate. Verified end-to-end against real Postgres (seed → simulate approval →
+  confirm both tables populate correctly). `TutorProfileForm.tsx` (T11) is kept, but now
+  only as an edit-later tool or an opt-in path for an instructor who skipped this step.
+- [x] **Account type should not be a visible label for students; instructor status should
+  be a real trust signal.** `Header.tsx`'s raw `profile.role` badge (shown to the account
+  owner) is gone for students entirely; replaced with a "Verified instructor" badge shown
+  only when `role === 'instructor' && verified === true`. The *public*-facing version of
+  this signal (on course cards/instructor bylines, visible to other users) is still open —
+  noted below.
+- [x] **Public verified-instructor badge on course cards/byline.** `CourseCard.tsx` (used
+  by `HomePage.tsx` and `CourseList.tsx`) now shows a small checkmark next to a verified
+  instructor's name; `CourseDetail.tsx`'s instructor byline shows a "Verified" pill. Both
+  read `profiles.verified` via the existing `instructor:profiles!instructor_id(...)`
+  embedded query (already publicly readable, no RLS change needed) — just added `verified`
+  to the select list in 3 call sites. Verified with real seeded data (`Lucien Engolo`,
+  `verified: true` in the live DB) via direct REST query; a live screenshot wasn't possible
+  this pass due to this sandbox's persistent memory pressure (see note below), so this
+  relies on the passing component tests (`CourseCard.test.tsx`) plus reusing the exact
+  `bg-green-50 text-green-700` pattern already proven elsewhere in this codebase.
+- **Parent tutor-request form is too minimalist to capture what parents actually need.**
+  Current fields (subject, grade, neighborhood, budget, WhatsApp, child label) don't
+  capture specificity a parent might care about (learning goals, urgency, schedule
+  constraints, tutor preferences). Needs a real design pass on what fields actually matter
+  before adding them — not just padding the form.
+- **Bilingual toggle doesn't cover the whole platform.** Scoped deliberately to platform
+  chrome only for T9 (Header nav) — this was the stated scope at the time, not an oversight,
+  but the founder now wants full-platform coverage. Translating every string across V1's
+  existing pages (courses, lessons, dashboards, account settings) plus the tutor-marketplace
+  screens is a real, large undertaking — needs a scoped inventory of what to translate first
+  and in what order, not a blind pass.
+- [x] **Mobile responsive quality across the app is poor.** Audit done as a code-level
+  review (a live-screenshot pass wasn't possible this session — the browser tool
+  consistently failed to start under this sandbox's persistent memory ceiling, ~50-60Mi
+  free regardless of cleanup, most likely VS Code + extensions, not anything spawned by
+  this work). Systematically checked layout classes across `HomePage.tsx`, `CourseList.tsx`,
+  `CourseDetail.tsx`, `LessonViewer.tsx`, `InstructorDashboard.tsx`, `CourseStudents.tsx`,
+  `QuizViewer.tsx`, and every Tutors/ component + `ApplicationWizard.tsx` built this session.
+  **2 real, concrete bugs found and fixed, both introduced this session:**
+  1. `LessonViewer.tsx`'s header row grew to 3 text-bearing elements (back link + the new
+     low-bandwidth toggle + Kairos Mind toggle) with no `flex-wrap` — their combined width
+     exceeds a phone viewport. Fixed: added `flex-wrap` + `gap-y-2`.
+  2. `RequestForm.tsx`'s budget min/max inputs were `w-full` siblings in a flex row with no
+     `min-w-0` — number inputs have a browser-default intrinsic minimum width that flexbox
+     respects unless overridden, so the pair would refuse to shrink and overflow. Fixed:
+     added `min-w-0` to both.
+  **Checked and judged low-risk, not fixed:** `InstructorDashboard.tsx`/`CourseStudents.tsx`'s
+  3-column stat grids (short numeric content in fixed grid cells, not the same overflow
+  class as the two bugs above). **Not yet audited:** Account Settings, Auth modal,
+  Certificates page, Kairos Mind panel, Review Queue, Course Editor/Quiz Builder (instructor
+  authoring tools) — this pass covered the highest-traffic pages plus everything built this
+  session, not the entire app exhaustively.
+
+### P2 — New initiatives (each needs its own scoping pass, not a direct build)
+
+- **Tutor course/lesson creation is still minimalist.** Overlaps directly with the
+  already-logged "Course & lesson restructuring" item below (Module → Lesson → Section
+  hierarchy, sync/async lesson types) — same initiative, not a new one. See that section.
+- [x] **Multi-audience nav + institutional landing pages** (Individual | School & University
+  | Business | Government). Founder shared Coursera/W3Schools reference screenshots
+  (2026-07-23); resolved via `/design-consultation` as "adopt the UX structure, re-skin
+  entirely in the existing ink-and-paper system" — see DESIGN.md's new "Patterns" section.
+  Deliberately scoped to NOT touch `profiles.role` or RLS: the 3 new tabs route to static
+  marketing/interest-capture pages (`InstitutionalLandingPage.tsx`, one component
+  parameterized by account type), not real new account types with auth/dashboards — that
+  remains its own initiative below, unchanged. Inquiries land in a new
+  `institutional_inquiries` table (`0035_institutional_inquiries.sql`, public insert +
+  reviewer-only select, verified against local Postgres including an RLS rejection test for
+  empty fields). `AudienceNav.tsx` added above `Header.tsx`'s main row. **Migration written,
+  verified locally — not yet deployed to the live Supabase project** (same deploy gap as the
+  P0 edge-functions item above; this one is just a SQL migration though, so it can go out
+  with the next `supabase db push` once a session has DB credentials).
+- **Real new account types (University, Business, Government profiles) with their own
+  auth/dashboards** — NOT what was just built above (that's marketing pages only). Still
+  needs its own `/office-hours` or `/spec` pass: `profiles.role` is a DB-enforced CHECK
+  constraint limited to `'student'`/`'instructor'` (`0003_single_role_enforcement.sql`),
+  and adding real account types touches that constraint, every RLS policy keyed on `role`,
+  and per-account-type dashboards. Only start this once there's real inquiry volume from the
+  pages above to justify it.
+- [x] **Gamification (streaks / XP / credits + personal tier)** — shipped as a
+  `StreakXPCard` on `StudentDashboard.tsx`, entirely derived from existing
+  `lesson_progress`/`quiz_attempts` rows (`lib/gamification.ts`), no new migration, no new
+  deploy dependency. Scoping calls made: 10 XP/completed lesson, 15 XP/distinct passed quiz
+  (deduped by quiz_id so retrying an already-passed quiz doesn't farm XP), streak = 
+  consecutive calendar days with a completion or quiz attempt (grace through end-of-day if
+  today has no activity yet), tier = Bronze/Silver/Gold by XP threshold. Deliberately NOT a
+  competitive leaderboard — comparing/ranking against other students needs a privacy
+  decision plus a cron-driven weekly reset (same shape of work as the tutor-matching cron
+  jobs); this is personal-only. Styled per DESIGN.md Patterns (square Oxblood ticks, plain
+  IBM Plex Mono XP number, typographic tier label). Applies to students only for now — the
+  same pattern would need separate tutor-facing metrics (sessions taught, not XP) if
+  extended to tutors later.
+- [x] **Pathfinder-style dashboard sidebar IA.** Founder confirmed to proceed. Shipped as
+  `DashboardSidebar.tsx`: Dashboard / My Requests / Certificates / Profile, wired into
+  `StudentDashboard.tsx` (220px sidebar + fluid main column, per DESIGN.md's Layout token).
+  Deliberately just shortcuts to the SAME existing top-level pages/routes (not a duplicated
+  IA) — no "My Progress" tab added, since `StudentDashboard` itself already IS the progress
+  view (stats + streak/XP + course list); a separate identical destination would be a dead
+  click, not a real feature.
+- [x] **Instructor "classroom" adaptation** (founder: "look at Slearn classroom.png and
+  adapt my instructor page"). Adapted `CourseStudents.tsx` (the actual per-course page that
+  maps to that reference, not the multi-course list): added an "Attention" panel (students
+  who haven't started + students inactive 14+ days, computed from real `lesson_progress`
+  timestamps, not a stored field), a "Class overall progress" bar chart (Not started / In
+  progress / Completed counts, reusing the same status buckets `statusBadge` already used),
+  and a "Needs attention"/"Last active" signal per student row. Styled in the page's existing
+  gray/primary token system, not ink-and-paper, to stay consistent within one already-cohesive
+  screen (same reasoning as the audience-nav vs. institutional-page token choice). Did NOT
+  add "Assign Products"/"Assign Goals" buttons from the reference — no backend concept of
+  "goals" exists; that's part of the already-deferred LMS/class-management initiative below,
+  not something to fake here.
+- [x] **Avatar identity system ("totems").** Founder request: avatars should reference
+  African national-team totem names (e.g. Indomitable Lions). First pass shipped text-only;
+  founder corrected — wanted an actual mascot, not plain text. Revised to an emoji-glyph
+  badge (colored circle + animal/symbol emoji, e.g. 🦁 for the 3 lion-nickname totems,
+  distinguished from each other by badge color) since no image-generation capability exists
+  in this environment and no real team crests/logos are used (trademarked assets) — 10 real,
+  public team nicknames (`lib/totems.ts`), a `profiles.totem` column with a matching CHECK
+  constraint (`0036_profile_totem.sql`, verified locally — not yet deployed, same gap as 0035
+  above), a mascot-badge picker in Account Settings, and the badge + totem name shown on the
+  student dashboard greeting. **Real bug caught while wiring this up:** `lib/totems.ts` holds
+  Tailwind class strings as plain data (not JSX), but `tailwind.config.js`'s `content` glob
+  only scanned `components/**/*.{ts,tsx}` — the badge colors would have compiled to nothing
+  in production. Fixed by adding `./lib/**/*.ts` to the glob.
+- **New marketing landing page** (what the platform does, reviews, testimonials, vision) —
+  distinct from the current course-marketplace-style `HomePage.tsx`, which would become a
+  secondary/authenticated-area page rather than the first thing a visitor sees. Real IA
+  decision (does `/` become the new landing page, with the current HomePage moving to
+  `/courses` or behind a "browse courses" CTA?) worth settling before building.
+
+### P3 — Discussion needed first, not a build item yet
+
+- **Regulatory & compliance.** Founder wants to discuss this, not receive an implementation.
+  Real candidate topics once that conversation happens: data protection (Cameroon/CEMAC
+  context), KYC/identity-verification legal obligations for the instructor pipeline,
+  holding parent deposits (payment services regulation), and the certificate-issuance trust
+  model in the deferred LMS initiative below.
+- **Optimization/performance setups.** Also explicitly a conversation, not a build item —
+  needs a target (what's actually slow, for whom, measured how) before any work is scoped.
+
 ## Deferred: Tutor-Marketplace MVP Design Debt (from `/plan-design-review`, 2026-07-21)
 
 - **P3 — Document a named component vocabulary in DESIGN.md.** Button variants

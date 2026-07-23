@@ -18,6 +18,7 @@ export type Profile = {
   is_reviewer: boolean;
   avatar_url: string | null;
   bio: string | null;
+  totem: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -195,6 +196,17 @@ export type InstructorApplication = {
   decision_notes: string | null;
   created_at: string;
   updated_at: string;
+  // Optional tutoring opt-in (0034_tutoring_opt_in_application_fields.sql)
+  // -- avoids a second post-approval form; instructor-approval populates
+  // tutor_profile_fields/tutor_subjects directly from these at approval time.
+  offers_tutoring: boolean;
+  tutoring_category_ids: string[];
+  tutoring_neighborhood: string | null;
+  tutoring_teaching_mode: 'online' | 'in_person' | 'both' | null;
+  tutoring_languages: ('fr' | 'en')[];
+  tutoring_rate_per_session: number | null;
+  tutoring_response_time_minutes: number | null;
+  tutoring_whatsapp: string | null;
 };
 
 export type InstructorCredentialType =
@@ -338,4 +350,17 @@ export type TutorSessionPayment = {
   refund_status: 'pending' | 'succeeded' | 'failed' | null;
   created_at: string;
   updated_at: string;
+};
+
+export type InstitutionalAccountType = 'school_university' | 'business' | 'government';
+
+export type InstitutionalInquiry = {
+  id: string;
+  account_type: InstitutionalAccountType;
+  organization_name: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string | null;
+  message: string | null;
+  created_at: string;
 };

@@ -59,7 +59,26 @@
 2. **Verification-as-typographic-stamp**, tied to real marking-guide verification (`paper_solutions.verification_status`), instead of a generic green-checkmark trust badge every fintech/ed-tech uses. Cost: more custom design work than grabbing a stock icon.
 3. **Deliberately minimal motion/decoration** even where competitors go image/animation-heavy. Cost: may feel "less flashy" on a fast connection or in a demo — the payoff is real on the actual target network conditions.
 
+## Patterns (added 2026-07-23)
+Founder shared reference screenshots (Coursera multi-audience nav, W3Schools gamification/Pathfinder dashboard, W3Schools Academy institutional pages). Decision: adopt the *structural/UX patterns* only — every pattern below is reskinned entirely into the existing ink-and-paper system. None of these introduce new colors, fonts, or motion beyond what's already defined above. See Deliberate Risks #1 and #3 — this addendum does not reverse either.
+
+### Multi-audience nav
+A thin utility row above the main header with exactly 4 tabs, mirroring the account-type tracks: **Individual | School & University | Business | Government**. "Individual" is the single tab covering the existing parent/student/tutor experience (no separate Parents/Tutors split) — matching how Coursera treats "For Individuals" as one track. Each tab routes to a positioning page for that account type. Style: Paper/Ink background, 11px IBM Plex Mono label caps, no color — the only accent is an Oxblood underline on the active tab. No pill buttons, no icons.
+
+### Gamification (streaks / XP / leagues)
+Keep the mechanic, drop the navy/purple/emoji treatment entirely. Streak = a row of small square ticks filled Oxblood (not fire icons). XP = a plain IBM Plex Mono number labeled "credits earned" (not a lightning-bolt stat card). League tier = a typographic label (Bronze/Silver/Gold as text), consistent with the existing verification-stamp motif. Motion stays inside the existing micro/short duration budget — no confetti, no animated counters.
+
+### Student dashboard IA
+Adopt the "continue where you left off" + progress-ring information architecture (left sidebar: Dashboard, My Progress, My Requests, Certificates, Profile) inside the existing 220px-sidebar dashboard grid — ink-and-paper cards, not dark tiles.
+
+### Institutional pages (School & University / Business / Government tiers)
+Adopt the value-props → pricing tiers → FAQ (incl. compliance) → analytics-preview page structure as the template for the 3 new account-type landing pages, built in the existing editorial/asymmetric marketing layout — not a dark corporate-SaaS treatment.
+
 ## Decisions Log
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-07-17 | Initial design system created | Created by /design-consultation based on office-hours product context, live-app research (s-learn-beta.vercel.app), and competitive research (Preply, Flutterwave, Coursera). Replaces the prior amber/gold + green ad-hoc palette with a restrained ink/paper/oxblood/verified-forest system tied to the V3 verification mechanics. |
+| 2026-07-23 | Added Patterns section (nav, gamification, dashboard IA, institutional pages) | Founder shared Coursera/W3Schools reference screenshots wanting that UI/UX adopted while keeping the ink-and-paper vision. Resolved as: adopt structure, re-skin entirely — no change to typography/color/motion tokens above. |
+| 2026-07-23 | Nav corrected to 4 tabs (Individual / School & University / Business / Government); shipped nav + institutional marketing pages + gamification card | Founder corrected the nav proposal to merge Parents/Tutors into one "Individual" tab. Institutional pages scoped as marketing/interest-capture only (no new account types/RLS). Gamification scoped as personal XP/streak/tier derived from existing lesson/quiz data, not a competitive leaderboard (that needs its own privacy + cron scoping pass). Dashboard sidebar IA deliberately deferred — would restructure existing working navigation, flagged for a design pass instead of a silent call. |
+| 2026-07-23 | Shipped dashboard sidebar IA, instructor classroom adaptation, avatar totem identity system | Founder confirmed the sidebar IA (scoped as shortcuts to existing pages, no duplicated IA, no fake "My Progress" tab). Instructor `CourseStudents.tsx` adapted to the shared "Slearn classroom.png" reference (attention panel + class-progress chart), styled in that page's existing old-token system for internal consistency, not ink-and-paper. Avatar mascots: African national-team nicknames (Cameroon's Indomitable Lions listed first). |
+| 2026-07-23 | Totem avatars corrected from text-only to an emoji mascot badge | Founder explicitly rejected the text-only totem treatment, wanted a real mascot. Revised to a colored circular badge + animal/symbol emoji per totem (lion/eagle/elephant/star/etc.), since no image-generation capability exists here and real team crests are trademarked — this is the closest honest approximation to an illustrated mascot available in this environment. Deliberately NOT extended to the streak-tick gamification pattern, which stays icon-free per its own earlier decision (a different surface, not reopened here). |
