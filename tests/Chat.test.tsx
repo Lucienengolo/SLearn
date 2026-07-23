@@ -30,6 +30,7 @@ const TUTOR_PROFILE: Profile = {
   is_reviewer: false,
   avatar_url: null,
   bio: null,
+  totem: null,
   created_at: '',
   updated_at: '',
 };

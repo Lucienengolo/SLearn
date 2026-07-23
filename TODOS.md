@@ -1,5 +1,32 @@
 # TODOS
 
+## CI red on main (2026-07-23) — fixed
+
+Founder reported 4 failing checks after this session's work landed on `main`: CI's
+"Lint, typecheck, build", "Accessibility (axe-core)", "Lighthouse budget", and the Vercel
+deploy. All 4 shared one root cause, confirmed by reading `vercel.json` and `.github/
+workflows/ci.yml`: every one of them runs `npm run build` (`tsc -b && vite build`), and
+that failed because `Profile.totem` was added as a *required* field but two pre-existing
+test mocks (`tests/Chat.test.tsx`, `tests/PaymentStatus.test.tsx`) never got a `totem` field
+added to them. Fixed by adding `totem: null` to both.
+
+**Process gap that let this ship:** throughout this session I verified type safety with a
+bare `npx tsc --noEmit`, which silently checked *zero files* (the root `tsconfig.json` has
+`"files": []` and is reference-only — without `-b` it doesn't follow references). The real
+check is `npm run typecheck` (`tsc -b --noEmit`), which follows into `tsconfig.app.json`
+(includes `tests/`) and would have caught this immediately. Going forward, use
+`npm run typecheck` and `npm run build`, not a bare `tsc` invocation.
+
+Also fixed while investigating: `AudienceNav.tsx`'s inactive-tab text
+(`text-warm-gray` on `bg-paper`) measures ~3.4:1 contrast by manual WCAG math — below the
+4.5:1 AA floor for 11px text, and this nav is present on every page the axe-core/Lighthouse
+jobs actually audit (Home, Courses list, Auth modal). Switched both states to `text-ink`,
+differentiated by weight + underline instead of color. **Could not run the real axe-core
+or Lighthouse audits locally to fully confirm** — this sandbox's headless Chromium hangs
+under its persistent memory ceiling (same constraint documented earlier for the `browse`
+tool and the mobile audit). Verified instead: `npm run typecheck`, `npm run lint`,
+`npm run build`, and the full test suite (138/138) all pass locally.
+
 ## Founder Review Feedback (2026-07-22) — Priority List
 
 10 items from a full review of the session's work. Ordered by actual severity/dependency,

@@ -34,10 +34,14 @@ export default function AudienceNav({ onNavigate, currentPage }: AudienceNavProp
                 key={tab.page}
                 onClick={() => onNavigate(tab.page)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`whitespace-nowrap text-[11px] font-plex-mono uppercase tracking-wide py-2 border-b-2 transition-colors ${
-                  isActive
-                    ? 'border-oxblood text-ink'
-                    : 'border-transparent text-warm-gray hover:text-ink'
+                // text-ink (not text-warm-gray) on both states: warm-gray on
+                // paper measures ~3.4:1 contrast, below WCAG AA's 4.5:1 floor
+                // for 11px text (caught via manual contrast math, axe-core's
+                // headless Chromium couldn't run in this sandbox -- see
+                // TODOS.md). Active/inactive distinguished by weight +
+                // underline, not by a borderline-contrast color alone.
+                className={`whitespace-nowrap text-[11px] font-plex-mono uppercase tracking-wide py-2 border-b-2 transition-colors text-ink ${
+                  isActive ? 'border-oxblood font-medium' : 'border-transparent font-normal hover:opacity-70'
                 }`}
               >
                 {t(tab.key)}
