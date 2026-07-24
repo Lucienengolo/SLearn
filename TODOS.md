@@ -1,5 +1,28 @@
 # TODOS
 
+## S@Learn Classroom — centralized learner management (2026-07-24)
+
+Founder wanted a SECOND, separate page alongside (not instead of) the per-course
+`CourseStudents.tsx` classroom: a centralized "S@Learn Classroom" aggregating learners
+across every course the instructor teaches, matching the Slearn classroom.png layout
+exactly again. Shipped as `SLearnClassroom.tsx`, reached via a new "S@Learn Classroom" tab
+in `InstructorDashboard.tsx` (alongside Courses/Tutor Matches — the tab-bar row was
+duplicated twice already, so extracted a small shared `TabNav` while adding the third).
+
+- **Data layer** (`lib/instructorLearners.ts`) — separated into pure, unit-tested functions
+  (`buildLearnerRows`, `computeCourseProgressBars`) plus an orchestrating fetch, unlike
+  `CourseStudents.tsx`'s inline logic — the multi-course aggregation (staleness/certificates
+  keyed per `student:course` pair, not globally per student, so one student in 2 courses
+  gets independent reads) was complex enough to be worth locking down with tests.
+- **Class Overall Progress chart** — one bar per course, ALL the same hue (not N distinct
+  categorical colors): a variable, potentially large course count would force a fixed
+  palette to cycle and repeat hues, which the dataviz non-negotiables forbid. Each bar is
+  already directly labeled by course title, so color-as-identity isn't needed anyway.
+- **Add Student** — reused by extending `AddStudentModal` to accept a course list instead
+  of a single id (task before this: `CourseStudents.tsx` passes its one course; this page
+  passes all of them, rendering a real `<select>` when there's more than one).
+- Colors: unchanged, same app palette as everywhere else this session.
+
 ## Classroom student-management page (2026-07-24)
 
 Founder: use `Slearn classroom.png` for real this time — exact layout, for student

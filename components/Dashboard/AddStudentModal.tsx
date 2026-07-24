@@ -1,18 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { enrollStudentByEmail } from '../../lib/instructorEnrollment';
 
+type CourseOption = { id: string; title: string };
+
 type AddStudentModalProps = {
   isOpen: boolean;
-  courseId: string;
+  courses: CourseOption[];
   onClose: () => void;
   onEnrolled: () => void;
 };
 
-export default function AddStudentModal({ isOpen, courseId, onClose, onEnrolled }: AddStudentModalProps) {
+// Accepts a course LIST, not a single id, so the same modal works from both
+// the per-course classroom page (CourseStudents.tsx, always 1 option) and
+// the centralized S@Learn Classroom page (many options -- 2026-07-24). A
+// single course renders as a static label; 2+ render a real dropdown.
+export default function AddStudentModal({ isOpen, courses, onClose, onEnrolled }: AddStudentModalProps) {
   const [email, setEmail] = useState('');
+  const [courseId, setCourseId] = useState(courses[0]?.id ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) setCourseId(courses[0]?.id ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -24,6 +36,7 @@ export default function AddStudentModal({ isOpen, courseId, onClose, onEnrolled 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!courseId) return;
     setSubmitting(true);
     setError('');
     try {
@@ -55,6 +68,25 @@ export default function AddStudentModal({ isOpen, courseId, onClose, onEnrolled 
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {courses.length > 1 && (
+            <div>
+              <label htmlFor="add-student-course" className="block text-sm font-medium text-gray-700 mb-1">
+                Course
+              </label>
+              <select
+                id="add-student-course"
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+              >
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="add-student-email" className="block text-sm font-medium text-gray-700 mb-1">
               Student email
@@ -71,7 +103,7 @@ export default function AddStudentModal({ isOpen, courseId, onClose, onEnrolled 
           {error && <div className="bg-red-50 text-red-600 p-3 rounded-[10px] text-sm">{error}</div>}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !courseId}
             className="w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
           >
             {submitting ? 'Adding…' : 'Add student'}

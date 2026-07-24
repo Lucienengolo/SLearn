@@ -5,12 +5,39 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import CourseEditor from './CourseEditor';
 import CourseStudents from './CourseStudents';
+import SLearnClassroom from './SLearnClassroom';
 import TutorMatches from '../Tutors/TutorMatches';
 import Chat from '../Tutors/Chat';
 import ConfirmDialog from '../UI/ConfirmDialog';
 
 type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number };
-type DashboardTab = 'courses' | 'tutor-matches';
+type DashboardTab = 'courses' | 'tutor-matches' | 'classroom';
+
+const TAB_LABELS: Record<DashboardTab, string> = {
+  courses: 'Courses',
+  'tutor-matches': 'Tutor Matches',
+  classroom: 'S@Learn Classroom',
+};
+
+function TabNav({ tab, onSelect }: { tab: DashboardTab; onSelect: (t: DashboardTab) => void }) {
+  return (
+    <div className="flex items-center gap-1 mb-6 border-b border-canvas-150">
+      {(Object.keys(TAB_LABELS) as DashboardTab[]).map((t) => (
+        <button
+          key={t}
+          onClick={() => onSelect(t)}
+          className={`text-md px-3 py-2.5 transition ${
+            tab === t
+              ? 'font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px'
+              : 'font-medium text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          {TAB_LABELS[t]}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function InstructorDashboard() {
   const { user } = useAuth();
@@ -124,23 +151,14 @@ export default function InstructorDashboard() {
     );
   }
 
+  if (tab === 'classroom') {
+    return <SLearnClassroom onBack={() => setTab('courses')} />;
+  }
+
   if (tab === 'tutor-matches' && user) {
     return (
       <div className="max-w-[1200px] mx-auto px-6 py-10">
-        <div className="flex items-center gap-1 mb-8 border-b border-canvas-150">
-          <button
-            onClick={() => setTab('courses')}
-            className="text-md px-3 py-2.5 font-medium text-gray-500 hover:text-gray-900 transition"
-          >
-            Courses
-          </button>
-          <button
-            onClick={() => setTab('tutor-matches')}
-            className="text-md px-3 py-2.5 font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px"
-          >
-            Tutor Matches
-          </button>
-        </div>
+        <TabNav tab={tab} onSelect={setTab} />
 
         {selectedMatchId ? (
           <div>
@@ -161,20 +179,7 @@ export default function InstructorDashboard() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10">
-      <div className="flex items-center gap-1 mb-6 border-b border-canvas-150">
-        <button
-          onClick={() => setTab('courses')}
-          className="text-md px-3 py-2.5 font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px"
-        >
-          Courses
-        </button>
-        <button
-          onClick={() => setTab('tutor-matches')}
-          className="text-md px-3 py-2.5 font-medium text-gray-500 hover:text-gray-900 transition"
-        >
-          Tutor Matches
-        </button>
-      </div>
+      <TabNav tab={tab} onSelect={setTab} />
 
       <div className="flex justify-between items-center mb-8 gap-4">
         <div>
