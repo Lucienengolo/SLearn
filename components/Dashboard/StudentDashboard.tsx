@@ -197,7 +197,7 @@ export default function StudentDashboard({
 
         {resumeCourse && (
           <div
-            className="rounded-[14px] overflow-hidden text-white p-5 flex flex-col justify-between cursor-pointer"
+            className="rounded-[14px] overflow-hidden text-white p-5 flex flex-col justify-between cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-[box-shadow,transform]"
             style={{ background: 'linear-gradient(135deg,#3C413A,#181B16)' }}
             onClick={() => onCourseSelect(resumeCourse.course_id)}
           >
@@ -210,7 +210,10 @@ export default function StudentDashboard({
             </div>
             <div className="mt-4">
               <div className="h-1.5 rounded-full bg-white/20 overflow-hidden mb-3">
-                <div className="h-full bg-primary-400" style={{ width: `${resumeCourse.progress_percentage}%` }} />
+                <div
+                  className="h-full bg-primary-400 transition-[width] duration-300 ease-out"
+                  style={{ width: `${resumeCourse.progress_percentage}%` }}
+                />
               </div>
               <button className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-10 rounded-[10px]">
                 Resume — {resumeCourse.progress_percentage}%
@@ -231,7 +234,10 @@ export default function StudentDashboard({
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {statTiles.map((tile) => (
-          <div key={tile.label} className="rounded-[14px] border border-canvas-150 p-5">
+          <div
+            key={tile.label}
+            className="rounded-[14px] border border-canvas-150 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform]"
+          >
             <span className={`w-10 h-10 rounded-[10px] flex items-center justify-center mb-3 ${tile.tint}`}>
               <tile.icon size={20} />
             </span>
@@ -243,7 +249,7 @@ export default function StudentDashboard({
 
       {/* Certificates -- gold, the design system's reward color */}
       {certificates.length > 0 && (
-        <div className="rounded-[14px] border border-primary-200 bg-primary-50 p-5 flex items-center gap-4 mb-8">
+        <div className="rounded-[14px] border border-primary-200 bg-primary-50 p-5 flex items-center gap-4 mb-8 shadow-sm">
           <span
             className="w-12 h-12 rounded-[10px] flex-shrink-0 flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg,#E2A52A,#A66E13)' }}
@@ -299,7 +305,7 @@ export default function StudentDashboard({
             return (
               <div
                 key={enrollment.id}
-                className="rounded-[14px] border border-canvas-150 p-4 flex gap-4 cursor-pointer hover:border-gray-300 transition"
+                className="rounded-[14px] border border-canvas-150 p-4 flex gap-4 cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300 transition-[box-shadow,transform,border-color]"
                 onClick={() => onCourseSelect(enrollment.course_id)}
               >
                 <div
@@ -334,7 +340,7 @@ export default function StudentDashboard({
                   <div className="flex items-center gap-2.5">
                     <div className="flex-1 h-[7px] rounded-full bg-canvas-150 overflow-hidden">
                       <div
-                        className={`h-full ${enrollment.progress_percentage === 100 ? 'bg-green-500' : 'bg-primary-500'}`}
+                        className={`h-full transition-[width] duration-300 ease-out ${enrollment.progress_percentage === 100 ? 'bg-green-500' : 'bg-primary-500'}`}
                         style={{ width: `${enrollment.progress_percentage}%` }}
                       />
                     </div>

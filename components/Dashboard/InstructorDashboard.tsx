@@ -197,7 +197,10 @@ export default function InstructorDashboard() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {courses.map((course) => (
-            <div key={course.id} className="rounded-[14px] border border-canvas-150 hover:border-gray-300 transition">
+            <div
+              key={course.id}
+              className="rounded-[14px] border border-canvas-150 shadow-sm hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 transition-[box-shadow,transform,border-color]"
+            >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">

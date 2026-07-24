@@ -200,28 +200,28 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 mb-6">
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-[10px] border border-canvas-150 p-4">
+              <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
                 <p className="font-display text-2xl text-gray-900">{rows.length}</p>
                 <p className="text-2xs text-gray-500">Enrolled</p>
               </div>
-              <div className="rounded-[10px] border border-canvas-150 p-4">
+              <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
                 <p className="font-display text-2xl text-green-700">{completedCount}</p>
                 <p className="text-2xs text-gray-500">Completed</p>
               </div>
-              <div className="rounded-[10px] border border-canvas-150 p-4">
+              <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
                 <p className="font-display text-2xl text-primary-700">{averageProgress}%</p>
                 <p className="text-2xs text-gray-500">Average progress</p>
               </div>
             </div>
 
-            <div className="rounded-[10px] border border-canvas-150 p-4">
+            <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
               <p className="text-2xs font-semibold text-gray-500 mb-3">Class overall progress</p>
               <div className="flex items-end justify-between gap-3 h-20">
                 {progressChartBuckets.map((bucket) => (
                   <div key={bucket.label} className="flex-1 flex flex-col items-center justify-end h-full">
                     <span className="text-2xs font-semibold text-gray-700 mb-1">{bucket.count}</span>
                     <div
-                      className={`w-full rounded-t-[4px] ${bucket.barClass}`}
+                      className={`w-full rounded-t-[4px] transition-[height] duration-300 ease-out ${bucket.barClass}`}
                       style={{ height: `${Math.max(4, (bucket.count / progressChartMax) * 100)}%` }}
                       role="img"
                       aria-label={`${bucket.label}: ${bucket.count} student${bucket.count === 1 ? '' : 's'}`}
@@ -262,12 +262,12 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
             </select>
           </div>
 
-          <div className="rounded-[14px] border border-canvas-150 divide-y divide-canvas-150">
+          <div className="rounded-[14px] border border-canvas-150 divide-y divide-canvas-150 shadow-sm">
             {filteredRows.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-10">No students match your search.</p>
             ) : (
               filteredRows.map((row) => (
-                <div key={row.enrollmentId} className="flex items-center gap-3.5 p-4">
+                <div key={row.enrollmentId} className="flex items-center gap-3.5 p-4 hover:bg-gray-50 transition-colors">
                   {row.avatarUrl ? (
                     <img src={row.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                   ) : (
@@ -295,7 +295,10 @@ export default function CourseStudents({ courseId, onBack }: CourseStudentsProps
                   </div>
                   <div className="w-28 flex-shrink-0 hidden sm:block">
                     <div className="h-1.5 rounded-full bg-canvas-150 overflow-hidden mb-1">
-                      <div className="h-full bg-primary-500" style={{ width: `${row.progressPercentage}%` }} />
+                      <div
+                        className="h-full bg-primary-500 transition-[width] duration-300 ease-out"
+                        style={{ width: `${row.progressPercentage}%` }}
+                      />
                     </div>
                     <p className="text-2xs text-gray-500 text-right">{row.progressPercentage}%</p>
                   </div>

@@ -10,11 +10,55 @@
 **"World-class, built for us."** Not a stripped-down African version of a Western product — genuinely polished and globally credible, with local specificity (FCFA pricing, French-first copy, real local exam systems, verified-tutor trust) coming through content, not decorative "African" visual motifs.
 
 ## Aesthetic Direction
+
+**Two registers, one product (added 2026-07-24):** founder feedback: the ink-and-paper
+system is "actually good" but "lacks some major modern aspect" — pointed at W3Schools'
+visual richness (color, card elevation, real icons/motion) as the missing quality, not its
+product model. Resolved as a deliberate split rather than a system-wide reversal:
+
+- **Editorial register** (booking/tutor-marketplace flow — `RequestForm`/`Chat`/
+  `MatchStatus`/`PaymentStatus`, plus the institutional marketing pages) stays exactly as
+  below: restrained, typographic, minimal motion. This is where "considered, credible, not
+  generic-SaaS" still does real trust work — a booking/payment flow and a first-impression
+  marketing page are the wrong place to add visual noise.
+- **Product register** (authenticated dashboards — `StudentDashboard`, `InstructorDashboard`,
+  `CourseStudents`, gamification surfaces) leans into the modern energy: real elevation
+  (soft shadows, not flat borders), icons for gamification (a real flame/trophy/lightning,
+  not typographic-only), and noticeable (not decorative) motion — hover lift, animated
+  progress fills. These pages already run on the older gold/DM-Sans token system, not
+  ink-and-paper, so this is additive richness on top of that system, not a new palette.
+  See "Product Register" below for the specifics.
+
+The rest of this Aesthetic Direction section (and the Color/Motion sections below)
+describes the **Editorial register** — unchanged since 2026-07-17.
+
 - **Direction:** Editorial/Magazine, restrained — "ink-and-paper" credibility. A well-made gradebook, not a generic SaaS dashboard.
 - **Decoration level:** Intentional — a verification-stamp motif used only where verification is real (tied directly to `paper_solutions.verification_status`), never as decoration. No stock photography, no gradient hero, no animation-heavy imagery.
 - **Mood:** Considered, credible, quietly confident. Trust comes from typographic craft and real verified data, not from decoration or media weight.
 - **Reference sites:** Preply (tutor-marketplace trust patterns — deliberately NOT adopting its stock-photo hero), Flutterwave (proof that African-built products can be genuinely global-caliber), Coursera (outcome-stat-as-trust-device, adapted to real verification data instead of generic testimonials).
 - **Eureka finding:** Every reference site assumes rich media/dense grids signal quality. For S@Learn's actual users (variable device/network), that weight is a tax on exactly the audience being served. Trust and "world-class" here come from restraint and real data, not from copying image/JS-heavy category patterns.
+
+### Product Register (authenticated dashboards — added 2026-07-24)
+- **Elevation:** `shadow-sm` resting / `shadow-md` on hover for cards (stat tiles, streak/XP
+  card, course cards, sidebar active state), `rounded-xl` (12px) minimum, up from flat
+  `border-canvas-150` with no shadow. This is the single biggest "flat vs. modern" gap versus
+  the W3Schools reference.
+- **Iconography:** real lucide-react icons for gamification — flame for streak, trophy for
+  league tier, zap for XP/credits — reversing the 2026-07-23 "typographic-only" streak-tick
+  decision now that the founder has clarified dashboards specifically should feel modern, not
+  restrained. Still no emoji, no 3D badge art (matches the totem-mascot decision: real icons
+  are fine, cartoon/emoji-heavy decoration is not).
+- **Motion:** hover lift (`translate-y` + shadow increase) on interactive cards, animated
+  progress-bar fill (`transition-[width]`) instead of a static bar, both within a slightly
+  wider budget than the Editorial register's micro/short — up to ~300ms, still no
+  scroll-driven or entrance-sequence choreography. Respects the same low-bandwidth
+  constraint as the rest of the app: CSS transitions only, nothing that ships JS animation
+  libraries or blocks on a network request.
+- **Color:** reuses the existing gold/DM-Sans dashboard palette (`primary-*`, `green-*`) more
+  confidently/liberally rather than introducing new hex values — e.g. `primary-500` becomes
+  the default filled progress/active-state color throughout, not just on a couple of
+  buttons. Verified Forest (`#1F5C4E`) stays reserved for the Editorial register's
+  verification-stamp motif and is NOT reused here, so that motif keeps its scarcity/meaning.
 
 ## Typography
 - **Display/Hero:** Fraunces — warm, editorial serif with italic optical-size emphasis. Deliberately not another Playfair/generic-serif; carries the "considered, not corporate" feeling.
@@ -82,3 +126,4 @@ Adopt the value-props → pricing tiers → FAQ (incl. compliance) → analytics
 | 2026-07-23 | Nav corrected to 4 tabs (Individual / School & University / Business / Government); shipped nav + institutional marketing pages + gamification card | Founder corrected the nav proposal to merge Parents/Tutors into one "Individual" tab. Institutional pages scoped as marketing/interest-capture only (no new account types/RLS). Gamification scoped as personal XP/streak/tier derived from existing lesson/quiz data, not a competitive leaderboard (that needs its own privacy + cron scoping pass). Dashboard sidebar IA deliberately deferred — would restructure existing working navigation, flagged for a design pass instead of a silent call. |
 | 2026-07-23 | Shipped dashboard sidebar IA, instructor classroom adaptation, avatar totem identity system | Founder confirmed the sidebar IA (scoped as shortcuts to existing pages, no duplicated IA, no fake "My Progress" tab). Instructor `CourseStudents.tsx` adapted to the shared "Slearn classroom.png" reference (attention panel + class-progress chart), styled in that page's existing old-token system for internal consistency, not ink-and-paper. Avatar mascots: African national-team nicknames (Cameroon's Indomitable Lions listed first). |
 | 2026-07-23 | Totem avatars corrected from text-only to an emoji mascot badge | Founder explicitly rejected the text-only totem treatment, wanted a real mascot. Revised to a colored circular badge + animal/symbol emoji per totem (lion/eagle/elephant/star/etc.), since no image-generation capability exists here and real team crests are trademarked — this is the closest honest approximation to an illustrated mascot available in this environment. Deliberately NOT extended to the streak-tick gamification pattern, which stays icon-free per its own earlier decision (a different surface, not reopened here). |
+| 2026-07-24 | Split into Editorial + Product registers; Product register gets elevation/icons/motion | Founder: current system is "good" but "lacks some major modern aspect," pointing at W3Schools' visual richness specifically (not its product model). Chose the hybrid scope (of 3 options presented): authenticated dashboards/gamification lean into modern elevation, real icons, and noticeable motion; booking flow + institutional marketing pages stay restrained/editorial, since that's where the "considered, credible" identity still does trust work. This explicitly reverses the 2026-07-23 "typographic-only, no icons" streak/XP decision for the Product register only — Editorial-register pages are unaffected. |

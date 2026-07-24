@@ -4,30 +4,25 @@ import StreakXPCard from '../components/Dashboard/StreakXPCard';
 import type { StudentProgress } from '../lib/gamification';
 
 describe('StreakXPCard', () => {
-  it('renders XP, streak day count, and tier as plain text (no icons/emoji)', () => {
+  it('renders streak days, XP, and tier with real icons (Product register, DESIGN.md 2026-07-24)', () => {
     const progress: StudentProgress = { xp: 120, streakDays: 4, tier: 'Silver' };
-    render(<StreakXPCard progress={progress} />);
-
-    expect(screen.getByText('120')).toBeInTheDocument();
-    expect(screen.getByText('4 days')).toBeInTheDocument();
-    expect(screen.getByText('Silver')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: '4 day streak' })).toBeInTheDocument();
-  });
-
-  it('caps the visible streak ticks at 7 even for a longer streak', () => {
-    const progress: StudentProgress = { xp: 400, streakDays: 12, tier: 'Gold' };
     const { container } = render(<StreakXPCard progress={progress} />);
 
-    const ticks = container.querySelectorAll('span.w-3\\.5.h-3\\.5');
-    expect(ticks).toHaveLength(7);
-    const filled = container.querySelectorAll('span.w-3\\.5.h-3\\.5.bg-oxblood');
-    expect(filled).toHaveLength(7);
-    expect(screen.getByText('12 days')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('120')).toBeInTheDocument();
+    expect(screen.getByText('Silver')).toBeInTheDocument();
+    expect(container.querySelector('svg.lucide-flame')).toBeInTheDocument();
+    expect(container.querySelector('svg.lucide-zap')).toBeInTheDocument();
+    expect(container.querySelector('svg.lucide-trophy')).toBeInTheDocument();
   });
 
-  it('uses singular "day" for a 1-day streak', () => {
-    const progress: StudentProgress = { xp: 10, streakDays: 1, tier: 'Bronze' };
-    render(<StreakXPCard progress={progress} />);
-    expect(screen.getByText('1 day')).toBeInTheDocument();
+  it('renders a distinct tint per tier', () => {
+    const { container: bronze } = render(
+      <StreakXPCard progress={{ xp: 10, streakDays: 1, tier: 'Bronze' }} />
+    );
+    const { container: gold } = render(<StreakXPCard progress={{ xp: 400, streakDays: 12, tier: 'Gold' }} />);
+
+    expect(bronze.querySelector('.bg-orange-50.text-orange-700')).toBeInTheDocument();
+    expect(gold.querySelector('.bg-primary-50.text-primary-700')).toBeInTheDocument();
   });
 });
