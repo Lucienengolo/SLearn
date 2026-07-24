@@ -209,7 +209,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
             aria-label="Search courses"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 h-12 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+            className="w-full pl-11 pr-4 h-12 border border-gray-200 rounded-[10px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
           />
         </div>
 
@@ -217,7 +217,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition ${
+              className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] ${
                 selectedCategory === 'all'
                   ? 'border-primary-200 bg-primary-50 text-primary-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
@@ -232,7 +232,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition whitespace-nowrap ${
+                  className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] whitespace-nowrap ${
                     active
                       ? 'border-primary-200 bg-primary-50 text-primary-700'
                       : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
@@ -250,7 +250,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
               <button
                 onClick={() => setSavedOnly((v) => !v)}
                 aria-pressed={savedOnly}
-                className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium transition whitespace-nowrap ${
+                className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] whitespace-nowrap ${
                   savedOnly
                     ? 'border-primary-200 bg-primary-50 text-primary-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
@@ -307,7 +307,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition font-medium h-11 px-6 rounded-[10px] disabled:opacity-50"
+                className="bg-white border border-gray-200 text-gray-700 shadow-sm hover:shadow-md hover:bg-gray-50 transition-[box-shadow,background-color] font-medium h-11 px-6 rounded-[10px] disabled:opacity-50"
               >
                 {loadingMore ? 'Loading…' : `Load more (${totalCount - courses.length} remaining)`}
               </button>

@@ -11,8 +11,8 @@ type DashboardSidebarProps = {
 };
 
 // Pathfinder-style dashboard IA (DESIGN.md Patterns, 2026-07-23; Product
-// Register "pushed further" pass, 2026-07-24). Green is the active/hover
-// accent here to match the reference's actual sidebar look, and a small
+// Register pass, 2026-07-24). Founder: "keep my colors" -- active/hover
+// accent stays the app's own primary-gold, not a new green accent. A small
 // profile header (totem + name + tier pill) sits above the nav items,
 // mirroring Pathfinder's avatar+name+"Free" card -- still a shortcut nav to
 // pages that already exist, not a parallel IA.
@@ -36,7 +36,7 @@ export default function DashboardSidebar({ current, onNavigate, fullName, totem,
           <div className="min-w-0">
             <p className="font-medium text-sm text-gray-900 truncate">{fullName ?? 'Student'}</p>
             {tier && (
-              <span className="inline-block text-2xs font-semibold px-1.5 py-0.5 rounded bg-green-50 text-green-700 mt-0.5">
+              <span className="inline-block text-2xs font-semibold px-1.5 py-0.5 rounded bg-primary-50 text-primary-700 mt-0.5">
                 {tier}
               </span>
             )}
@@ -53,7 +53,7 @@ export default function DashboardSidebar({ current, onNavigate, fullName, totem,
               onClick={() => onNavigate(page)}
               aria-current={isActive ? 'page' : undefined}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-sm font-medium whitespace-nowrap transition ${
-                isActive ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               <Icon size={17} />

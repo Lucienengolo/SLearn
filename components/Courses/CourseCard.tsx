@@ -21,7 +21,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
   return (
     <div
       onClick={onClick}
-      className="relative rounded-[14px] border border-canvas-150 overflow-hidden hover:border-gray-300 hover:shadow-md transition cursor-pointer bg-white"
+      className="relative rounded-[14px] border border-canvas-150 overflow-hidden shadow-sm hover:border-gray-300 hover:shadow-lg hover:-translate-y-1 transition-[box-shadow,transform,border-color] cursor-pointer bg-white"
     >
       <div className="h-44 flex items-center justify-center" style={{ background: cover.gradient }}>
         {course.thumbnail_url ? (

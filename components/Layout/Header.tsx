@@ -34,7 +34,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
   return (
     <>
       <AudienceNav onNavigate={onNavigate} currentPage={currentPage} />
-  <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-canvas-150">
+  <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-canvas-150 shadow-sm">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex justify-between items-center h-[66px]">
             <div
@@ -52,16 +52,16 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
             <nav className="hidden md:flex items-center gap-1">
               <button
                 onClick={() => onNavigate('home')}
-                className={`text-md px-3 py-2 rounded-[10px] transition ${
-                  currentPage === 'home' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                className={`text-md px-3 py-2 rounded-full transition ${
+                  currentPage === 'home' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 {t('nav.home')}
               </button>
               <button
                 onClick={() => onNavigate('courses')}
-                className={`text-md px-3 py-2 rounded-[10px] transition ${
-                  currentPage === 'courses' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                className={`text-md px-3 py-2 rounded-full transition ${
+                  currentPage === 'courses' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 {t('nav.courses')}
@@ -69,8 +69,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               {user && (
                 <button
                   onClick={() => onNavigate('dashboard')}
-                  className={`text-md px-3 py-2 rounded-[10px] transition ${
-                    currentPage === 'dashboard' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  className={`text-md px-3 py-2 rounded-full transition ${
+                    currentPage === 'dashboard' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   {t('nav.dashboard')}
@@ -79,9 +79,9 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               {user && profile?.role === 'student' && (
                 <button
                   onClick={() => onNavigate('my-requests')}
-                  className={`text-md px-3 py-2 rounded-[10px] transition ${
+                  className={`text-md px-3 py-2 rounded-full transition ${
                     currentPage === 'my-requests' || currentPage === 'tutor-request-new' || currentPage === 'tutor-request-detail'
-                      ? 'font-semibold text-gray-900'
+                      ? 'font-semibold text-gray-900 bg-primary-50'
                       : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
@@ -91,8 +91,8 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
               {profile?.is_reviewer && (
                 <button
                   onClick={() => onNavigate('review-queue')}
-                  className={`text-md px-3 py-2 rounded-[10px] transition ${
-                    currentPage === 'review-queue' ? 'font-semibold text-gray-900' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  className={`text-md px-3 py-2 rounded-full transition ${
+                    currentPage === 'review-queue' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   {t('nav.reviewQueue')}
@@ -156,7 +156,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   )}
                   <button
                     onClick={() => setAuthModalOpen(true)}
-                    className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400 transition"
+                    className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-full shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color]"
                   >
                     <User size={20} />
                     <span>{t('nav.signIn')}</span>

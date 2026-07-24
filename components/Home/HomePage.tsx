@@ -180,7 +180,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
         <div className="flex gap-2.5 flex-wrap">
           <button
             onClick={() => onNavigate('courses')}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100 transition"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium shadow-sm hover:shadow-md hover:bg-primary-100 transition-[box-shadow,background-color]"
           >
             All
           </button>
@@ -190,7 +190,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
               <button
                 key={category.id}
                 onClick={() => onFilterByCategory(category.id)}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-medium hover:border-primary-200 hover:text-gray-900 transition whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-medium shadow-sm hover:shadow-md hover:border-primary-200 hover:text-gray-900 transition-[box-shadow,border-color,color] whitespace-nowrap"
               >
                 <CategoryIcon size={16} />
                 {category.name}
@@ -239,7 +239,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
           distinct from the primary "Enroll"-style gold actions. */}
       <section className="max-w-[1200px] mx-auto px-6 pb-20">
         <div
-          className="rounded-[20px] overflow-hidden p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 items-center"
+          className="rounded-[20px] overflow-hidden p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 items-center shadow-lg hover:shadow-xl transition-shadow"
           style={{ background: 'linear-gradient(120deg,#0F5F3C,#157A4D)' }}
         >
           <div>
@@ -255,7 +255,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
           <div className="flex flex-col items-start gap-3">
             <button
               onClick={() => onNavigate(user ? 'become-instructor' : 'courses')}
-              className="bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold rounded-[10px] h-12 px-6"
+              className="bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold rounded-[10px] h-12 px-6"
             >
               Become an instructor
             </button>
@@ -276,7 +276,10 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
               { title: 'Earn certificates', body: 'Get recognized for your achievements' },
               { title: 'Expert instructors', body: 'Learn from industry professionals' },
             ].map((item) => (
-              <div key={item.title} className="bg-white rounded-[14px] border border-canvas-150 p-6 flex items-start gap-3">
+              <div
+                key={item.title}
+                className="bg-white rounded-[14px] border border-canvas-150 p-6 flex items-start gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform]"
+              >
                 <CheckCircle size={20} className="text-primary-700 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>

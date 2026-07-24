@@ -204,11 +204,11 @@ export default function StudentDashboard({
             <div className="mt-4">
               <div className="h-1.5 rounded-full bg-white/20 overflow-hidden mb-3">
                 <div
-                  className="h-full bg-green-500 transition-[width] duration-300 ease-out"
+                  className="h-full bg-primary-400 transition-[width] duration-300 ease-out"
                   style={{ width: `${resumeCourse.progress_percentage}%` }}
                 />
               </div>
-              <button className="w-full bg-green-500 text-white hover:bg-green-600 transition font-semibold h-10 rounded-[10px]">
+              <button className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-10 rounded-[10px]">
                 Resume — {resumeCourse.progress_percentage}%
               </button>
             </div>

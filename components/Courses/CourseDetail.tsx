@@ -246,7 +246,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
     <button
       onClick={handleEnroll}
       disabled={startingCheckout}
-      className={`${className} bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold disabled:opacity-60 disabled:cursor-not-allowed`}
+      className={`${className} bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm`}
     >
       {startingCheckout
         ? 'Redirecting to checkout…'
@@ -280,7 +280,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
           {/* MAIN */}
           <div className="min-w-0 space-y-7">
             <div
-              className="relative rounded-[14px] overflow-hidden h-[220px] sm:h-[260px] flex items-end p-6"
+              className="relative rounded-[14px] overflow-hidden h-[220px] sm:h-[260px] flex items-end p-6 shadow-md"
               style={{ background: cover.gradient }}
             >
               {course.thumbnail_url ? (
@@ -351,8 +351,8 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                     <div
                       key={lesson.id}
                       onClick={() => clickable && onStartLesson(lesson.id)}
-                      className={`flex items-center gap-3.5 p-3.5 rounded-[14px] border transition ${
-                        clickable ? 'cursor-pointer hover:border-gray-300' : 'cursor-not-allowed opacity-70'
+                      className={`flex items-center gap-3.5 p-3.5 rounded-[14px] border shadow-sm transition-[box-shadow,transform,border-color] ${
+                        clickable ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300' : 'cursor-not-allowed opacity-70'
                       } ${isCurrent ? 'border-primary-200 bg-primary-50' : 'border-canvas-150'}`}
                     >
                       <span
@@ -379,7 +379,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
             {/* Instructor */}
             {course.instructor && (
-              <div className="rounded-[14px] border border-canvas-150 p-6 flex gap-4 items-start">
+              <div className="rounded-[14px] border border-canvas-150 p-6 flex gap-4 items-start shadow-sm">
                 <span
                   className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold"
                   style={{ background: cover.gradient }}
@@ -428,7 +428,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 )}
                 <div className="space-y-3">
                   {reviews.slice(0, 5).map((review) => (
-                    <div key={review.id} className="rounded-[14px] border border-canvas-150 p-4">
+                    <div key={review.id} className="rounded-[14px] border border-canvas-150 p-4 shadow-sm">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="font-semibold text-gray-900">{review.student.full_name}</span>
                         <div className="flex items-center gap-0.5">
@@ -451,7 +451,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
           {/* ENROLL SIDEBAR (desktop) */}
           <div className="hidden lg:block sticky top-[90px]">
-            <div className="rounded-[14px] border border-canvas-150 shadow-md p-5">
+            <div className="rounded-[14px] border border-canvas-150 shadow-lg p-5">
               {checkoutNotice === 'success' && !isEnrolled && (
                 <div className="mb-4 text-sm text-primary-700 bg-primary-50 p-3 rounded-[10px]">
                   Payment received — activating your enrollment…
@@ -475,7 +475,10 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   </div>
                   {lessons.length > 0 && (
                     <div className="h-2 rounded-full bg-canvas-150 overflow-hidden">
-                      <div className="h-full bg-primary-500" style={{ width: `${progressPercentage}%` }} />
+                      <div
+                        className="h-full bg-primary-500 transition-[width] duration-300 ease-out"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
                     </div>
                   )}
                   {!user && (
@@ -490,7 +493,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                       </p>
                       <button
                         onClick={() => setShowFinalExam(true)}
-                        className="w-full flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-12 rounded-[10px]"
+                        className="w-full flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold h-12 rounded-[10px]"
                       >
                         <GraduationCap size={18} />
                         Take final exam
@@ -499,7 +502,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   ) : (
                     <button
                       onClick={() => firstAvailableLessonId && onStartLesson(firstAvailableLessonId)}
-                      className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-12 rounded-[10px]"
+                      className="w-full bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold h-12 rounded-[10px]"
                     >
                       Continue learning
                     </button>
