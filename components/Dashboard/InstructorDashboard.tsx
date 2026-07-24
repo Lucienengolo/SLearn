@@ -111,7 +111,17 @@ export default function InstructorDashboard() {
   }
 
   if (studentsCourseId) {
-    return <CourseStudents courseId={studentsCourseId} onBack={() => setStudentsCourseId(null)} />;
+    return (
+      <CourseStudents
+        courseId={studentsCourseId}
+        onBack={() => setStudentsCourseId(null)}
+        onEditCourse={() => {
+          setSelectedCourse(studentsCourseId);
+          setStudentsCourseId(null);
+          setShowEditor(true);
+        }}
+      />
+    );
   }
 
   if (tab === 'tutor-matches' && user) {

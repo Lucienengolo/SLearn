@@ -1,5 +1,39 @@
 # TODOS
 
+## Classroom student-management page (2026-07-24)
+
+Founder: use `Slearn classroom.png` for real this time — exact layout, for student
+management, added to the instructor dashboard, keeping S@Learn's own colors. Rebuilt
+`CourseStudents.tsx` (the page a course's "Students" button already opens) to match the
+reference precisely rather than just borrowing individual patterns from it as before:
+
+- **Icon rail** (left, matches the reference exactly) — 3 real, functional icons:
+  Dashboard (back), Classroom (current page, active state), Edit course (jumps straight
+  into `CourseEditor` — new `onEditCourse` prop threaded through `InstructorDashboard.tsx`).
+- **Information panel** — level, enrolled count, published date (all real `Course` fields;
+  the reference's date-range field doesn't exist in this schema, so it's honestly omitted
+  rather than faked).
+- **Attention panel** — kept from the 2026-07-23 pass, now always visible (shows a neutral
+  "nothing needs attention" message instead of disappearing, matching the reference's
+  layout more literally).
+- **2x2 stat tiles** — real numbers only, no fabricated "hours spent"/"challenges solved":
+  course length, students completed, quiz attempts (new query), certificates earned.
+- **Class Overall Progress chart** — kept from 2026-07-23, repositioned into the 3-column
+  layout.
+- **"Add Student" — built for real, not decorative.** The reference's button implied real
+  functionality; unlike "Assign Products/Goals" (omitted again — no such concept exists in
+  this product), manually enrolling a student is a genuine, buildable feature (real use
+  case: payment settled outside Stripe). Required a new RLS policy
+  (`0037_instructor_manual_enrollment.sql`) scoped to courses the instructor owns and
+  student-role profiles only — verified locally against 3 cases (own course succeeds,
+  someone else's course rejected, non-student profile rejected), including catching a real
+  test-setup gotcha along the way: a security trigger (`0007_rls_performance_and_security_
+  hardening.sql`) silently reverts `role`/`verified`/`is_reviewer` changes unless
+  `auth.role() = 'service_role'`, which the first test attempt didn't set. **Not yet
+  deployed** — same gap as migrations 0034-0036.
+- Colors: unchanged from the app's existing gold/green/gray palette throughout — no green
+  or other accent borrowed from W3Schools' actual branding.
+
 ## CI red on main (2026-07-23) — fixed
 
 Founder reported 4 failing checks after this session's work landed on `main`: CI's
