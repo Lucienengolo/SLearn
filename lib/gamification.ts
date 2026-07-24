@@ -16,10 +16,17 @@ export type StudentProgress = {
   xp: number;
   streakDays: number;
   tier: StudentProgressTier;
+  /** Last 7 calendar days, oldest first, ending today -- for the week-strip UI. */
+  last7Days: boolean[];
+  /** XP needed to reach the next tier, or null if already at the top tier (Gold). */
+  xpToNextTier: number | null;
+  /** 0-100 progress toward the next tier (relative to the current tier's own span). Always 100 at Gold. */
+  tierProgressPct: number;
 };
 
 const XP_PER_COMPLETED_LESSON = 10;
 const XP_PER_PASSED_QUIZ = 15;
+const TIER_THRESHOLDS: Record<StudentProgressTier, number> = { Bronze: 0, Silver: 100, Gold: 300 };
 
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -69,16 +76,63 @@ function computeStreakDays(
   return streak;
 }
 
+function activityDateSet(lessons: LessonCompletionRecord[], quizAttempts: QuizAttemptRecord[]): Set<string> {
+  const dates = new Set<string>();
+  for (const l of lessons) {
+    if (l.completed && l.completed_at) dates.add(toISODate(new Date(l.completed_at)));
+  }
+  for (const a of quizAttempts) {
+    dates.add(toISODate(new Date(a.attempted_at)));
+  }
+  return dates;
+}
+
+// Oldest-first, ending today -- renders left-to-right as Mon..Sun-style week
+// strip (Product Register, DESIGN.md 2026-07-24: matches the Pathfinder
+// reference's day-by-day streak row instead of a plain tick count).
+function computeLast7Days(
+  lessons: LessonCompletionRecord[],
+  quizAttempts: QuizAttemptRecord[],
+  now: Date = new Date()
+): boolean[] {
+  const dates = activityDateSet(lessons, quizAttempts);
+  const days: boolean[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const cursor = new Date(now);
+    cursor.setDate(cursor.getDate() - i);
+    days.push(dates.has(toISODate(cursor)));
+  }
+  return days;
+}
+
+function computeTierProgress(xp: number, tier: StudentProgressTier): { xpToNextTier: number | null; tierProgressPct: number } {
+  if (tier === 'Gold') return { xpToNextTier: null, tierProgressPct: 100 };
+  const currentFloor = TIER_THRESHOLDS[tier];
+  const nextTier: StudentProgressTier = tier === 'Bronze' ? 'Silver' : 'Gold';
+  const nextFloor = TIER_THRESHOLDS[nextTier];
+  const span = nextFloor - currentFloor;
+  const into = xp - currentFloor;
+  return {
+    xpToNextTier: nextFloor - xp,
+    tierProgressPct: Math.max(0, Math.min(100, Math.round((into / span) * 100))),
+  };
+}
+
 export function computeStudentProgress(
   lessons: LessonCompletionRecord[],
   quizAttempts: QuizAttemptRecord[],
   now: Date = new Date()
 ): StudentProgress {
   const xp = computeXp(lessons, quizAttempts);
+  const tier = tierForXp(xp);
+  const { xpToNextTier, tierProgressPct } = computeTierProgress(xp, tier);
   return {
     xp,
     streakDays: computeStreakDays(lessons, quizAttempts, now),
-    tier: tierForXp(xp),
+    tier,
+    last7Days: computeLast7Days(lessons, quizAttempts, now),
+    xpToNextTier,
+    tierProgressPct,
   };
 }
 

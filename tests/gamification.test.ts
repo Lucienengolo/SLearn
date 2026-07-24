@@ -14,7 +14,12 @@ describe('tierForXp', () => {
 describe('computeStudentProgress', () => {
   it('returns zero XP and zero streak with no activity', () => {
     const result = computeStudentProgress([], []);
-    expect(result).toEqual({ xp: 0, streakDays: 0, tier: 'Bronze' });
+    expect(result.xp).toBe(0);
+    expect(result.streakDays).toBe(0);
+    expect(result.tier).toBe('Bronze');
+    expect(result.last7Days).toEqual([false, false, false, false, false, false, false]);
+    expect(result.xpToNextTier).toBe(100);
+    expect(result.tierProgressPct).toBe(0);
   });
 
   it('awards 10 XP per completed lesson, ignoring incomplete ones', () => {
@@ -92,5 +97,41 @@ describe('computeStudentProgress', () => {
       now
     );
     expect(result.streakDays).toBe(1);
+  });
+
+  it('builds a 7-day week strip oldest-first, ending today', () => {
+    const now = new Date('2026-07-23T18:00:00Z');
+    const result = computeStudentProgress(
+      [
+        { completed: true, completed_at: '2026-07-21T10:00:00Z' }, // 2 days ago
+        { completed: true, completed_at: '2026-07-23T10:00:00Z' }, // today
+      ],
+      [],
+      now
+    );
+    // index 4 = 2 days ago (2026-07-21), index 6 = today (2026-07-23)
+    expect(result.last7Days).toEqual([false, false, false, false, true, false, true]);
+  });
+
+  it('reports XP-to-next-tier and progress percent within the current tier band', () => {
+    const bronze = computeStudentProgress(
+      [{ completed: true, completed_at: '2026-07-23T10:00:00Z' }, { completed: true, completed_at: '2026-07-22T10:00:00Z' }],
+      [],
+      new Date('2026-07-23T18:00:00Z')
+    ); // 20 XP
+    expect(bronze.xpToNextTier).toBe(80);
+    expect(bronze.tierProgressPct).toBe(20);
+
+    const gold = computeStudentProgress(
+      Array.from({ length: 40 }, (_, i) => ({
+        completed: true,
+        completed_at: `2026-07-${String((i % 20) + 1).padStart(2, '0')}T10:00:00Z`,
+      })),
+      [],
+      new Date('2026-07-23T18:00:00Z')
+    ); // 400 XP, well past the Gold floor
+    expect(gold.tier).toBe('Gold');
+    expect(gold.xpToNextTier).toBeNull();
+    expect(gold.tierProgressPct).toBe(100);
   });
 });

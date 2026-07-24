@@ -60,6 +60,22 @@ describes the **Editorial register** — unchanged since 2026-07-17.
   buttons. Verified Forest (`#1F5C4E`) stays reserved for the Editorial register's
   verification-stamp motif and is NOT reused here, so that motif keeps its scarcity/meaning.
 
+**Revision — "pushed further" pass (2026-07-24):** founder wanted closer visual fidelity to
+the actual Pathfinder reference screens, not just elevation/icons layered on the existing
+gold palette. Superseding the Color bullet above: **green (Tailwind `green-500`/`green-600`/
+`green-50`/`green-700`) is now the Product Register's primary/active accent** — sidebar
+active state, gamification card accents, resume-course progress fill and CTA — matching the
+reference's actual dominant color, not gold. Gold (`primary-*`) stays only where it's part of
+an already-correct 3-color semantic set that green would collide with (the Not-started/
+In-progress/Completed status badges and chart in `CourseStudents.tsx` — In-progress is gold,
+Completed is green; making both green would make two of three states visually
+indistinguishable, an accessibility regression, not an improvement). Also: `StreakXPCard`
+restructured from one unified card into 3 separate cards (Totem/Avatar · Streak with a 7-day
+flame strip · League with a progress-to-next-tier bar), mirroring the Pathfinder reference's
+actual 3-card row layout instead of a single icon-tile summary; `DashboardSidebar` gained a
+profile header (totem + name + tier pill) above the nav, mirroring the reference's
+avatar+name+tier card at the top of its sidebar.
+
 ## Typography
 - **Display/Hero:** Fraunces — warm, editorial serif with italic optical-size emphasis. Deliberately not another Playfair/generic-serif; carries the "considered, not corporate" feeling.
 - **Body:** General Sans — humanist grotesk, light-weight on low-end devices, clean French accent support.
@@ -127,3 +143,4 @@ Adopt the value-props → pricing tiers → FAQ (incl. compliance) → analytics
 | 2026-07-23 | Shipped dashboard sidebar IA, instructor classroom adaptation, avatar totem identity system | Founder confirmed the sidebar IA (scoped as shortcuts to existing pages, no duplicated IA, no fake "My Progress" tab). Instructor `CourseStudents.tsx` adapted to the shared "Slearn classroom.png" reference (attention panel + class-progress chart), styled in that page's existing old-token system for internal consistency, not ink-and-paper. Avatar mascots: African national-team nicknames (Cameroon's Indomitable Lions listed first). |
 | 2026-07-23 | Totem avatars corrected from text-only to an emoji mascot badge | Founder explicitly rejected the text-only totem treatment, wanted a real mascot. Revised to a colored circular badge + animal/symbol emoji per totem (lion/eagle/elephant/star/etc.), since no image-generation capability exists here and real team crests are trademarked — this is the closest honest approximation to an illustrated mascot available in this environment. Deliberately NOT extended to the streak-tick gamification pattern, which stays icon-free per its own earlier decision (a different surface, not reopened here). |
 | 2026-07-24 | Split into Editorial + Product registers; Product register gets elevation/icons/motion | Founder: current system is "good" but "lacks some major modern aspect," pointing at W3Schools' visual richness specifically (not its product model). Chose the hybrid scope (of 3 options presented): authenticated dashboards/gamification lean into modern elevation, real icons, and noticeable motion; booking flow + institutional marketing pages stay restrained/editorial, since that's where the "considered, credible" identity still does trust work. This explicitly reverses the 2026-07-23 "typographic-only, no icons" streak/XP decision for the Product register only — Editorial-register pages are unaffected. |
+| 2026-07-24 | "Completely change my design" clarified to a deeper Product-register fidelity pass, not a full reversal | Founder's "completely change" was ambiguous between "everywhere" and "dashboards need to go further" — asked, founder chose the latter (recommended option), keeping the Editorial/Product split from earlier the same day. Green becomes the Product Register's primary accent (superseding the "reuse gold more liberally" color note above), except where it would collide with an already-correct 3-color semantic set (`CourseStudents`' status badges/chart). `StreakXPCard` restructured into 3 cards (Totem/Streak-with-week-strip/League-with-progress-bar) mirroring the Pathfinder reference's actual layout; `DashboardSidebar` gained a profile header card. |

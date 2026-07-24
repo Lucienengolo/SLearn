@@ -157,7 +157,13 @@ export default function StudentDashboard({
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
-      <DashboardSidebar current="dashboard" onNavigate={onNavigate} />
+      <DashboardSidebar
+        current="dashboard"
+        onNavigate={onNavigate}
+        fullName={profile?.full_name}
+        totem={totem}
+        tier={progress?.tier ?? null}
+      />
       <div>
       {/* Greeting + resume */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mb-7 items-stretch">
@@ -180,19 +186,6 @@ export default function StudentDashboard({
               ? 'Pick up where you left off and keep the momentum going.'
               : 'Browse the catalog to start your first course.'}
           </p>
-          {totem && (
-            <div className="flex items-center gap-2 mt-2">
-              <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-base flex-shrink-0 ${totem.bgClass}`}
-                aria-hidden="true"
-              >
-                {totem.emoji}
-              </span>
-              <p className="text-sm text-gray-500">
-                Learning as the <span className="font-semibold text-gray-700">{totem.name}</span>
-              </p>
-            </div>
-          )}
         </div>
 
         {resumeCourse && (
@@ -211,11 +204,11 @@ export default function StudentDashboard({
             <div className="mt-4">
               <div className="h-1.5 rounded-full bg-white/20 overflow-hidden mb-3">
                 <div
-                  className="h-full bg-primary-400 transition-[width] duration-300 ease-out"
+                  className="h-full bg-green-500 transition-[width] duration-300 ease-out"
                   style={{ width: `${resumeCourse.progress_percentage}%` }}
                 />
               </div>
-              <button className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-10 rounded-[10px]">
+              <button className="w-full bg-green-500 text-white hover:bg-green-600 transition font-semibold h-10 rounded-[10px]">
                 Resume — {resumeCourse.progress_percentage}%
               </button>
             </div>
@@ -227,7 +220,7 @@ export default function StudentDashboard({
           lesson/quiz completion data, not a stored counter */}
       {progress && (
         <div className="mb-6">
-          <StreakXPCard progress={progress} />
+          <StreakXPCard progress={progress} totem={totem} onEditTotem={() => onNavigate('account-settings')} />
         </div>
       )}
 
