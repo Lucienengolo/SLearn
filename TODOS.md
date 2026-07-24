@@ -190,11 +190,26 @@ code. P3 = explicitly "let's talk first," not a build item.
   Tailwind class strings as plain data (not JSX), but `tailwind.config.js`'s `content` glob
   only scanned `components/**/*.{ts,tsx}` — the badge colors would have compiled to nothing
   in production. Fixed by adding `./lib/**/*.ts` to the glob.
-- **New marketing landing page** (what the platform does, reviews, testimonials, vision) —
-  distinct from the current course-marketplace-style `HomePage.tsx`, which would become a
-  secondary/authenticated-area page rather than the first thing a visitor sees. Real IA
-  decision (does `/` become the new landing page, with the current HomePage moving to
-  `/courses` or behind a "browse courses" CTA?) worth settling before building.
+- [x] **New marketing landing page.** Founder flagged this gap twice (2026-07-22, then again
+  2026-07-24 as "there is no landing page"). IA decision resolved via AskUserQuestion: `/`
+  shows the new `LandingPage.tsx` for logged-out visitors only; signed-in users still land on
+  the existing course-browsing `HomePage.tsx` unchanged (`App.tsx`'s `home` route now
+  branches on `user`). Content: hero + CTAs, trust stats, 3 real product pillars (courses /
+  tutor marketplace / certificates), **real student reviews as testimonials** (pulled from
+  the `reviews` table, rating ≥ 4 with a comment — the section omits itself if there aren't
+  any yet, rather than shipping fabricated quotes), a vision statement, a final CTA, and a
+  minimal footer (the app had none anywhere before this). `AuthModal` gained an `initialMode`
+  prop so the landing page's "Get started" CTA opens straight into signup, not login —
+  required lifting `authModalOpen`/`authModalMode` state from `Header.tsx` up to `App.tsx`
+  so both components can trigger the same modal.
+- [x] **Replaced `alert()`/`confirm()` with in-app UI** (founder: "not modern... standard of
+  app building" — a concrete, non-aesthetic instance of that). Native dialogs freeze the tab
+  and don't match the app's own styling. Added `ToastProvider`/`useToast()`
+  (`contexts/ToastContext.tsx`, wraps the app in `App.tsx`) and `ConfirmDialog`
+  (`components/UI/ConfirmDialog.tsx`), then replaced all 6 call sites: 3 `alert()`s in
+  `CourseDetail.tsx` → `showToast(..., 'error')`; `InstructorDashboard.tsx`'s delete-course
+  `confirm()` → `ConfirmDialog` with a real destructive-action state machine, and its 2
+  `alert()`s → toasts.
 
 ### P3 — Discussion needed first, not a build item yet
 

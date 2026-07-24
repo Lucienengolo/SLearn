@@ -1,8 +1,10 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
+import { ToastProvider } from './contexts/ToastContext';
 import Header from './components/Layout/Header';
 import HomePage from './components/Home/HomePage';
+import LandingPage from './components/Home/LandingPage';
 import CourseList from './components/Courses/CourseList';
 import CourseDetail from './components/Courses/CourseDetail';
 import StudentDashboard from './components/Dashboard/StudentDashboard';
@@ -39,6 +41,8 @@ function AppContent() {
   const [selectedTutorRequestId, setSelectedTutorRequestId] = useState<string | null>(null);
   const [courseSearchTerm, setCourseSearchTerm] = useState('');
   const [courseCategoryFilter, setCourseCategoryFilter] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -113,6 +117,11 @@ function AppContent() {
     window.location.hash = '';
   };
 
+  const handleOpenAuthModal = (mode: 'login' | 'signup') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -135,18 +144,29 @@ function AppContent() {
         Skip to main content
       </a>
 
-      <Header onNavigate={handleNavigate} currentPage={currentPage} />
+      <Header
+        onNavigate={handleNavigate}
+        currentPage={currentPage}
+        authModalOpen={authModalOpen}
+        authModalMode={authModalMode}
+        onOpenAuthModal={handleOpenAuthModal}
+        onCloseAuthModal={() => setAuthModalOpen(false)}
+      />
 
       {isPasswordRecovery && <ResetPasswordPrompt />}
 
       <main id="main-content">
         {currentPage === 'home' && (
-          <HomePage
-            onNavigate={handleNavigate}
-            onCourseSelect={handleCourseSelect}
-            onSearchCourses={handleSearchCourses}
-            onFilterByCategory={handleFilterCoursesByCategory}
-          />
+          user ? (
+            <HomePage
+              onNavigate={handleNavigate}
+              onCourseSelect={handleCourseSelect}
+              onSearchCourses={handleSearchCourses}
+              onFilterByCategory={handleFilterCoursesByCategory}
+            />
+          ) : (
+            <LandingPage onNavigate={handleNavigate} onGetStarted={() => handleOpenAuthModal('signup')} />
+          )
         )}
 
         {currentPage === 'courses' && (
@@ -277,9 +297,11 @@ function AppContent() {
 function App() {
   return (
     <LocaleProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ToastProvider>
     </LocaleProvider>
   );
 }

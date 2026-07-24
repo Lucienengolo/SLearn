@@ -10,12 +10,24 @@ import AudienceNav from './AudienceNav';
 type HeaderProps = {
   onNavigate: (page: string) => void;
   currentPage: string;
+  // Lifted to App.tsx (not local state) so the landing page's own "Sign up"
+  // CTA can open the same modal, in signup mode, without duplicating it.
+  authModalOpen: boolean;
+  authModalMode: 'login' | 'signup';
+  onOpenAuthModal: (mode: 'login' | 'signup') => void;
+  onCloseAuthModal: () => void;
 };
 
-export default function Header({ onNavigate, currentPage }: HeaderProps) {
+export default function Header({
+  onNavigate,
+  currentPage,
+  authModalOpen,
+  authModalMode,
+  onOpenAuthModal,
+  onCloseAuthModal,
+}: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const { t } = useLocale();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [guestXp, setGuestXp] = useState(0);
 
@@ -155,7 +167,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                     </span>
                   )}
                   <button
-                    onClick={() => setAuthModalOpen(true)}
+                    onClick={() => onOpenAuthModal('login')}
                     className="flex items-center space-x-2 bg-primary-500 text-gray-900 px-4 py-2 rounded-full shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color]"
                   >
                     <User size={20} />
@@ -273,7 +285,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
                   )}
                   <button
                     onClick={() => {
-                      setAuthModalOpen(true);
+                      onOpenAuthModal('login');
                       setMobileMenuOpen(false);
                     }}
                     className="w-full bg-primary-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-primary-400"
@@ -287,7 +299,7 @@ export default function Header({ onNavigate, currentPage }: HeaderProps) {
         )}
       </header>
 
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <AuthModal isOpen={authModalOpen} onClose={onCloseAuthModal} initialMode={authModalMode} />
     </>
   );
 }

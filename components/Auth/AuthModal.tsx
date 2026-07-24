@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
+type Mode = 'login' | 'signup' | 'forgot';
+
 type AuthModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: Mode;
 };
 
-type Mode = 'login' | 'signup' | 'forgot';
-
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [mode, setMode] = useState<Mode>('login');
+export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -29,6 +30,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError('');
     onClose();
   };
+
+  // Syncs on every open (not just first mount) -- this component stays
+  // mounted persistently in Header, so a plain useState(initialMode)
+  // initializer would only apply once and ignore later callers (e.g. the
+  // landing page's "Sign up" CTA) that want a different starting mode.
+  useEffect(() => {
+    if (isOpen) setMode(initialMode);
+  }, [isOpen, initialMode]);
 
   useEffect(() => {
     if (!isOpen) return;

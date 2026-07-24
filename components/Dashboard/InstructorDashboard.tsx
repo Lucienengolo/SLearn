@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react';
 import { Plus, BookOpen, Users, Edit, Trash2 } from 'lucide-react';
 import { supabase, Course, CourseStats } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import CourseEditor from './CourseEditor';
 import CourseStudents from './CourseStudents';
 import TutorMatches from '../Tutors/TutorMatches';
 import Chat from '../Tutors/Chat';
+import ConfirmDialog from '../UI/ConfirmDialog';
 
 type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number };
 type DashboardTab = 'courses' | 'tutor-matches';
 
 export default function InstructorDashboard() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [tab, setTab] = useState<DashboardTab>('courses');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
@@ -19,6 +22,7 @@ export default function InstructorDashboard() {
   const [showEditor, setShowEditor] = useState(false);
   const [studentsCourseId, setStudentsCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [courseIdPendingDelete, setCourseIdPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCourses();
@@ -62,10 +66,10 @@ export default function InstructorDashboard() {
     setLoading(false);
   };
 
-  const handleDeleteCourse = async (courseId: string) => {
-    if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-      return;
-    }
+  const handleConfirmDeleteCourse = async () => {
+    if (!courseIdPendingDelete) return;
+    const courseId = courseIdPendingDelete;
+    setCourseIdPendingDelete(null);
 
     const { error } = await supabase
       .from('courses')
@@ -73,8 +77,9 @@ export default function InstructorDashboard() {
       .eq('id', courseId);
 
     if (error) {
-      alert('Failed to delete course');
+      showToast('Failed to delete course', 'error');
     } else {
+      showToast('Course deleted', 'success');
       fetchCourses();
     }
   };
@@ -86,7 +91,7 @@ export default function InstructorDashboard() {
       .eq('id', courseId);
 
     if (error) {
-      alert('Failed to update course status');
+      showToast('Failed to update course status', 'error');
     } else {
       fetchCourses();
     }
@@ -274,7 +279,7 @@ export default function InstructorDashboard() {
                     {course.is_published ? 'Unpublish' : 'Submit for review'}
                   </button>
                   <button
-                    onClick={() => handleDeleteCourse(course.id)}
+                    onClick={() => setCourseIdPendingDelete(course.id)}
                     className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-600 rounded-[10px] hover:bg-red-100 transition flex-shrink-0"
                     title="Delete course"
                   >
@@ -286,6 +291,16 @@ export default function InstructorDashboard() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!courseIdPendingDelete}
+        title="Delete this course?"
+        message="This action cannot be undone. Students already enrolled will lose access."
+        confirmLabel="Delete course"
+        destructive
+        onConfirm={handleConfirmDeleteCourse}
+        onCancel={() => setCourseIdPendingDelete(null)}
+      />
     </div>
   );
 }

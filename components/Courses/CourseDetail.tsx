@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, Users, Star, BookOpen, CheckCircle, Lock, PlayCircle, ChevronRight, Wifi, Award, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { supabase, Course, Lesson, Review, Enrollment, Quiz } from '../../lib/supabase';
 import { getGuestCourseProgress, isGuestLessonComplete, guestEnroll, isGuestEnrolled } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
@@ -24,6 +25,7 @@ type ReviewWithStudent = Review & { student: { full_name: string } };
 
 export default function CourseDetail({ courseId, onBack, onStartLesson }: CourseDetailProps) {
   const { user, profile } = useAuth();
+  const { showToast } = useToast();
   const isInstructor = profile?.role === 'instructor';
   const [course, setCourse] = useState<CourseWithRelations | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -155,7 +157,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
         setIsEnrolled(true);
         trackEvent('course_enrolled', { courseId, guest: true, price: course.price });
       } else {
-        alert('Please sign in to enroll in paid courses');
+        showToast('Please sign in to enroll in paid courses', 'error');
       }
       return;
     }
@@ -169,7 +171,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
       if (error || !data?.url) {
         console.error('Error starting checkout:', error);
-        alert('Could not start checkout. Please try again.');
+        showToast('Could not start checkout. Please try again.', 'error');
         return;
       }
 
@@ -184,7 +186,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
     if (error) {
       console.error('Error enrolling:', error);
-      alert('Failed to enroll in course');
+      showToast('Failed to enroll in course', 'error');
     } else {
       setIsEnrolled(true);
       trackEvent('course_enrolled', { courseId, guest: false, price: course?.price });
