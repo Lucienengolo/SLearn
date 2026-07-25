@@ -1,5 +1,24 @@
 # TODOS
 
+## Global footer (2026-07-24)
+
+Founder shared a W3Schools footer screenshot and asked for a footer on the platform.
+Built `components/Layout/Footer.tsx`: dark band, logo + top audience-link row (6 links,
+matching the reference's 6-header-link row), a 3-column link grid, a disclaimer, and a
+copyright line. Rendered globally from `App.tsx`, but only on the public/marketing-ish
+pages (home, courses, course-detail, the 3 institutional pages) — not inside the
+authenticated dashboard shell, matching how the reference itself only shows this footer on
+marketing pages, not its own logged-in dashboard.
+
+**Every link routes somewhere real.** Deliberately did NOT copy the reference's
+Terms-of-use/Privacy-policy/Cookies links or its social-media icon row — S@Learn has none
+of those yet (regulatory/compliance is still the explicit P3 "let's talk first" item; no
+real social accounts exist), and a footer link to a dead page is worse than not having the
+section. The 4-column link grid became 3 columns for the same reason: real content
+(Browse courses/Find a tutor/My certificates, Become an instructor, the 3 institutional
+tracks) filled 3 columns honestly; padding to 4 with fabricated categories wasn't worth
+matching the reference's exact count.
+
 ## S@Learn Classroom — centralized learner management (2026-07-24)
 
 Founder wanted a SECOND, separate page alongside (not instead of) the per-course

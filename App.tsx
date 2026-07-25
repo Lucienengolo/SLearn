@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
 import { ToastProvider } from './contexts/ToastContext';
 import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
 import HomePage from './components/Home/HomePage';
 import LandingPage from './components/Home/LandingPage';
 import CourseList from './components/Courses/CourseList';
@@ -135,8 +136,21 @@ function AppContent() {
   // after the applicant passes the verification pipeline.
   const isVerifiedInstructor = !!profile && profile.role === 'instructor' && profile.verified;
 
+  // Footer shows on the public/marketing-ish pages a visitor actually
+  // browses, not inside the authenticated app shell (dashboards, lesson
+  // playback, account settings, etc.) -- matches how the reference itself
+  // only carries this footer on its marketing pages, not its own dashboard.
+  const showFooter = [
+    'home',
+    'courses',
+    'course-detail',
+    'audience-schools',
+    'audience-business',
+    'audience-government',
+  ].includes(currentPage);
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-primary-700 focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg"
@@ -155,7 +169,7 @@ function AppContent() {
 
       {isPasswordRecovery && <ResetPasswordPrompt />}
 
-      <main id="main-content">
+      <main id="main-content" className="flex-1">
         {currentPage === 'home' && (
           user ? (
             <HomePage
@@ -290,6 +304,8 @@ function AppContent() {
           </Suspense>
         )}
       </main>
+
+      {showFooter && <Footer onNavigate={handleNavigate} />}
     </div>
   );
 }

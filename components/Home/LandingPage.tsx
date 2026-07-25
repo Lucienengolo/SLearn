@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Users, Award, Wifi, ArrowRight, CheckCircle, GraduationCap, MessageCircle, Star } from 'lucide-react';
+import { BookOpen, Users, Award, Wifi, ArrowRight, GraduationCap, MessageCircle, Star } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type LandingPageProps = {
@@ -247,19 +247,6 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
           </div>
         </div>
       </section>
-
-      {/* Minimal footer -- no footer existed anywhere in the app before
-          this; scoped to the landing page only for now rather than
-          retrofitting every other page. */}
-      <footer className="border-t border-canvas-150 py-8">
-        <div className="max-w-[1200px] mx-auto px-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle size={14} className="text-primary-700" />
-            S@Learn — Store of Learning
-          </span>
-          <span>&copy; {new Date().getFullYear()} S@Learn. Built in Douala, Cameroon.</span>
-        </div>
-      </footer>
     </div>
   );
 }
