@@ -364,3 +364,31 @@ export type InstitutionalInquiry = {
   message: string | null;
   created_at: string;
 };
+
+export type ClassworkPostType = 'announcement' | 'material' | 'assignment';
+
+export type ClassworkPost = {
+  id: string;
+  course_id: string;
+  instructor_id: string;
+  type: ClassworkPostType;
+  title: string;
+  body: string | null;
+  attachment_url: string | null;
+  due_at: string | null;
+  max_points: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ClassworkSubmission = {
+  id: string;
+  post_id: string;
+  student_id: string;
+  content: string | null;
+  attachment_url: string | null;
+  submitted_at: string;
+  grade: number | null;
+  feedback: string | null;
+  graded_at: string | null;
+};

@@ -1,25 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Plus, BookOpen, Users, Edit, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, Users, Edit, Trash2, Search } from 'lucide-react';
 import { supabase, Course, CourseStats } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import CourseEditor from './CourseEditor';
 import CourseStudents from './CourseStudents';
 import SLearnClassroom from './SLearnClassroom';
-import InstructorLeague from './InstructorLeague';
-import TutorMatches from '../Tutors/TutorMatches';
-import Chat from '../Tutors/Chat';
 import ConfirmDialog from '../UI/ConfirmDialog';
 
 type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number };
-type DashboardTab = 'courses' | 'tutor-matches' | 'classroom' | 'league';
+// S@Learn Classroom absorbed Tutor Matches and League as internal sections
+// (founder request, 2026-07-27) -- it's the whole class-management
+// workspace now, not one tab among several. Only Courses (CRUD) stays
+// separate at this top level.
+type DashboardTab = 'courses' | 'classroom';
 
 const TAB_LABELS: Record<DashboardTab, string> = {
   courses: 'Courses',
-  'tutor-matches': 'Tutor Matches',
   classroom: 'S@Learn Classroom',
-  league: 'League',
 };
+
+type StatusFilter = 'all' | 'draft' | 'pending' | 'live' | 'rejected';
+
+function courseStatus(course: Course): StatusFilter {
+  if (!course.is_published) return 'draft';
+  if (course.moderation_status === 'approved') return 'live';
+  if (course.moderation_status === 'rejected') return 'rejected';
+  return 'pending';
+}
 
 function TabNav({ tab, onSelect }: { tab: DashboardTab; onSelect: (t: DashboardTab) => void }) {
   return (
@@ -45,13 +53,14 @@ export default function InstructorDashboard() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<DashboardTab>('courses');
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [studentsCourseId, setStudentsCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [courseIdPendingDelete, setCourseIdPendingDelete] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   useEffect(() => {
     fetchCourses();
@@ -157,36 +166,11 @@ export default function InstructorDashboard() {
     return <SLearnClassroom onBack={() => setTab('courses')} />;
   }
 
-  if (tab === 'league') {
-    return (
-      <div className="max-w-[1200px] mx-auto px-6 py-10">
-        <TabNav tab={tab} onSelect={setTab} />
-        <InstructorLeague courses={courses.map((c) => ({ id: c.id, title: c.title }))} />
-      </div>
-    );
-  }
-
-  if (tab === 'tutor-matches' && user) {
-    return (
-      <div className="max-w-[1200px] mx-auto px-6 py-10">
-        <TabNav tab={tab} onSelect={setTab} />
-
-        {selectedMatchId ? (
-          <div>
-            <button
-              onClick={() => setSelectedMatchId(null)}
-              className="text-sm text-gray-500 hover:text-gray-800 transition mb-4"
-            >
-              ← Back to matches
-            </button>
-            <Chat matchId={selectedMatchId} currentUserId={user.id} viewerRole="tutor" />
-          </div>
-        ) : (
-          <TutorMatches tutorId={user.id} onSelectMatch={setSelectedMatchId} />
-        )}
-      </div>
-    );
-  }
+  const visibleCourses = courses.filter((course) => {
+    if (statusFilter !== 'all' && courseStatus(course) !== statusFilter) return false;
+    if (search.trim() && !course.title.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10">
@@ -209,6 +193,31 @@ export default function InstructorDashboard() {
         </button>
       </div>
 
+      {courses.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search your courses..."
+              className="w-full pl-10 pr-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            className="h-11 px-3.5 border border-gray-200 rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 sm:w-56"
+          >
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="pending">Pending review</option>
+            <option value="live">Live</option>
+            <option value="rejected">Changes requested</option>
+          </select>
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -225,9 +234,15 @@ export default function InstructorDashboard() {
             Create your first course
           </button>
         </div>
+      ) : visibleCourses.length === 0 ? (
+        <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
+          <Search size={40} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">No matches</h3>
+          <p className="text-gray-500 text-sm">Try a different search or status filter.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {courses.map((course) => (
+          {visibleCourses.map((course) => (
             <div
               key={course.id}
               className="rounded-[14px] border border-canvas-150 shadow-sm hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 transition-[box-shadow,transform,border-color]"
@@ -258,12 +273,22 @@ export default function InstructorDashboard() {
 
                 <div className="grid grid-cols-3 gap-3 mb-5">
                   <div className="text-center p-3 bg-primary-50 rounded-[10px]">
-                    <Users size={16} className="text-primary-700 mx-auto mb-1" />
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center mx-auto mb-1 shadow-sm"
+                      style={{ background: 'linear-gradient(135deg,#F2C94C,#C8881C)' }}
+                    >
+                      <Users size={14} className="text-white" fill="currentColor" fillOpacity={0.25} />
+                    </span>
                     <p className="font-display text-xl text-primary-700">{course.enrollmentCount}</p>
                     <p className="text-2xs text-gray-500">Students</p>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-[10px]">
-                    <BookOpen size={16} className="text-green-600 mx-auto mb-1" />
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center mx-auto mb-1 shadow-sm"
+                      style={{ background: 'linear-gradient(135deg,#4ADE80,#15803D)' }}
+                    >
+                      <BookOpen size={14} className="text-white" fill="currentColor" fillOpacity={0.25} />
+                    </span>
                     <p className="font-display text-xl text-green-700">{course.lessonCount}</p>
                     <p className="text-2xs text-gray-500">Lessons</p>
                   </div>

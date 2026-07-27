@@ -430,6 +430,9 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               placeholder="Describe what students will learn..."
               required
             />
+            <p className="text-2xs text-gray-500 mt-1.5">
+              Use **bold** and *italic* for emphasis — shown formatted on the course page.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

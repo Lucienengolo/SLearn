@@ -6,6 +6,7 @@ import { getCourseCover } from '../../lib/courseCovers';
 import { fetchStudentProgress, StudentProgress } from '../../lib/gamification';
 import { totemByName } from '../../lib/totems';
 import DashboardSidebar from './DashboardSidebar';
+import StatTile from '../UI/StatTile';
 
 type MyProgressProps = {
   onBack: () => void;
@@ -93,10 +94,10 @@ export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyPro
   const avgProgress = rows.length > 0 ? Math.round(rows.reduce((sum, r) => sum + r.progress_percentage, 0) / rows.length) : 0;
 
   const statTiles = [
-    { icon: BookOpen, value: rows.length, label: 'Courses enrolled', tint: 'bg-primary-50 text-primary-700' },
-    { icon: CheckCircle, value: completedCount, label: 'Completed', tint: 'bg-green-50 text-green-600' },
-    { icon: Zap, value: `${avgProgress}%`, label: 'Average progress', tint: 'bg-primary-50 text-primary-700' },
-    { icon: Award, value: certificateCount, label: 'Certificates earned', tint: 'bg-gray-100 text-gray-600' },
+    { icon: BookOpen, value: rows.length, label: 'Courses enrolled', tone: 'gold' as const },
+    { icon: CheckCircle, value: completedCount, label: 'Completed', tone: 'green' as const },
+    { icon: Zap, value: `${avgProgress}%`, label: 'Average progress', tone: 'blue' as const },
+    { icon: Award, value: certificateCount, label: 'Certificates earned', tone: 'gray' as const },
   ];
 
   return (
@@ -118,16 +119,7 @@ export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyPro
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {statTiles.map((tile) => (
-            <div
-              key={tile.label}
-              className="rounded-[14px] border border-canvas-150 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform]"
-            >
-              <span className={`w-10 h-10 rounded-[10px] flex items-center justify-center mb-3 ${tile.tint}`}>
-                <tile.icon size={20} />
-              </span>
-              <div className="font-display text-3xl text-gray-900 leading-none">{tile.value}</div>
-              <div className="text-sm text-gray-500 mt-1">{tile.label}</div>
-            </div>
+            <StatTile key={tile.label} icon={tile.icon} value={tile.value} label={tile.label} tone={tile.tone} />
           ))}
         </div>
 

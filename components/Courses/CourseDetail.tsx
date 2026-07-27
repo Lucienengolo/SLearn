@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Clock, Users, Star, BookOpen, CheckCircle, Lock, PlayCircle, ChevronRight, Wifi, Award, GraduationCap } from 'lucide-react';
+import { Clock, Users, Star, BookOpen, CheckCircle, Lock, PlayCircle, ChevronRight, Wifi, Award, GraduationCap, Info, ListChecks, MessageSquare } from 'lucide-react';
+import { renderRichText } from '../../lib/richText';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase, Course, Lesson, Review, Enrollment, Quiz } from '../../lib/supabase';
@@ -9,6 +10,7 @@ import { getCourseCover } from '../../lib/courseCovers';
 import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
 import ReviewForm from './ReviewForm';
 import QuizViewer from '../Quiz/QuizViewer';
+import ClassworkList from './ClassworkList';
 
 type CourseDetailProps = {
   courseId: string;
@@ -334,14 +336,24 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             </div>
 
             <div>
-              <h2 className="font-display text-2xl text-gray-900 mb-2.5">About this course</h2>
-              <p className="text-gray-600 leading-relaxed">{course.description}</p>
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="w-8 h-8 rounded-[8px] bg-primary-50 text-primary-700 flex items-center justify-center flex-shrink-0">
+                  <Info size={16} />
+                </span>
+                <h2 className="font-display text-2xl text-gray-900">About this course</h2>
+              </div>
+              <div className="text-gray-600 leading-relaxed">{renderRichText(course.description)}</div>
             </div>
 
             {/* Curriculum */}
             <div>
               <div className="flex justify-between items-baseline mb-4">
-                <h2 className="font-display text-2xl text-gray-900">Course content</h2>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-[8px] bg-primary-50 text-primary-700 flex items-center justify-center flex-shrink-0">
+                    <ListChecks size={16} />
+                  </span>
+                  <h2 className="font-display text-2xl text-gray-900">Course content</h2>
+                </div>
                 <span className="text-sm text-gray-500">{lessons.length} lessons · {course.duration_hours}h total</span>
               </div>
               <div className="space-y-2">
@@ -378,6 +390,12 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 })}
               </div>
             </div>
+
+            {/* Classwork -- announcements/materials/assignments posted from
+                S@Learn Classroom (founder request, 2026-07-27). Enrolled,
+                signed-in students only; omits itself entirely if nothing's
+                been posted yet. */}
+            {isEnrolled && user && !isInstructor && <ClassworkList courseId={courseId} studentId={user.id} />}
 
             {/* Instructor */}
             {course.instructor && (
@@ -417,7 +435,12 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             {/* Reviews */}
             {(reviews.length > 0 || canReview) && (
               <div>
-                <h2 className="font-display text-2xl text-gray-900 mb-4">Student reviews</h2>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <span className="w-8 h-8 rounded-[8px] bg-primary-50 text-primary-700 flex items-center justify-center flex-shrink-0">
+                    <MessageSquare size={16} />
+                  </span>
+                  <h2 className="font-display text-2xl text-gray-900">Student reviews</h2>
+                </div>
                 {canReview && (
                   <div className="mb-4">
                     <ReviewForm
@@ -518,17 +541,32 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 enrollButton('w-full h-12 rounded-[10px]')
               )}
 
-              <div className="mt-5 pt-5 border-t border-canvas-150 space-y-2.5 text-sm text-gray-600">
+              <div className="mt-5 pt-5 border-t border-canvas-150 space-y-3 text-sm text-gray-600">
                 <div className="flex items-center gap-2.5">
-                  <Wifi size={16} className="text-gray-400" />
+                  <span
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+                    style={{ background: 'linear-gradient(135deg,#9CA3AF,#4B5563)' }}
+                  >
+                    <Wifi size={13} className="text-white" fill="currentColor" fillOpacity={0.25} />
+                  </span>
                   Learn on any device, offline-friendly
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <Award size={16} className="text-gray-400" />
+                  <span
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+                    style={{ background: 'linear-gradient(135deg,#F2C94C,#C8881C)' }}
+                  >
+                    <Award size={13} className="text-white" fill="currentColor" fillOpacity={0.25} />
+                  </span>
                   Certificate of completion
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <BookOpen size={16} className="text-gray-400" />
+                  <span
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+                    style={{ background: 'linear-gradient(135deg,#60A5FA,#1D4ED8)' }}
+                  >
+                    <BookOpen size={13} className="text-white" fill="currentColor" fillOpacity={0.25} />
+                  </span>
                   {lessons.length} lessons · {course.duration_hours}h of content
                 </div>
               </div>

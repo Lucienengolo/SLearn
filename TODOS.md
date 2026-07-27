@@ -1,5 +1,68 @@
 # TODOS
 
+## Instructor dashboard overhaul: S@Learn Classroom becomes the whole workspace (2026-07-27)
+
+Founder: "the Slearn Classroom is not just a tab it's the entire management dashboard for
+instructor" — combine student management, classwork/assignments, league, and tutor matching
+into one Google-Classroom-inspired workspace, plus search/filter on the Courses tab and a
+typography/icon polish pass. Four sub-items, each with its own scoping decision locked in via
+AskUserQuestion rather than guessed:
+
+1. **Classwork went with the full option** (due dates, submissions, grading — not just an
+   announcements feed), and **one combined workspace with a course-switcher inside** (not a
+   per-course Classroom clone) — both explicit founder picks over the "lighter/recommended"
+   alternative. New tables `classwork_posts` (announcement/material/assignment, one feed) and
+   `classwork_submissions` (`0039_classwork.sql`) — attachments are a pasted link, not a file
+   upload (real storage pipeline is more scope than this pass; see the migration's own
+   comment). Both security-enforced via actual RLS policies, **not** security-definer
+   functions like `0038_league.sql` — a real methodology gap surfaced while testing this:
+   testing via `sudo -u postgres psql` alone gives **false confidence** for raw-table RLS,
+   because `postgres` is a superuser (bypasses RLS entirely) and owns every table. The first
+   fixture run "passed" every rejection case vacuously. Fix: `set local role authenticated;`
+   after fixture setup, before the actual assertions — re-verified and caught a real hole
+   (an instructor could otherwise post into another instructor's course) that the first,
+   invalid run had missed entirely. **Any future local RLS verification on a raw table policy
+   (not a security-definer function with its own manual `raise exception` check) must use
+   this pattern** — this is now a standing process note, same weight as the `npm run
+   typecheck` lesson below.
+2. `InstructorDashboard.tsx` collapsed from 4 top-level tabs to 2: **Courses** (CRUD, now
+   with a real search box + status filter — draft/pending/live/changes-requested) and
+   **S@Learn Classroom**, which absorbed the old separate Tutor Matches and League tabs as
+   internal sections.
+3. `SLearnClassroom.tsx` restructured around 5 sections (Google Classroom-style sub-nav):
+   **Stream** (post announcements/materials/assignments via `ClassworkComposer.tsx`),
+   **Classwork** (assignments + `GradingPanel.tsx` drill-in for grading), **People** (the
+   2026-07-24 cross-course learner roster, unchanged), **League** (`InstructorLeague.tsx`,
+   already built), **Tutor Matches** (moved in as-is from the old top-level tab). A course
+   filter dropdown scopes Stream/Classwork to one course or "all courses" — People/League
+   keep their own existing scoping (aggregate / instructor-picks-per-tab), not double-filtered
+   by this dropdown too.
+4. Students see classwork on `CourseDetail.tsx` via new `ClassworkList.tsx` — read-only for
+   announcements/materials, inline submit/resubmit box for assignments, switches to a
+   read-only grade+feedback display once graded. Hidden entirely if nothing's posted yet,
+   matching how that page already omits other empty sections (e.g. reviews).
+5. **Course presentation polish**: course descriptions now render through a small
+   zero-dependency `lib/richText.tsx` (`**bold**`/`*italic*`/paragraph breaks) instead of
+   plain text — a full markdown library was more than a short course blurb needs. Section
+   headings on `CourseDetail.tsx` (About/Course content/Student reviews) got a small icon
+   badge for visual hierarchy. `CourseEditor.tsx`'s description field now hints at the syntax.
+6. **Icon treatment upgrade** (founder shared a "realistic icons" Figma reference I can't
+   fetch — no browsing access to Figma's viewer, no image-generation capability to produce
+   matching art; founder chose "upgrade within lucide-react" over the other two options
+   offered). New shared `components/UI/StatTile.tsx`: gradient badge background + soft shadow
+   + a semi-filled icon (`fillOpacity`) instead of a flat single-tint background. Applied to
+   `StudentDashboard`/`MyProgress`'s stat tiles, `InstructorDashboard`'s course-card mini
+   stats, `CourseDetail`'s sidebar perks list, and `LeagueBoard`'s top-3 medal badges
+   (gold/silver/bronze gradients instead of a flat tint). Deliberately did NOT touch every
+   icon in the app (e.g. `CourseStudents`' compact 2x2 tiles, its nav rail) — scoped to the
+   clearest, most-repeated "icon badge" motif rather than a file-by-file pass across the
+   whole codebase.
+
+Verified: 245/245 tests passing (33 new: `classwork.test.ts`, `richText.test.tsx`,
+`ClassworkComposer.test.tsx`, `GradingPanel.test.tsx`, `ClassworkList.test.tsx`, a rewritten
+`SLearnClassroom.test.tsx` for the new IA), typecheck/lint/build all clean. Migration
+`0039_classwork.sql` **not yet deployed** — same credential gap as everything else pending.
+
 ## My Progress + League — Pathfinder reference (2026-07-27)
 
 Founder shared the Pathfinder sidebar again and asked for "My Progress" (cross-course

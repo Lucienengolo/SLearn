@@ -7,10 +7,12 @@ type LeagueBoardProps = {
   emptyMessage: string;
 };
 
-const MEDAL_TINT: Record<number, string> = {
-  1: 'bg-primary-100 text-primary-700',
-  2: 'bg-gray-200 text-gray-700',
-  3: 'bg-amber-100 text-amber-800',
+// Top-3 get a gradient medal instead of a flat tint -- a small, real "gold/
+// silver/bronze" cue, not just a color swap.
+const MEDAL_GRADIENT: Record<number, string> = {
+  1: 'linear-gradient(135deg,#F2C94C,#C8881C)',
+  2: 'linear-gradient(135deg,#D1D5DB,#6B7280)',
+  3: 'linear-gradient(135deg,#D9A066,#8B5A2B)',
 };
 
 export default function LeagueBoard({ rows, emptyMessage }: LeagueBoardProps) {
@@ -37,8 +39,9 @@ export default function LeagueBoard({ rows, emptyMessage }: LeagueBoardProps) {
           >
             <span
               className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${
-                MEDAL_TINT[row.rank] ?? 'bg-gray-100 text-gray-500'
+                MEDAL_GRADIENT[row.rank] ? 'text-white shadow-sm' : 'bg-gray-100 text-gray-500'
               }`}
+              style={MEDAL_GRADIENT[row.rank] ? { background: MEDAL_GRADIENT[row.rank] } : undefined}
             >
               {row.rank}
             </span>
