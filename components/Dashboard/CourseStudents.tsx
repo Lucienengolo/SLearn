@@ -12,6 +12,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { supabase, Course } from '../../lib/supabase';
+import { ICON_BADGE_GRADIENTS } from '../../lib/iconBadgeTones';
 import AddStudentModal from './AddStudentModal';
 
 type CourseStudentsProps = {
@@ -373,7 +374,10 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
                     {row.avatarUrl ? (
                       <img src={row.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <span className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                      <span
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm text-white shadow-sm"
+                        style={{ background: ICON_BADGE_GRADIENTS.gold }}
+                      >
                         {row.fullName.charAt(0).toUpperCase()}
                       </span>
                     )}

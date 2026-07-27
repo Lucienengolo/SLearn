@@ -1,6 +1,7 @@
 import { Flame, Trophy } from 'lucide-react';
 import { StudentProgress } from '../../lib/gamification';
 import { Totem } from '../../lib/totems';
+import IconBadge from '../UI/IconBadge';
 
 type StreakXPCardProps = {
   progress: StudentProgress;
@@ -50,9 +51,7 @@ export default function StreakXPCard({ progress, totem, onEditTotem }: StreakXPC
 
       <div className="rounded-[14px] border border-canvas-150 shadow-sm hover:shadow-md transition-shadow p-5">
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-orange-50 text-orange-600 flex-shrink-0">
-            <Flame size={18} />
-          </span>
+          <IconBadge icon={Flame} tone="orange" size={36} iconSize={18} shape="square" />
           <div>
             <p className="font-display text-xl text-gray-900 leading-none">
               {progress.streakDays} {progress.streakDays === 1 ? 'day' : 'days'}
@@ -72,9 +71,7 @@ export default function StreakXPCard({ progress, totem, onEditTotem }: StreakXPC
 
       <div className="rounded-[14px] border border-canvas-150 shadow-sm hover:shadow-md transition-shadow p-5">
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-primary-50 text-primary-700 flex-shrink-0">
-            <Trophy size={18} />
-          </span>
+          <IconBadge icon={Trophy} tone="gold" size={36} iconSize={18} shape="square" />
           <div>
             <p className="font-display text-xl text-gray-900 leading-none">{progress.tier} League</p>
             <p className="text-2xs text-gray-500">{progress.xp} credits earned</p>

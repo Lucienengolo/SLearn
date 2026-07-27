@@ -8,6 +8,7 @@ import { TOTEMS, totemByName } from '../../lib/totems';
 import { fetchStudentProgress, StudentProgressTier } from '../../lib/gamification';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 import ConfirmDialog from '../UI/ConfirmDialog';
+import IconBadge from '../UI/IconBadge';
 
 type AccountSettingsProps = {
   onBack: () => void;
@@ -58,7 +59,6 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
     if (user && isStudent) {
       fetchStudentProgress(user.id).then((p) => setTier(p.tier));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isStudent]);
 
   if (!user || !profile) return null;
@@ -216,9 +216,7 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
                 className="w-20 h-20 rounded-full object-cover border border-canvas-150"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center">
-                <UserIcon size={36} />
-              </div>
+              <IconBadge icon={UserIcon} tone="gold" size={80} iconSize={36} />
             )}
             <label
               className="absolute -bottom-1 -right-1 bg-primary-500 text-gray-900 p-1.5 rounded-full cursor-pointer hover:bg-primary-400 transition"

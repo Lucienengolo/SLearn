@@ -8,6 +8,7 @@ import {
   ClassworkPostWithCourse,
 } from '../../lib/classwork';
 import { ClassworkSubmission } from '../../lib/supabase';
+import { renderRichText } from '../../lib/richText';
 
 type ClassworkListProps = { courseId: string; studentId: string };
 
@@ -53,7 +54,7 @@ function AssignmentSubmission({
           Grade: {submission!.grade}
           {post.max_points ? ` / ${post.max_points}` : ''}
         </p>
-        {submission!.feedback && <p className="text-sm text-green-700">{submission.feedback}</p>}
+        {submission!.feedback && <div className="text-sm text-green-700">{renderRichText(submission.feedback)}</div>}
       </div>
     );
   }
@@ -139,7 +140,7 @@ export default function ClassworkList({ courseId, studentId }: ClassworkListProp
                 {post.max_points && <span className="text-2xs text-gray-500">{post.max_points} pts</span>}
               </div>
               <p className="font-semibold text-gray-900">{post.title}</p>
-              {post.body && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{post.body}</p>}
+              {post.body && <div className="text-sm text-gray-600 mt-1">{renderRichText(post.body)}</div>}
               {post.attachment_url && (
                 <a
                   href={post.attachment_url}

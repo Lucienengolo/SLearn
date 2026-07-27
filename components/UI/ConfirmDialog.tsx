@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import IconBadge from './IconBadge';
 
 type ConfirmDialogProps = {
   isOpen: boolean;
@@ -35,11 +36,7 @@ export default function ConfirmDialog({
         aria-labelledby="confirm-dialog-title"
       >
         <div className="flex items-start gap-3 mb-2">
-          {destructive && (
-            <span className="w-9 h-9 rounded-full bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle size={18} />
-            </span>
-          )}
+          {destructive && <IconBadge icon={AlertTriangle} tone="red" size={36} iconSize={18} />}
           <div>
             <h2 id="confirm-dialog-title" className="font-display text-xl text-gray-900">
               {title}

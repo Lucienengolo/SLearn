@@ -13,6 +13,7 @@ import {
 import { CourseWithInstructor, decideCourse, fetchDecidedCourses, fetchPendingCourses } from '../../lib/courseModeration';
 import { Interview } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
+import { renderRichText } from '../../lib/richText';
 
 type Section = 'applications' | 'courses';
 type Tab = 'pending' | 'decided';
@@ -207,7 +208,7 @@ function CourseReviewCard({
 
       {expanded && (
         <div className="border-t border-canvas-150 p-4 space-y-4">
-          <p className="text-sm text-gray-700">{course.description}</p>
+          <div className="text-sm text-gray-700">{renderRichText(course.description)}</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <Field label="Level" value={course.level} />
             <Field label="Duration" value={`${course.duration_hours}h`} />
@@ -346,7 +347,7 @@ function ApplicationCard({
               {application.bio && (
                 <div>
                   <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">Bio</p>
-                  <p className="text-sm text-gray-700">{application.bio}</p>
+                  <div className="text-sm text-gray-700">{renderRichText(application.bio)}</div>
                 </div>
               )}
               {application.qualifications && (

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { supabase, Quiz, QuizQuestion } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { renderRichText } from '../../lib/richText';
+import IconBadge from '../UI/IconBadge';
 
 type QuizViewerProps = {
   quizId: string;
@@ -116,17 +118,13 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
         <div className="rounded-[14px] border border-canvas-150 p-8 text-center">
           {result.passed ? (
             <div className="space-y-3">
-              <span className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto">
-                <CheckCircle size={36} className="text-green-600" />
-              </span>
+              <IconBadge icon={CheckCircle} tone="green" size={64} iconSize={36} className="mx-auto" />
               <h2 className="font-display text-3xl text-gray-900">Congratulations!</h2>
               <p className="text-lg text-gray-500">You passed the quiz</p>
             </div>
           ) : (
             <div className="space-y-3">
-              <span className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
-                <XCircle size={36} className="text-red-600" />
-              </span>
+              <IconBadge icon={XCircle} tone="red" size={64} iconSize={36} className="mx-auto" />
               <h2 className="font-display text-3xl text-gray-900">Keep trying!</h2>
               <p className="text-lg text-gray-500">You can retake this quiz anytime</p>
             </div>
@@ -190,9 +188,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
       <div className="rounded-[14px] border border-canvas-150 p-6 md:p-8">
         <div className="mb-8">
           <h1 className="font-display text-3xl text-gray-900 mb-2">{quiz.title}</h1>
-          {quiz.description && (
-            <p className="text-gray-500">{quiz.description}</p>
-          )}
+          {quiz.description && <div className="text-gray-500">{renderRichText(quiz.description)}</div>}
           <p className="text-sm text-gray-500 mt-2">
             Passing score: {quiz.passing_score}%
           </p>

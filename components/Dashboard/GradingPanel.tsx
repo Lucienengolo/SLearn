@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClassworkPostWithCourse, ClassworkSubmissionWithStudent, fetchSubmissionsForPost, gradeSubmission } from '../../lib/classwork';
 import { useToast } from '../../contexts/ToastContext';
+import { renderRichText } from '../../lib/richText';
 
 type GradingPanelProps = {
   post: ClassworkPostWithCourse;
@@ -37,7 +38,7 @@ function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSu
         <p className="font-medium text-gray-900">{submission.student?.full_name ?? 'Student'}</p>
         <span className="text-2xs text-gray-500">Submitted {new Date(submission.submitted_at).toLocaleDateString()}</span>
       </div>
-      <p className="text-sm text-gray-700 whitespace-pre-wrap mb-3">{submission.content}</p>
+      <div className="text-sm text-gray-700 mb-3">{renderRichText(submission.content ?? '')}</div>
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={grade}

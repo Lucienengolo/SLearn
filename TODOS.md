@@ -1,5 +1,61 @@
 # TODOS
 
+## Platform-wide rich text + icon badge sweep (2026-07-27)
+
+Founder, after the classwork/S@Learn Classroom pass: "apply the richer text and icons on
+every component of the Platform even on course created and creation(this was even the main
+area where richer text should've been applied)." Used an Explore subagent to catalog every
+remaining flat-tint icon badge and every plain-text render of a freeform human-authored field
+across `components/`, then worked through the full list rather than cherry-picking a few
+visible spots.
+
+**Course creation (the flagged priority):** `CourseEditor.tsx` now shows a live
+`RichTextPreview` under BOTH the course description field and each lesson's text-content
+field — renders through `lib/richText.tsx` as you type, so **bold**/*italic* formatting is
+visible during creation, not just after publishing. This was the actual gap the founder
+meant: the description textarea got a hint text on 2026-07-27 earlier today, but nothing
+showed instructors what it would look like rendered, and lesson content (the real bulk of a
+course) hadn't been touched at all.
+
+**Rich text, extended to 12 more render sites**: `LessonViewer.tsx` (lesson description +
+content — probably the single highest-value target, since it's the actual reading material
+students spend the most time on, previously plain `whitespace-pre-wrap` text), instructor
+bios (`CourseDetail.tsx`, `ReviewQueue.tsx`'s application-review view), review comments
+(`CourseDetail.tsx`, `LandingPage.tsx` testimonials), quiz descriptions (`QuizViewer.tsx`),
+classwork post bodies/submission content/feedback (`ClassworkList.tsx`, `SLearnClassroom.tsx`,
+`GradingPanel.tsx`), and course descriptions in the admin moderation queue
+(`ReviewQueue.tsx`). Deliberately NOT applied to single-line `truncate`/`line-clamp-2`
+preview contexts (`CourseCard.tsx`, `InstructorDashboard.tsx`'s course-card blurb, the
+curriculum list's lesson description, a quiz question's `question_text` inline in a heading)
+— `renderRichText` emits block-level `<p>` tags, which breaks single-line truncation CSS;
+these are short previews, not the primary reading surface anyway.
+
+**Icon badges, extended to 19 more locations** via a new shared
+`components/UI/IconBadge.tsx` (+ `lib/iconBadgeTones.ts` as the single source of truth for
+the gradient palette, which `StatTile.tsx` now also imports from instead of duplicating its
+own copy): avatar fallbacks (`AccountSettings`, `Header` x2), student-initial avatars
+(`CourseStudents`, `SLearnClassroom`), landing-page pillars, `CourseDetail`'s section headers
+and curriculum status icons, `LessonViewer`'s sidebar status icons + 2 toggle buttons + PDF
+icon, `ConfirmDialog`'s warning icon, `AuthModal`'s 2 success icons, `QuizViewer`'s 2
+pass/fail result icons, and `StreakXPCard`'s flame/trophy (kept as separate `orange`/`gold`
+tones, not merged into one — the founder's own "keep my colors" note on that file says these
+are deliberately different semantic tints, fire vs. trophy, not the same color).
+
+**Deliberately left flat, not an oversight**: `CourseStudents.tsx`'s icon rail and compact 2x2
+stat tiles (an intentional style boundary from the 2026-07-24 pass); classwork type-label
+pills (`TYPE_META` in `ClassworkList.tsx`/`SLearnClassroom.tsx`) and Draft/Live/Pending status
+badges everywhere — these are text-plus-icon *status pills*, a different, already-consistent
+design language from decorative icon badges, and a gradient background would hurt legibility
+at that size; primary-action buttons using `bg-primary-500`/`hover:bg-primary-400` (e.g. the
+Kairos Mind send button) — those are the app's actual button language, not decorative icon
+tints, and re-skinning every button was a different, much bigger ask than "richer icons."
+Chat bubble bodies (`Tutors/Chat.tsx`, `KairosMindTutor.tsx`) were flagged as lower-confidence
+by the research pass and left alone — `renderRichText`'s block-paragraph output doesn't suit
+a chat-bubble layout, and Kairos Mind's replies are AI-generated, not human-authored text.
+
+Verified: 249/249 tests passing (5 new: `IconBadge.test.tsx`; the rest covered by existing
+suites since these were presentational swaps, not new logic), typecheck/lint/build all clean.
+
 ## Instructor dashboard overhaul: S@Learn Classroom becomes the whole workspace (2026-07-27)
 
 Founder: "the Slearn Classroom is not just a tab it's the entire management dashboard for

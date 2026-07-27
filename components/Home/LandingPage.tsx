@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Users, Award, Wifi, ArrowRight, GraduationCap, MessageCircle, Star } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { renderRichText } from '../../lib/richText';
+import IconBadge from '../UI/IconBadge';
 
 type LandingPageProps = {
   onNavigate: (page: string) => void;
@@ -75,16 +77,19 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
       icon: BookOpen,
       title: 'Practical courses',
       body: 'Learn real, income-generating skills from local experts — at your own pace, on any device.',
+      tone: 'gold' as const,
     },
     {
       icon: MessageCircle,
       title: 'Verified tutors',
       body: "Book a vetted, identity-checked tutor for your child, matched to your neighborhood and budget.",
+      tone: 'blue' as const,
     },
     {
       icon: Award,
       title: 'Real certificates',
       body: 'Finish a course, pass the final exam, and earn a certificate that proves what you actually learned.',
+      tone: 'green' as const,
     },
   ];
 
@@ -163,9 +168,7 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
               key={p.title}
               className="bg-white rounded-[14px] border border-canvas-150 p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform]"
             >
-              <span className="w-11 h-11 rounded-[10px] bg-primary-50 text-primary-700 flex items-center justify-center mb-4">
-                <p.icon size={22} />
-              </span>
+              <IconBadge icon={p.icon} tone={p.tone} size={44} iconSize={22} shape="square" className="mb-4" />
               <h3 className="font-semibold text-lg text-gray-900 mb-1.5">{p.title}</h3>
               <p className="text-sm text-gray-600 leading-relaxed">{p.body}</p>
             </div>
@@ -196,7 +199,7 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
                       />
                     ))}
                   </div>
-                  <p className="text-sm text-gray-700 leading-relaxed mb-4">&ldquo;{review.comment}&rdquo;</p>
+                  <div className="text-sm text-gray-700 leading-relaxed mb-4">&ldquo;{renderRichText(review.comment)}&rdquo;</div>
                   <p className="text-sm font-semibold text-gray-900">{review.studentName}</p>
                   {review.courseTitle && <p className="text-2xs text-gray-500">{review.courseTitle}</p>}
                 </div>

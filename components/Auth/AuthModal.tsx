@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import IconBadge from '../UI/IconBadge';
 
 type Mode = 'login' | 'signup' | 'forgot';
 
@@ -96,9 +97,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
         {confirmationPending ? (
           <div className="text-center py-4">
-            <span className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={30} className="text-green-600" />
-            </span>
+            <IconBadge icon={CheckCircle} tone="green" size={56} iconSize={30} className="mx-auto mb-4" />
             <h2 className="font-display text-2xl mb-2 text-gray-900">Check your email</h2>
             <p className="text-gray-500 text-sm">
               We sent a confirmation link to <strong className="text-gray-700">{email}</strong>. Click it to activate
@@ -113,9 +112,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           </div>
         ) : resetSent ? (
           <div className="text-center py-4">
-            <span className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={30} className="text-green-600" />
-            </span>
+            <IconBadge icon={CheckCircle} tone="green" size={56} iconSize={30} className="mx-auto mb-4" />
             <h2 className="font-display text-2xl mb-2 text-gray-900">Check your email</h2>
             <p className="text-gray-500 text-sm">
               If an account exists for <strong className="text-gray-700">{email}</strong>, we sent a link to reset

@@ -7,6 +7,7 @@ import AuthModal from '../Auth/AuthModal';
 import NotificationBell from './NotificationBell';
 import LanguageToggle from './LanguageToggle';
 import AudienceNav from './AudienceNav';
+import IconBadge from '../UI/IconBadge';
 type HeaderProps = {
   onNavigate: (page: string) => void;
   currentPage: string;
@@ -141,9 +142,7 @@ export default function Header({
                     {profile.avatar_url ? (
                       <img src={profile.avatar_url} alt="" className="w-9 h-9 object-cover" />
                     ) : (
-                      <span className="w-9 h-9 flex items-center justify-center bg-primary-100 text-primary-700">
-                        <User size={18} />
-                      </span>
+                      <IconBadge icon={User} tone="gold" size={36} iconSize={18} />
                     )}
                   </button>
                   <button
@@ -260,9 +259,7 @@ export default function Header({
                     {profile.avatar_url ? (
                       <img src={profile.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
                     ) : (
-                      <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center">
-                        <User size={14} />
-                      </span>
+                      <IconBadge icon={User} tone="gold" size={24} iconSize={14} />
                     )}
                     {t('nav.accountSettings')}
                   </button>

@@ -11,6 +11,7 @@ import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '.
 import ReviewForm from './ReviewForm';
 import QuizViewer from '../Quiz/QuizViewer';
 import ClassworkList from './ClassworkList';
+import IconBadge from '../UI/IconBadge';
 
 type CourseDetailProps = {
   courseId: string;
@@ -337,9 +338,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
             <div>
               <div className="flex items-center gap-2.5 mb-3">
-                <span className="w-8 h-8 rounded-[8px] bg-primary-50 text-primary-700 flex items-center justify-center flex-shrink-0">
-                  <Info size={16} />
-                </span>
+                <IconBadge icon={Info} tone="gold" size={32} iconSize={16} shape="square" />
                 <h2 className="font-display text-2xl text-gray-900">About this course</h2>
               </div>
               <div className="text-gray-600 leading-relaxed">{renderRichText(course.description)}</div>
@@ -349,9 +348,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             <div>
               <div className="flex justify-between items-baseline mb-4">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-[8px] bg-primary-50 text-primary-700 flex items-center justify-center flex-shrink-0">
-                    <ListChecks size={16} />
-                  </span>
+                  <IconBadge icon={ListChecks} tone="gold" size={32} iconSize={16} shape="square" />
                   <h2 className="font-display text-2xl text-gray-900">Course content</h2>
                 </div>
                 <span className="text-sm text-gray-500">{lessons.length} lessons · {course.duration_hours}h total</span>
@@ -369,13 +366,18 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                         clickable ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300' : 'cursor-not-allowed opacity-70'
                       } ${isCurrent ? 'border-primary-200 bg-primary-50' : 'border-canvas-150'}`}
                     >
-                      <span
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          done ? 'bg-green-50 text-green-600' : isCurrent ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        {done ? <CheckCircle size={16} /> : clickable ? <PlayCircle size={16} /> : <Lock size={16} />}
-                      </span>
+                      {done || clickable ? (
+                        <IconBadge
+                          icon={done ? CheckCircle : PlayCircle}
+                          tone={done ? 'green' : 'gold'}
+                          size={32}
+                          iconSize={16}
+                        />
+                      ) : (
+                        <span className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 text-gray-400">
+                          <Lock size={16} />
+                        </span>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{lesson.title}</p>
                         {lesson.description && (
@@ -426,7 +428,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                     )}
                   </p>
                   {course.instructor.bio && (
-                    <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{course.instructor.bio}</p>
+                    <div className="text-sm text-gray-600 mt-1.5 leading-relaxed">{renderRichText(course.instructor.bio)}</div>
                   )}
                 </div>
               </div>
@@ -436,9 +438,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             {(reviews.length > 0 || canReview) && (
               <div>
                 <div className="flex items-center gap-2.5 mb-4">
-                  <span className="w-8 h-8 rounded-[8px] bg-primary-50 text-primary-700 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare size={16} />
-                  </span>
+                  <IconBadge icon={MessageSquare} tone="gold" size={32} iconSize={16} shape="square" />
                   <h2 className="font-display text-2xl text-gray-900">Student reviews</h2>
                 </div>
                 {canReview && (
@@ -466,7 +466,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                           ))}
                         </div>
                       </div>
-                      {review.comment && <p className="text-sm text-gray-600">{review.comment}</p>}
+                      {review.comment && <div className="text-sm text-gray-600">{renderRichText(review.comment)}</div>}
                     </div>
                   ))}
                 </div>

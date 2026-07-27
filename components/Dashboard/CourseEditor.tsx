@@ -1,9 +1,27 @@
 import { useState, useEffect, ChangeEvent } from 'react';
-import { ArrowLeft, Plus, Trash2, GripVertical, Upload, X, FileText, Video } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, GripVertical, Upload, X, FileText, Video, Eye } from 'lucide-react';
 import { supabase, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadLessonVideo, uploadLessonPDF, uploadCourseThumbnail } from '../../lib/storage';
+import { renderRichText } from '../../lib/richText';
 import QuizBuilder, { QuizDraft, emptyQuizDraft } from './QuizBuilder';
+
+// Live "how students will see this" preview -- founder feedback, 2026-07-27:
+// course creation was "the main area where richer text should've been
+// applied." Shown right under the field it previews, so bold/italic
+// formatting is visible while writing, not just after publishing.
+function RichTextPreview({ text }: { text: string }) {
+  if (!text.trim()) return null;
+  return (
+    <div className="mt-2 rounded-[10px] border border-canvas-150 bg-canvas-25 p-3.5">
+      <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+        <Eye size={12} />
+        Preview
+      </p>
+      <div className="text-sm text-gray-700 leading-relaxed">{renderRichText(text)}</div>
+    </div>
+  );
+}
 
 const MAX_THUMBNAIL_MB = 5;
 const MAX_VIDEO_MB = 500;
@@ -433,6 +451,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
             <p className="text-2xs text-gray-500 mt-1.5">
               Use **bold** and *italic* for emphasis — shown formatted on the course page.
             </p>
+            <RichTextPreview text={description} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -672,6 +691,10 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                             rows={3}
                             placeholder="Enter lesson text content (optional)"
                           />
+                          <p className="text-2xs text-gray-500 mt-1.5">
+                            Use **bold** and *italic* for emphasis — shown formatted on the lesson page.
+                          </p>
+                          <RichTextPreview text={lesson.content} />
                         </div>
 
                         <div className="border-t border-primary-200 pt-3">

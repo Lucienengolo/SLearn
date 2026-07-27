@@ -10,6 +10,8 @@ import {
 } from '../../lib/instructorLearners';
 import { Course } from '../../lib/supabase';
 import { fetchClassworkPosts, deleteClassworkPost, ClassworkPostWithCourse } from '../../lib/classwork';
+import { renderRichText } from '../../lib/richText';
+import { ICON_BADGE_GRADIENTS } from '../../lib/iconBadgeTones';
 import AddStudentModal from './AddStudentModal';
 import ClassworkComposer from './ClassworkComposer';
 import GradingPanel from './GradingPanel';
@@ -253,7 +255,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                           </button>
                         </div>
                         <p className="font-semibold text-gray-900">{post.title}</p>
-                        {post.body && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{post.body}</p>}
+                        {post.body && <div className="text-sm text-gray-600 mt-1">{renderRichText(post.body)}</div>}
                         {post.attachment_url && (
                           <a
                             href={post.attachment_url}
@@ -425,7 +427,10 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                       {row.avatarUrl ? (
                         <img src={row.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                       ) : (
-                        <span className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                        <span
+                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm text-white shadow-sm"
+                          style={{ background: ICON_BADGE_GRADIENTS.gold }}
+                        >
                           {row.fullName.charAt(0).toUpperCase()}
                         </span>
                       )}

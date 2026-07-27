@@ -6,6 +6,9 @@ import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSessi
 import { trackEvent } from '../../lib/analytics';
 import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
 import { isSlowConnection, getNetworkInfo } from '../../lib/connectionDetection';
+import { renderRichText } from '../../lib/richText';
+import { ICON_BADGE_GRADIENTS } from '../../lib/iconBadgeTones';
+import IconBadge from '../UI/IconBadge';
 import QuizViewer from '../Quiz/QuizViewer';
 import KairosMindTutor from './KairosMindTutor';
 import LowBandwidthVideoPlayer from './LowBandwidthVideoPlayer';
@@ -313,13 +316,18 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
               isCurrent ? 'bg-primary-50' : 'hover:bg-gray-50'
             }`}
           >
-            <span
-              className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                done ? 'bg-green-50 text-green-600' : isCurrent ? 'bg-primary-500 text-gray-900' : 'bg-gray-100 text-gray-400'
-              }`}
-            >
-              {done ? <CheckCircle size={14} /> : isCurrent ? <PlayCircle size={14} /> : <Lock size={14} />}
-            </span>
+            {done || isCurrent ? (
+              <IconBadge
+                icon={done ? CheckCircle : PlayCircle}
+                tone={done ? 'green' : 'gold'}
+                size={28}
+                iconSize={14}
+              />
+            ) : (
+              <span className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 text-gray-400">
+                <Lock size={14} />
+              </span>
+            )}
             <div className="flex-1 min-w-0">
               <div className={`text-sm truncate ${isCurrent ? 'font-semibold text-primary-700' : 'text-gray-800'}`}>
                 {l.title}
@@ -367,9 +375,10 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             onClick={toggleCurriculum}
             aria-label="Show course content"
             title="Show course content"
-            className="w-9 h-9 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-100 transition"
+            className="w-9 h-9 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+            style={{ background: ICON_BADGE_GRADIENTS.gray }}
           >
-            <ListTree size={16} />
+            <ListTree size={16} className="text-white" fill="currentColor" fillOpacity={0.25} />
           </button>
         </div>
       )}
@@ -420,20 +429,16 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
           </p>
 
           {lesson.description && (
-            <p className="text-gray-600 leading-relaxed mb-6">{lesson.description}</p>
+            <div className="text-gray-600 leading-relaxed mb-6">{renderRichText(lesson.description)}</div>
           )}
 
           {lesson.content && (
-            <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap mb-6">
-              {lesson.content}
-            </div>
+            <div className="prose max-w-none text-gray-700 leading-relaxed mb-6">{renderRichText(lesson.content)}</div>
           )}
 
           {lesson.pdf_notes_url && (
             <div className="flex items-center gap-3.5 border border-canvas-150 rounded-[10px] p-3.5 mb-8">
-              <span className="w-10 h-10 rounded-[10px] bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <FileText size={20} className="text-gray-600" />
-              </span>
+              <IconBadge icon={FileText} tone="gray" size={40} iconSize={20} shape="square" />
               <div className="flex-1">
                 <div className="font-semibold text-sm text-gray-900">Lesson notes (PDF)</div>
                 <div className="text-2xs text-gray-500">Slides &amp; materials</div>
@@ -527,9 +532,10 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             onClick={toggleKairosMind}
             aria-label="Show Kairos Mind"
             title="Show Kairos Mind"
-            className="w-9 h-9 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center hover:bg-primary-100 transition"
+            className="w-9 h-9 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+            style={{ background: ICON_BADGE_GRADIENTS.gold }}
           >
-            <Sparkles size={16} />
+            <Sparkles size={16} className="text-white" fill="currentColor" fillOpacity={0.25} />
           </button>
         </div>
       )}
