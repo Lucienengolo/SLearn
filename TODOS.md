@@ -1,5 +1,57 @@
 # TODOS
 
+## My Progress + League — Pathfinder reference (2026-07-27)
+
+Founder shared the Pathfinder sidebar again and asked for "My Progress" (cross-course
+progress) and "League" (rank + level, split into a Global league and a per-instructor
+"S@Learn Classroom" league that the instructor organizes for their own courses, each or
+combined), plus a "For Teachers" nav item that routes a student into the existing
+become-instructor flow.
+
+**Ranking architecture (migration `0038_league.sql`):** XP is computed live from
+`lesson_progress`/`quiz_attempts` (same formula as `lib/gamification.ts`: 10 XP/completed
+lesson, 15 XP/passed quiz, counted once per quiz) — no new counters to keep in sync. Three
+security-definer RPCs, all scoped by the courses actually being ranked (using a student's
+platform-wide XP for every scope would make "course league" and "instructor global league"
+collapse into the same ranking):
+- `get_global_league(p_limit)` — every student on the platform, all-time XP. Always
+  includes the caller's own row even outside the limit, so the UI can show "you're #142."
+- `get_course_league(p_course_id, p_limit)` — one course's XP only. Caller must be enrolled
+  in the course or be its instructor, or it raises — these functions bypass RLS, so they
+  enforce their own authorization. Verified locally: an outsider gets rejected; a student
+  enrolled in two instructors' courses correctly scores 0 XP in the course they haven't
+  touched, even though their platform-wide XP is nonzero (confirms the scoping actually
+  works, not just that the query runs).
+- `get_instructor_league(p_course_id, p_limit)` — the instructor's own view: null course_id
+  = all courses they teach combined ("global"), a specific course_id = just that course.
+  Always scoped to courses THEY teach.
+- **Not yet deployed** — same credential gap as every other migration/edge function this
+  session (no `SUPABASE_ACCESS_TOKEN`); verified against the local Postgres stub only.
+
+**Decisions locked in via AskUserQuestion rather than guessed:** all-time XP (not a
+weekly-reset ladder — that's real cron-job-shaped work, deferred, see the LMS overhaul
+track below if it's ever wanted); a student enrolled with several instructors gets a
+dropdown to switch between each course's classroom league (not one merged board); the
+instructor's League tab is view-only (no configurable ranking rules).
+
+- [x] `lib/league.ts` — RPC wrappers + `fetchStudentCourseOptions` for the dropdown.
+- [x] `components/Dashboard/LeagueBoard.tsx` — shared ranked-list UI (rank, totem, name, XP,
+  "(You)" highlight), reused by both the student and instructor league views.
+- [x] `components/Dashboard/MyProgress.tsx` — student-only, detailed per-course breakdown
+  (progress %, lessons done/total, certificate status), distinct from the Dashboard's
+  card-grid overview.
+- [x] `components/Dashboard/League.tsx` — student-only, Global/Classroom tabs.
+- [x] `components/Dashboard/InstructorLeague.tsx` — new tab inside `InstructorDashboard`.
+- [x] `DashboardSidebar` — added My Progress/League/For Teachers to `STUDENT_ITEMS` (For
+  Teachers routes to the existing `become-instructor` page — not a new page).
+- **Found and fixed a real race, not just a flaky test:** `League.tsx`'s data-fetch effect
+  was originally keyed on `[scope, selectedCourseId]` — but `selectedCourseId` changes
+  shortly after mount (once the course dropdown loads), which re-triggered the effect even
+  while `scope` was still `'global'`, firing a second, redundant `fetchGlobalLeague()` call
+  that raced the first. Split into two effects (one keyed on `[scope]` for the global
+  fetch, one on `[scope, selectedCourseId]` for the classroom fetch) — confirmed the
+  associated test failed intermittently before the fix (1 in ~3 runs) and passed 5/5 after.
+
 ## Profile page rebuild — Pathfinder reference (2026-07-27)
 
 Founder shared the Pathfinder "Profile" settings page and asked for it on the platform,

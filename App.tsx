@@ -20,6 +20,8 @@ const InstructorDashboard = lazy(() => import('./components/Dashboard/Instructor
 const InstructorApplicationFlow = lazy(() => import('./components/Dashboard/InstructorApplication'));
 const CertificatesPage = lazy(() => import('./components/Certificates/CertificatesPage'));
 const AccountSettings = lazy(() => import('./components/Account/AccountSettings'));
+const MyProgress = lazy(() => import('./components/Dashboard/MyProgress'));
+const League = lazy(() => import('./components/Dashboard/League'));
 const ReviewQueue = lazy(() => import('./components/Dashboard/ReviewQueue'));
 const MyRequests = lazy(() => import('./components/Tutors/MyRequests'));
 const RequestForm = lazy(() => import('./components/Tutors/RequestForm'));
@@ -277,6 +279,18 @@ function AppContent() {
         {currentPage === 'account-settings' && profile && (
           <Suspense fallback={<PageFallback />}>
             <AccountSettings onBack={handleBackToDashboard} onNavigate={handleNavigate} />
+          </Suspense>
+        )}
+
+        {currentPage === 'my-progress' && user && profile?.role === 'student' && (
+          <Suspense fallback={<PageFallback />}>
+            <MyProgress onBack={handleBackToDashboard} onNavigate={handleNavigate} onCourseSelect={handleCourseSelect} />
+          </Suspense>
+        )}
+
+        {currentPage === 'league' && user && profile?.role === 'student' && (
+          <Suspense fallback={<PageFallback />}>
+            <League onBack={handleBackToDashboard} onNavigate={handleNavigate} />
           </Suspense>
         )}
 

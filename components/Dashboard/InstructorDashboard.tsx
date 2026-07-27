@@ -6,17 +6,19 @@ import { useToast } from '../../contexts/ToastContext';
 import CourseEditor from './CourseEditor';
 import CourseStudents from './CourseStudents';
 import SLearnClassroom from './SLearnClassroom';
+import InstructorLeague from './InstructorLeague';
 import TutorMatches from '../Tutors/TutorMatches';
 import Chat from '../Tutors/Chat';
 import ConfirmDialog from '../UI/ConfirmDialog';
 
 type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number };
-type DashboardTab = 'courses' | 'tutor-matches' | 'classroom';
+type DashboardTab = 'courses' | 'tutor-matches' | 'classroom' | 'league';
 
 const TAB_LABELS: Record<DashboardTab, string> = {
   courses: 'Courses',
   'tutor-matches': 'Tutor Matches',
   classroom: 'S@Learn Classroom',
+  league: 'League',
 };
 
 function TabNav({ tab, onSelect }: { tab: DashboardTab; onSelect: (t: DashboardTab) => void }) {
@@ -153,6 +155,15 @@ export default function InstructorDashboard() {
 
   if (tab === 'classroom') {
     return <SLearnClassroom onBack={() => setTab('courses')} />;
+  }
+
+  if (tab === 'league') {
+    return (
+      <div className="max-w-[1200px] mx-auto px-6 py-10">
+        <TabNav tab={tab} onSelect={setTab} />
+        <InstructorLeague courses={courses.map((c) => ({ id: c.id, title: c.title }))} />
+      </div>
+    );
   }
 
   if (tab === 'tutor-matches' && user) {

@@ -5,12 +5,15 @@ import DashboardSidebar from '../components/Dashboard/DashboardSidebar';
 import { totemByName } from '../lib/totems';
 
 describe('DashboardSidebar', () => {
-  it('renders all 4 destinations and marks the current one active', () => {
+  it('renders all 7 student destinations and marks the current one active', () => {
     render(<DashboardSidebar current="certificates" onNavigate={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: /dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^dashboard$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /my progress/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /league/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /my requests/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /for teachers/i })).toBeInTheDocument();
 
     const certificatesButton = screen.getByRole('button', { name: /certificates/i });
     expect(certificatesButton).toHaveAttribute('aria-current', 'page');
@@ -27,6 +30,15 @@ describe('DashboardSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /my requests/i }));
     expect(onNavigate).toHaveBeenCalledWith('my-requests');
+
+    await user.click(screen.getByRole('button', { name: /my progress/i }));
+    expect(onNavigate).toHaveBeenCalledWith('my-progress');
+
+    await user.click(screen.getByRole('button', { name: /^league$/i }));
+    expect(onNavigate).toHaveBeenCalledWith('league');
+
+    await user.click(screen.getByRole('button', { name: /for teachers/i }));
+    expect(onNavigate).toHaveBeenCalledWith('become-instructor');
   });
 
   it('renders no profile header when no name/totem/tier are given', () => {
@@ -45,12 +57,15 @@ describe('DashboardSidebar', () => {
     expect(screen.getByText('🦁')).toBeInTheDocument();
   });
 
-  it('hides the student-only "My Requests" and "Certificates" items for an instructor', () => {
+  it('hides the student-only items for an instructor', () => {
     render(<DashboardSidebar current="account-settings" onNavigate={vi.fn()} role="instructor" />);
 
-    expect(screen.getByRole('button', { name: /dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^dashboard$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /my requests/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /certificates/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /my progress/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /league/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /for teachers/i })).not.toBeInTheDocument();
   });
 });

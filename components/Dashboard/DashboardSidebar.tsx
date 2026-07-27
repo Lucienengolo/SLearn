@@ -1,9 +1,9 @@
-import { LayoutDashboard, MessageCircle, Award, User } from 'lucide-react';
+import { LayoutDashboard, MessageCircle, Award, User, TrendingUp, Trophy, GraduationCap } from 'lucide-react';
 import { Totem } from '../../lib/totems';
 import { StudentProgressTier } from '../../lib/gamification';
 
 type DashboardSidebarProps = {
-  current: 'dashboard' | 'my-requests' | 'certificates' | 'account-settings';
+  current: 'dashboard' | 'my-progress' | 'league' | 'my-requests' | 'certificates' | 'account-settings';
   onNavigate: (page: string) => void;
   fullName?: string | null;
   totem?: Totem | null;
@@ -23,9 +23,12 @@ type DashboardSidebarProps = {
 // pages that already exist, not a parallel IA.
 const STUDENT_ITEMS = [
   { page: 'dashboard' as const, label: 'Dashboard', Icon: LayoutDashboard },
+  { page: 'my-progress' as const, label: 'My Progress', Icon: TrendingUp },
+  { page: 'league' as const, label: 'League', Icon: Trophy },
   { page: 'my-requests' as const, label: 'My Requests', Icon: MessageCircle },
   { page: 'certificates' as const, label: 'Certificates', Icon: Award },
   { page: 'account-settings' as const, label: 'Profile', Icon: User },
+  { page: 'become-instructor' as const, label: 'For Teachers', Icon: GraduationCap },
 ];
 
 const INSTRUCTOR_ITEMS = [
