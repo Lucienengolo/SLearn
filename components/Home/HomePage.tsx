@@ -4,6 +4,7 @@ import { supabase, Course, CourseStats, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import CourseCard from '../Courses/CourseCard';
 import { getCourseCover } from '../../lib/courseCovers';
+import IconBadge from '../UI/IconBadge';
 
 type HomePageProps = {
   onNavigate: (page: string) => void;
@@ -272,15 +273,15 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
           <h2 className="font-display text-3xl text-gray-900 mb-8 text-center">Why choose S@Learn?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { title: 'Learn at your own pace', body: 'Access courses anytime, anywhere' },
-              { title: 'Earn certificates', body: 'Get recognized for your achievements' },
-              { title: 'Expert instructors', body: 'Learn from industry professionals' },
+              { title: 'Learn at your own pace', body: 'Access courses anytime, anywhere', tone: 'blue' as const },
+              { title: 'Earn certificates', body: 'Get recognized for your achievements', tone: 'gold' as const },
+              { title: 'Expert instructors', body: 'Learn from industry professionals', tone: 'green' as const },
             ].map((item) => (
               <div
                 key={item.title}
                 className="bg-white rounded-[14px] border border-canvas-150 p-6 flex items-start gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform]"
               >
-                <CheckCircle size={20} className="text-primary-700 flex-shrink-0 mt-0.5" />
+                <IconBadge icon={CheckCircle} tone={item.tone} size={40} iconSize={20} />
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
                   <p className="text-sm text-gray-600">{item.body}</p>

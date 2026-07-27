@@ -323,15 +323,15 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 </div>
               )}
               <div className="flex items-center gap-2 text-gray-600">
-                <Users size={18} />
+                <Users size={18} className="text-primary-600" />
                 {lessons.length > 0 ? `Open to all levels` : 'No lessons yet'}
               </div>
               <div className="flex items-center gap-2 text-gray-600">
-                <Clock size={18} />
+                <Clock size={18} className="text-blue-500" />
                 {course.duration_hours} hours
               </div>
               <div className="flex items-center gap-2 text-gray-600">
-                <BookOpen size={18} />
+                <BookOpen size={18} className="text-green-600" />
                 {lessons.length} lessons
               </div>
             </div>

@@ -1,5 +1,40 @@
 # TODOS
 
+## Real markdown gap found via screenshots + more icon spots (2026-07-27)
+
+Founder pasted 6 screenshots (category chips, course card meta, a "Why choose" feature
+callout, CourseDetail's meta row, the instructor card/reviews header, and — critically — a
+live lesson page) asking for richer text/icons "on the entire platform." Cross-checked each
+screenshot against current source before touching anything:
+
+- **Category chips, instructor-card avatar, and "Student reviews" header were already fixed**
+  in the previous two commits (`ac1e24b`, `11225f5`) — the flat-looking versions in those
+  screenshots are almost certainly the live site not having redeployed yet, not a code gap.
+  Worth double-checking the Vercel deploy actually picked up the latest push if they still
+  look flat after a refresh.
+- **The lesson-content screenshot exposed a real, serious bug**: actual lesson content (a
+  "CSS Box Model" lesson) uses bullet lists, inline `` `code` ``, and fenced ` ```css ` code
+  blocks — none of which `lib/richText.tsx` understood. Instead of rendering nicely, students
+  were seeing literal `**`, `-`, and backtick/fence characters cluttering the text, which is
+  arguably *worse* than the plain-text rendering from before rich text existed at all.
+  Rewrote `renderRichText` into a real (still dependency-free) block parser: fenced code
+  blocks → `<pre><code>`, inline code → `<code>`, `-`/`*`/`1.` lists → `<ul>`/`<ol>`,
+  `#`/`##`/`###` → heading tags, on top of the existing bold/italic/paragraph handling.
+  Reconsidered and still deliberately chose NOT to add `react-markdown`/`remark-gfm` for
+  this — the block set actually observed in real content is bounded and now fully covered by
+  the hand-rolled parser, and a full remark/unified pipeline is real added bundle weight for
+  marginal correctness gain at this scope. Added a regression test using the exact mixed
+  content from the screenshot.
+- **Found 3 more icon spots the earlier Explore-agent sweep missed**, all bare/uncolored
+  icons rather than icons inside a tinted container (which is what that sweep's search
+  pattern looked for): `CourseCard.tsx`'s duration/enrollment meta icons, `CourseDetail.tsx`'s
+  meta row (Users/Clock/BookOpen), and `HomePage.tsx`'s own separate "Why choose S@Learn?"
+  section (a near-duplicate of LandingPage's already-upgraded pillars, but a different file,
+  so it was invisible to a search for colored *container* badges specifically).
+
+Verified: 256/256 tests passing (7 new richText cases covering lists/code/headings + the
+exact screenshot content), typecheck/lint/build all clean.
+
 ## Platform-wide rich text + icon badge sweep (2026-07-27)
 
 Founder, after the classwork/S@Learn Classroom pass: "apply the richer text and icons on

@@ -66,13 +66,13 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
         <div className="flex items-center text-sm text-gray-500 gap-4 mb-3">
           {course.duration_hours > 0 && (
             <div className="flex items-center gap-1">
-              <Clock size={15} />
+              <Clock size={15} className="text-blue-500" />
               <span>{course.duration_hours}h</span>
             </div>
           )}
           {course.enrollmentCount !== undefined && (
             <div className="flex items-center gap-1">
-              <Users size={15} />
+              <Users size={15} className="text-primary-600" />
               <span>{course.enrollmentCount}</span>
             </div>
           )}
