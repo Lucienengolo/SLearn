@@ -276,7 +276,7 @@ function AppContent() {
 
         {currentPage === 'account-settings' && profile && (
           <Suspense fallback={<PageFallback />}>
-            <AccountSettings onBack={handleBackToDashboard} />
+            <AccountSettings onBack={handleBackToDashboard} onNavigate={handleNavigate} />
           </Suspense>
         )}
 

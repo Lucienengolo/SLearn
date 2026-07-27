@@ -1,5 +1,34 @@
 # TODOS
 
+## Profile page rebuild — Pathfinder reference (2026-07-27)
+
+Founder shared the Pathfinder "Profile" settings page and asked for it on the platform,
+"keeping a reflection to my app." Rebuilt `AccountSettings.tsx`: persistent `DashboardSidebar`
+(now reachable from this page too, not just the dashboard), a profile header card (avatar +
+name + a REAL status badge), then grouped sections — Basic information (name/bio + totem
+picker, students only), Account information (email), Password, and a new Delete Account
+section.
+
+**Deliberately not copied from the reference:** the "Free" subscription pill (no paid tiers
+exist), the public-profile link + "Show Certificates/Spaces in Profile" visibility toggles
+(no public profile page exists — a toggle for a page that isn't there would be dead UI,
+same anti-pattern as the earlier "Assign Products/Goals" call). The header shows what's
+actually real instead: a verified-instructor badge for instructors, or a totem + league tier
+for students.
+
+- [x] **DashboardSidebar** gained a `role` prop — "My Requests"/"Certificates" are
+  student-only concepts and AccountSettings is shared by both roles; an instructor now sees
+  just Dashboard/Profile.
+- [x] **Delete Account — built for real, not decorative.** New `delete-account` edge function
+  (`supabase/functions/delete-account/index.ts`, type-checked + linted locally with `deno`):
+  always deletes the CALLER's own account only (no target-user param, so it can never be
+  used on someone else's account), via `admin.auth.admin.deleteUser()`. `profiles.id` already
+  has `on delete cascade` to `auth.users` (0001_core_schema.sql), so this cascades through
+  everything the account owns without a manual cleanup pass. Client side: `ConfirmDialog` +
+  `useToast`, sign-out + redirect home on success. **Not yet deployed** — same gap as every
+  other edge function this session (match-tutor-request, create-tutor-deposit-checkout,
+  cancel-tutor-booking, instructor-approval); still blocked on a `SUPABASE_ACCESS_TOKEN`.
+
 ## Global footer (2026-07-24)
 
 Founder shared a W3Schools footer screenshot and asked for a footer on the platform.

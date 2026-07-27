@@ -1,16 +1,28 @@
-import { useState } from 'react';
-import { ArrowLeft, Camera, LogOut, User as UserIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Camera, LogOut, User as UserIcon, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/storage';
-import { TOTEMS } from '../../lib/totems';
+import { TOTEMS, totemByName } from '../../lib/totems';
+import { fetchStudentProgress, StudentProgressTier } from '../../lib/gamification';
+import DashboardSidebar from '../Dashboard/DashboardSidebar';
+import ConfirmDialog from '../UI/ConfirmDialog';
 
 type AccountSettingsProps = {
   onBack: () => void;
+  onNavigate: (page: string) => void;
 };
 
-export default function AccountSettings({ onBack }: AccountSettingsProps) {
+// Rebuilt to match the Pathfinder "Profile" reference page (2026-07-27):
+// persistent sidebar + profile header card + grouped sections. "Keeping a
+// reflection to my app": no fake public-profile link/visibility toggles
+// (S@Learn has no public profile page) and no fake "Free"/"Plus" pill (no
+// subscription tiers exist) -- the header shows what's actually real
+// instead: a verified-instructor badge, or a student's totem + league tier.
+export default function AccountSettings({ onBack, onNavigate }: AccountSettingsProps) {
   const { user, profile, refreshProfile, signOut } = useAuth();
+  const { showToast } = useToast();
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -35,6 +47,19 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [tier, setTier] = useState<StudentProgressTier | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const isStudent = profile?.role === 'student';
+
+  useEffect(() => {
+    if (user && isStudent) {
+      fetchStudentProgress(user.id).then((p) => setTier(p.tier));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isStudent]);
 
   if (!user || !profile) return null;
 
@@ -144,22 +169,45 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    setDeletingAccount(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) {
+        showToast('Failed to delete account. Please try again or contact support.', 'error');
+        return;
+      }
+      await signOut();
+      onNavigate('home');
+    } finally {
+      setDeletingAccount(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const totemInfo = totemByName(totem);
+
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-6"
-      >
-        <ArrowLeft size={16} />
-        <span>Back</span>
-      </button>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
+      <DashboardSidebar
+        current="account-settings"
+        onNavigate={onNavigate}
+        fullName={profile.full_name}
+        totem={isStudent ? totemInfo : null}
+        tier={isStudent ? tier : null}
+        role={profile.role}
+      />
 
-      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">Account settings</h1>
-      <p className="text-gray-500 mb-8">Manage your profile, email, and password.</p>
+      <div className="min-w-0">
+        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4 lg:hidden">
+          ← Back
+        </button>
 
-      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Profile</h2>
-        <div className="flex items-center gap-5 mb-6">
+        {/* Profile header -- avatar + name + a real status badge (verified
+            instructor, or nothing fabricated for students -- no fake
+            "Free"/"Plus" pill, no public-profile link, since neither
+            subscription tiers nor public profiles exist in this product). */}
+        <div className="flex items-center gap-5 mb-8">
           <div className="relative">
             {profile.avatar_url ? (
               <img
@@ -190,147 +238,189 @@ export default function AccountSettings({ onBack }: AccountSettingsProps) {
               />
             </label>
           </div>
-          <div className="text-sm text-gray-500">
-            {uploadingAvatar ? 'Uploading…' : 'PNG or JPG, square images look best.'}
-            {avatarError && <p className="text-red-600 mt-1">{avatarError}</p>}
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-2xl text-gray-900">{profile.full_name || profile.email}</h1>
+              {profile.role === 'instructor' && profile.verified && (
+                <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded flex items-center gap-1">
+                  <CheckCircle size={12} />
+                  Verified instructor
+                </span>
+              )}
+              {isStudent && tier && (
+                <span className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded font-medium">{tier}</span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {uploadingAvatar ? 'Uploading…' : 'PNG or JPG, square images look best.'}
+            </p>
+            {avatarError && <p className="text-sm text-red-600 mt-1">{avatarError}</p>}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="settings-full-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full name
-            </label>
+        <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+          <h2 className="font-semibold text-gray-900 mb-1">Basic information</h2>
+          <p className="text-sm text-gray-500 mb-4">Your name and bio, shown across the platform.</p>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="settings-full-name" className="block text-sm font-medium text-gray-700 mb-1">
+                Full name
+              </label>
+              <input
+                id="settings-full-name"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+              />
+            </div>
+            <div>
+              <label htmlFor="settings-bio" className="block text-sm font-medium text-gray-700 mb-1">
+                Bio
+              </label>
+              <textarea
+                id="settings-bio"
+                rows={3}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+              />
+            </div>
+            {profileMessage && <p className="text-sm text-primary-700">{profileMessage}</p>}
+            {profileError && <p className="text-sm text-red-600">{profileError}</p>}
+            <button
+              onClick={handleProfileSave}
+              disabled={savingProfile}
+              className="bg-primary-500 text-gray-900 h-11 px-4 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
+            >
+              {savingProfile ? 'Saving…' : 'Save profile'}
+            </button>
+          </div>
+
+          {isStudent && (
+            <div className="mt-6 pt-6 border-t border-canvas-150">
+              <p className="text-sm font-medium text-gray-700 mb-1">Totem</p>
+              <p className="text-sm text-gray-500 mb-4">
+                Pick the national team totem that represents you. Shown on your dashboard.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Totem">
+                {TOTEMS.map((t) => (
+                  <button
+                    key={t.name}
+                    type="button"
+                    role="radio"
+                    aria-checked={totem === t.name}
+                    disabled={savingTotem}
+                    onClick={() => handleTotemSave(t.name)}
+                    className={`flex items-center gap-3 text-left px-3.5 py-2.5 rounded-[10px] border transition ${
+                      totem === t.name ? 'border-primary-400 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span
+                      className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl flex-shrink-0 ${t.bgClass}`}
+                      aria-hidden="true"
+                    >
+                      {t.emoji}
+                    </span>
+                    <span>
+                      <p className="text-sm font-medium text-gray-900">{t.name}</p>
+                      <p className="text-2xs text-gray-500">{t.country}</p>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {totemMessage && <p className="text-sm text-primary-700 mt-3">{totemMessage}</p>}
+              {totemError && <p className="text-sm text-red-600 mt-3">{totemError}</p>}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Account information</h2>
+          <p className="text-sm text-gray-500 mb-4">Current: {user.email}</p>
+          <div className="space-y-3">
             <input
-              id="settings-full-name"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              type="email"
+              placeholder="New email address"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
               className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
             />
-          </div>
-          <div>
-            <label htmlFor="settings-bio" className="block text-sm font-medium text-gray-700 mb-1">
-              Bio
-            </label>
-            <textarea
-              id="settings-bio"
-              rows={3}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-            />
-          </div>
-          {profileMessage && <p className="text-sm text-primary-700">{profileMessage}</p>}
-          {profileError && <p className="text-sm text-red-600">{profileError}</p>}
-          <button
-            onClick={handleProfileSave}
-            disabled={savingProfile}
-            className="bg-primary-500 text-gray-900 h-11 px-4 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
-          >
-            {savingProfile ? 'Saving…' : 'Save profile'}
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
-        <h2 className="font-semibold text-gray-900 mb-1">Totem</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Pick the national team totem that represents you. Shown on your dashboard.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Totem">
-          {TOTEMS.map((t) => (
+            {emailMessage && <p className="text-sm text-primary-700">{emailMessage}</p>}
+            {emailError && <p className="text-sm text-red-600">{emailError}</p>}
             <button
-              key={t.name}
-              type="button"
-              role="radio"
-              aria-checked={totem === t.name}
-              disabled={savingTotem}
-              onClick={() => handleTotemSave(t.name)}
-              className={`flex items-center gap-3 text-left px-3.5 py-2.5 rounded-[10px] border transition ${
-                totem === t.name
-                  ? 'border-primary-400 bg-primary-50'
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}
+              onClick={handleEmailChange}
+              disabled={savingEmail}
+              className="bg-white border border-gray-200 text-gray-700 h-11 px-4 rounded-[10px] hover:bg-gray-50 transition font-medium disabled:opacity-50"
             >
-              <span
-                className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl flex-shrink-0 ${t.bgClass}`}
-                aria-hidden="true"
-              >
-                {t.emoji}
-              </span>
-              <span>
-                <p className="text-sm font-medium text-gray-900">{t.name}</p>
-                <p className="text-2xs text-gray-500">{t.country}</p>
-              </span>
+              {savingEmail ? 'Sending…' : 'Change email'}
             </button>
-          ))}
+          </div>
         </div>
-        {totemMessage && <p className="text-sm text-primary-700 mt-3">{totemMessage}</p>}
-        {totemError && <p className="text-sm text-red-600 mt-3">{totemError}</p>}
-      </div>
 
-      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Email</h2>
-        <p className="text-sm text-gray-500 mb-4">Current: {user.email}</p>
-        <div className="space-y-3">
-          <input
-            type="email"
-            placeholder="New email address"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-          />
-          {emailMessage && <p className="text-sm text-primary-700">{emailMessage}</p>}
-          {emailError && <p className="text-sm text-red-600">{emailError}</p>}
+        <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Password</h2>
+          <div className="space-y-3">
+            <input
+              type="password"
+              placeholder="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              minLength={8}
+              className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+            />
+            <input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={8}
+              className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+            />
+            {passwordMessage && <p className="text-sm text-primary-700">{passwordMessage}</p>}
+            {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
+            <button
+              onClick={handlePasswordChange}
+              disabled={savingPassword}
+              className="bg-white border border-gray-200 text-gray-700 h-11 px-4 rounded-[10px] hover:bg-gray-50 transition font-medium disabled:opacity-50"
+            >
+              {savingPassword ? 'Updating…' : 'Update password'}
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-[14px] border border-red-200 p-6 mb-6">
+          <h2 className="font-semibold text-red-700 mb-1">Delete account</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Permanently deletes your account and everything tied to it — courses, enrollments, bookings. This
+            cannot be undone.
+          </p>
           <button
-            onClick={handleEmailChange}
-            disabled={savingEmail}
-            className="bg-white border border-gray-200 text-gray-700 h-11 px-4 rounded-[10px] hover:bg-gray-50 transition font-medium disabled:opacity-50"
+            onClick={() => setDeleteDialogOpen(true)}
+            className="bg-white border border-red-200 text-red-600 h-11 px-4 rounded-[10px] hover:bg-red-50 transition font-medium"
           >
-            {savingEmail ? 'Sending…' : 'Change email'}
+            Delete my account
           </button>
         </div>
+
+        <button
+          onClick={signOut}
+          className="flex items-center gap-2 text-red-600 hover:bg-red-50 h-11 px-4 rounded-[10px] transition font-medium"
+        >
+          <LogOut size={18} />
+          Sign out
+        </button>
       </div>
 
-      <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Password</h2>
-        <div className="space-y-3">
-          <input
-            type="password"
-            placeholder="New password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            minLength={8}
-            className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-          />
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            minLength={8}
-            className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-          />
-          {passwordMessage && <p className="text-sm text-primary-700">{passwordMessage}</p>}
-          {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
-          <button
-            onClick={handlePasswordChange}
-            disabled={savingPassword}
-            className="bg-white border border-gray-200 text-gray-700 h-11 px-4 rounded-[10px] hover:bg-gray-50 transition font-medium disabled:opacity-50"
-          >
-            {savingPassword ? 'Updating…' : 'Update password'}
-          </button>
-        </div>
-      </div>
-
-      <button
-        onClick={signOut}
-        className="flex items-center gap-2 text-red-600 hover:bg-red-50 h-11 px-4 rounded-[10px] transition font-medium"
-      >
-        <LogOut size={18} />
-        Sign out
-      </button>
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        title="Delete your account?"
+        message="This permanently deletes your account and everything tied to it. This cannot be undone."
+        confirmLabel={deletingAccount ? 'Deleting…' : 'Delete my account'}
+        destructive
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
+      />
     </div>
   );
 }

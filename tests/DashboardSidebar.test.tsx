@@ -44,4 +44,13 @@ describe('DashboardSidebar', () => {
     expect(screen.getByText('Silver')).toBeInTheDocument();
     expect(screen.getByText('🦁')).toBeInTheDocument();
   });
+
+  it('hides the student-only "My Requests" and "Certificates" items for an instructor', () => {
+    render(<DashboardSidebar current="account-settings" onNavigate={vi.fn()} role="instructor" />);
+
+    expect(screen.getByRole('button', { name: /dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /my requests/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /certificates/i })).not.toBeInTheDocument();
+  });
 });

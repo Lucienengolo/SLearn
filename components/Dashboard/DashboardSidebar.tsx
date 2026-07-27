@@ -8,6 +8,11 @@ type DashboardSidebarProps = {
   fullName?: string | null;
   totem?: Totem | null;
   tier?: StudentProgressTier | null;
+  // Defaults to 'student' -- AccountSettings.tsx is shared by both roles,
+  // and "My Requests"/"Certificates" are student-only concepts (an
+  // instructor account, being single-role, never has personal enrollments
+  // or tutor requests of its own).
+  role?: 'student' | 'instructor';
 };
 
 // Pathfinder-style dashboard IA (DESIGN.md Patterns, 2026-07-23; Product
@@ -16,14 +21,21 @@ type DashboardSidebarProps = {
 // profile header (totem + name + tier pill) sits above the nav items,
 // mirroring Pathfinder's avatar+name+"Free" card -- still a shortcut nav to
 // pages that already exist, not a parallel IA.
-const ITEMS = [
+const STUDENT_ITEMS = [
   { page: 'dashboard' as const, label: 'Dashboard', Icon: LayoutDashboard },
   { page: 'my-requests' as const, label: 'My Requests', Icon: MessageCircle },
   { page: 'certificates' as const, label: 'Certificates', Icon: Award },
   { page: 'account-settings' as const, label: 'Profile', Icon: User },
 ];
 
-export default function DashboardSidebar({ current, onNavigate, fullName, totem, tier }: DashboardSidebarProps) {
+const INSTRUCTOR_ITEMS = [
+  { page: 'dashboard' as const, label: 'Dashboard', Icon: LayoutDashboard },
+  { page: 'account-settings' as const, label: 'Profile', Icon: User },
+];
+
+export default function DashboardSidebar({ current, onNavigate, fullName, totem, tier, role = 'student' }: DashboardSidebarProps) {
+  const items = role === 'instructor' ? INSTRUCTOR_ITEMS : STUDENT_ITEMS;
+
   return (
     <div className="flex lg:flex-col gap-4">
       {(fullName || totem || tier) && (
@@ -45,7 +57,7 @@ export default function DashboardSidebar({ current, onNavigate, fullName, totem,
       )}
 
       <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible" aria-label="Dashboard">
-        {ITEMS.map(({ page, label, Icon }) => {
+        {items.map(({ page, label, Icon }) => {
           const isActive = current === page;
           return (
             <button
