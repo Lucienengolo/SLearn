@@ -1,5 +1,45 @@
 # TODOS
 
+## Dark code block, non-responsive People chart, sticky nav, audience wordmark (2026-07-28)
+
+Founder pasted a screenshot (the same dark code block from the CSS lesson) plus a screen
+recording showing the mobile experience, and asked for 4 things.
+
+- **Dark code block → light**: `lib/richText.tsx`'s fenced-code-block rendering used
+  `bg-gray-900 text-gray-100` -- a genuinely dark box that clashes with the rest of the
+  app's paper-light surfaces. Changed to `bg-gray-50` / `text-gray-800`, matching the
+  existing inline-code style.
+- **S@Learn Classroom's People page didn't fit on any screen**: found via the recording --
+  an instructor with 20 courses saw the "Class overall progress" chart's bars (`flex-1`
+  each, dividing available width evenly across an unbounded course count) squeeze down to
+  unreadable slivers with 1-3-character truncated labels ("N...", "C...") AND still overflow
+  past the right edge of the viewport, with no way to scroll to the cut-off bars. Fixed:
+  each bar is now a fixed `w-9`, in a `overflow-x-auto` track -- scrolls on any screen
+  regardless of course count, instead of squeezing infinitely. (Checked `CourseStudents.tsx`'s
+  own progress chart for the same bug -- it's always exactly 3 fixed buckets
+  [not-started/in-progress/completed], so it was never at risk.)
+- **Nav bar now stays fixed on scroll, on every page and every account**: `AudienceNav` (the
+  Individual/Schools/Business/Government tabs) was never sticky -- only the `<header>` below
+  it was, so on scroll the tabs vanished while the header alone snapped to the very top, a
+  visible jump. Wrapped both in one shared `sticky top-0 z-40` container in `Header.tsx`.
+- **Header wordmark now reflects the active audience track**: clicking Schools/Business/
+  Government already showed distinct page content (`InstitutionalLandingPage`, built
+  2026-07-23), but the header itself never changed, so there was no per-track "reflection"
+  visible in the app's own chrome. Added a `· Government`/`· Business`/`· Schools &
+  Universities` suffix next to the "S@Learn" wordmark while on that page (hidden on very
+  small screens via `hidden sm:inline`, in keeping with this same request's own "not
+  responsive" complaint). Scoped to the institutional landing pages themselves -- not
+  extended into a full per-track dashboard/color-theme, since no such thing exists yet and
+  building one wasn't what was asked.
+
+Verified: 261/261 tests passing (5 new: `Header.test.tsx`), typecheck/lint/build all clean.
+Full-suite runs were unusually slow this session (up to 140s vs. the normal ~90s, one run
+had to be killed and retried) due to severe pre-existing memory pressure from other
+processes already running in this sandbox (VS Code, tsserver, Codeium, ~6GB of 6.3GB used
+before any test run even starts) -- not a regression from these changes; confirmed via a
+narrower, fast, clean run of just the touched test files before the full suite finally went
+through.
+
 ## Real markdown gap found via screenshots + more icon spots (2026-07-27)
 
 Founder pasted 6 screenshots (category chips, course card meta, a "Why choose" feature

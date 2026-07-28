@@ -371,25 +371,32 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
 
                 <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
                   <p className="text-2xs font-semibold text-gray-500 mb-3">Class overall progress</p>
-                  <div className="flex items-end justify-between gap-3 h-24">
-                    {courseProgressBars.map((bar) => (
-                      <div key={bar.courseId} className="flex-1 flex flex-col items-center justify-end h-full">
-                        <span className="text-2xs font-semibold text-gray-700 mb-1">{bar.averageProgress}%</span>
-                        <div
-                          className="w-full rounded-t-[4px] bg-primary-500 transition-[height] duration-300 ease-out"
-                          style={{ height: `${Math.max(4, (bar.averageProgress / chartMax) * 100)}%` }}
-                          role="img"
-                          aria-label={`${bar.courseTitle}: ${bar.averageProgress}% average progress`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between gap-2 mt-2">
-                    {courseProgressBars.map((bar) => (
-                      <span key={bar.courseId} className="text-2xs text-gray-500 flex-1 text-center leading-tight truncate">
-                        {bar.courseTitle}
-                      </span>
-                    ))}
+                  {/* Course count is unbounded -- flex-1 bars used to squeeze
+                      to unreadable slivers (and overflow the viewport
+                      entirely) once an instructor had more than a handful of
+                      courses. Fixed-width bars in a horizontally scrollable
+                      track fit any screen and any course count instead. */}
+                  <div className="overflow-x-auto">
+                    <div className="flex items-end gap-3 h-24 min-w-max px-0.5">
+                      {courseProgressBars.map((bar) => (
+                        <div key={bar.courseId} className="w-9 flex-shrink-0 flex flex-col items-center justify-end h-full">
+                          <span className="text-2xs font-semibold text-gray-700 mb-1">{bar.averageProgress}%</span>
+                          <div
+                            className="w-full rounded-t-[4px] bg-primary-500 transition-[height] duration-300 ease-out"
+                            style={{ height: `${Math.max(4, (bar.averageProgress / chartMax) * 100)}%` }}
+                            role="img"
+                            aria-label={`${bar.courseTitle}: ${bar.averageProgress}% average progress`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-3 mt-2 min-w-max px-0.5">
+                      {courseProgressBars.map((bar) => (
+                        <span key={bar.courseId} className="w-9 flex-shrink-0 text-2xs text-gray-500 text-center leading-tight truncate">
+                          {bar.courseTitle}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

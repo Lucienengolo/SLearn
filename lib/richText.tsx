@@ -131,8 +131,10 @@ export function renderRichText(text: string): ReactNode {
   return parseBlocks(text).map((block, i) => {
     switch (block.type) {
       case 'code':
+        // Light, not dark -- founder flagged the dark code block as
+        // clashing with the rest of the app's paper-light surfaces.
         return (
-          <pre key={i} className="bg-gray-900 text-gray-100 rounded-[10px] p-4 overflow-x-auto text-sm my-3">
+          <pre key={i} className="bg-gray-50 border border-canvas-150 text-gray-800 rounded-[10px] p-4 overflow-x-auto text-sm my-3">
             <code>{block.code}</code>
           </pre>
         );

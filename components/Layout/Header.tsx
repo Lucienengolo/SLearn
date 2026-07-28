@@ -44,10 +44,26 @@ export default function Header({
     return () => window.removeEventListener(GUEST_XP_EVENT, onGuestXpChanged);
   }, []);
 
+  // Which institutional audience track (if any) the user is currently
+  // browsing -- reflected in the wordmark itself, not just the page body,
+  // per founder feedback that the nav "should reflect its own view" per
+  // account track. Home/courses/dashboard etc. show the plain wordmark.
+  const AUDIENCE_LABEL: Partial<Record<string, string>> = {
+    'audience-schools': 'Schools & Universities',
+    'audience-business': 'Business',
+    'audience-government': 'Government',
+  };
+  const audienceLabel = AUDIENCE_LABEL[currentPage];
+
   return (
     <>
-      <AudienceNav onNavigate={onNavigate} currentPage={currentPage} />
-  <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-canvas-150 shadow-sm">
+      {/* AudienceNav + header wrapped in one sticky container -- previously
+          only the header itself was sticky, so the audience tabs above it
+          scrolled away while the header snapped to the very top, a visible
+          jump. Both now stay put together on every page, for every account. */}
+      <div className="sticky top-0 z-40">
+        <AudienceNav onNavigate={onNavigate} currentPage={currentPage} />
+        <header className="bg-white/85 backdrop-blur-md border-b border-canvas-150 shadow-sm">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex justify-between items-center h-[66px]">
             <div
@@ -59,6 +75,9 @@ export default function Header({
               className="h-9 w-auto" />
               <span className="text-xl font-bold text-gray-900">
                 <span className="text-primary-600">@</span>Learn
+                {audienceLabel && (
+                  <span className="hidden sm:inline text-gray-400 font-medium"> · {audienceLabel}</span>
+                )}
               </span>
             </div>
 
@@ -295,6 +314,7 @@ export default function Header({
           </div>
         )}
       </header>
+      </div>
 
       <AuthModal isOpen={authModalOpen} onClose={onCloseAuthModal} initialMode={authModalMode} />
     </>
