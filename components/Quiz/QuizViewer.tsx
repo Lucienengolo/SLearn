@@ -187,7 +187,7 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
 
       <div className="rounded-[14px] border border-canvas-150 p-6 md:p-8">
         <div className="mb-8">
-          <h1 className="font-display text-3xl text-gray-900 mb-2">{quiz.title}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl text-gray-900 mb-2">{quiz.title}</h1>
           {quiz.description && <div className="text-gray-500">{renderRichText(quiz.description)}</div>}
           <p className="text-sm text-gray-500 mt-2">
             Passing score: {quiz.passing_score}%

@@ -70,6 +70,21 @@ describe('renderRichText', () => {
     expect(container.querySelector('h4')?.textContent).toBe('Section title');
   });
 
+  it('gives each of the 3 heading levels a visually distinct style (chapter vs. sub-heading vs. eyebrow label)', () => {
+    const { container } = render(
+      <div>{renderRichText('# Chapter\n\n## Sub-heading\n\n### Eyebrow label')}</div>
+    );
+    const h3 = container.querySelector('h3'); // level 1: "chapter" break
+    const h4 = container.querySelector('h4'); // level 2: sub-heading
+    const h5 = container.querySelector('h5'); // level 3: eyebrow label
+
+    expect(h3?.className).toContain('border-b'); // chapter break gets a divider
+    expect(h5?.className).toContain('uppercase'); // eyebrow label is small-caps
+    // The three tiers must not collapse into identical styling.
+    expect(h3?.className).not.toBe(h4?.className);
+    expect(h4?.className).not.toBe(h5?.className);
+  });
+
   it('renders the exact mixed CSS-lesson content correctly (regression for the raw-markdown bug)', () => {
     const content = [
       'Content, padding, border, and margin.',

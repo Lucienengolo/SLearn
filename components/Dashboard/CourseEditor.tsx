@@ -692,7 +692,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                             placeholder="Enter lesson text content (optional)"
                           />
                           <p className="text-2xs text-gray-500 mt-1.5">
-                            Use **bold** and *italic* for emphasis — shown formatted on the lesson page.
+                            Use **bold**, *italic*, `code`, - bullet lists, 1. numbered lists, and #/##/### for
+                            chapter/sub-heading/label breaks — shown formatted on the lesson page.
                           </p>
                           <RichTextPreview text={lesson.content} />
                         </div>

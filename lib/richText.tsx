@@ -124,8 +124,20 @@ function parseBlocks(text: string): Block[] {
   return blocks;
 }
 
+// Three visibly distinct tiers -- founder feedback (2026-07-28): rendered
+// lesson content gave "no way to differentiate heading, sub heading,
+// chapters, sections." # reads as a chapter/section break (display font,
+// bottom border, most spacing above it), ## as a regular sub-heading, and
+// ### as a small-caps "eyebrow" label -- same treatment already used for
+// category/eyebrow text elsewhere in the app (e.g. CourseDetail's category
+// tag), so a level-3 heading in lesson content matches a visual language
+// students already see, rather than inventing a fourth new style.
 const HEADING_TAGS = { 1: 'h3', 2: 'h4', 3: 'h5' } as const;
-const HEADING_SIZES = { 1: 'text-xl', 2: 'text-lg', 3: 'text-base' } as const;
+const HEADING_CLASSES = {
+  1: 'font-display text-xl sm:text-2xl font-semibold text-gray-900 mt-6 mb-2 pb-2 border-b border-canvas-150',
+  2: 'font-display text-lg font-semibold text-gray-900 mt-5 mb-1.5',
+  3: 'text-2xs font-semibold uppercase tracking-wide text-primary-700 mt-4 mb-1',
+} as const;
 
 export function renderRichText(text: string): ReactNode {
   return parseBlocks(text).map((block, i) => {
@@ -141,7 +153,7 @@ export function renderRichText(text: string): ReactNode {
       case 'heading': {
         const Tag = HEADING_TAGS[block.level];
         return (
-          <Tag key={i} className={`${HEADING_SIZES[block.level]} font-semibold text-gray-900 mt-4 mb-2`}>
+          <Tag key={i} className={HEADING_CLASSES[block.level]}>
             {renderInline(block.text, `h${i}`)}
           </Tag>
         );

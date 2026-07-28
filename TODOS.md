@@ -1,5 +1,40 @@
 # TODOS
 
+## Mobile button-wrap bug + heading hierarchy (2026-07-28, second pass)
+
+Founder sent 2 WhatsApp screenshots of the mobile lesson page: one showing "Take completion
+quiz to finish" wrapped across 4 lines inside a fixed-height pill (their advice: shrink text
+responsively), another showing a wall of undifferentiated prose with "no way to differentiate
+heading, sub heading, chapters, sections."
+
+- **Root cause of the wrap, found by reading the code, not guessed**: the lesson-footer nav
+  row (`LessonViewer.tsx`) packed 2-3 buttons into one `flex` row with no `whitespace-nowrap`
+  and a fixed `h-11`. On a narrow phone, the row squeezed the longest label ("Take completion
+  quiz to finish") until it wrapped vertically while the button's height stayed fixed at
+  44px, so the text spilled out past the button's visible bounds. Fixed properly rather than
+  just shrinking the font: the row now stacks vertically (`flex-col sm:flex-row`) on mobile
+  so buttons never compete for horizontal space, every button got `whitespace-nowrap`, and
+  the long label gets an explicit shorter mobile variant ("Take quiz to finish") alongside
+  the full desktop text — applying the founder's "reduce text on small screens" instinct to
+  the one label that's actually long, not blanket-shrinking body copy that was already a
+  perfectly normal 16px.
+- Also found and responsively sized 2 more dynamic, potentially-long titles that were fixed
+  at `text-3xl` regardless of viewport: the lesson title itself and the quiz title
+  (`QuizViewer.tsx`) -- both now `text-2xl sm:text-3xl`.
+- **Heading/hierarchy complaint**: the specific screenshotted lesson's actual stored content
+  has zero markdown structure at all (confirmed -- it's real founder-authored data, not seed
+  content, so it wasn't something to rewrite without being asked). The legitimate code-level
+  fix is making sure content THAT DOES use structure renders unmistakably: gave `lib/richText.tsx`'s
+  3 heading levels genuinely distinct treatments instead of just 3 font sizes -- level 1 (`#`)
+  reads as a chapter/section break (display serif, bottom border, most spacing), level 2
+  (`##`) as a plain sub-heading, level 3 (`###`) as a small-caps "eyebrow" label matching the
+  same treatment already used for category tags elsewhere in the app. Also updated
+  `CourseEditor.tsx`'s lesson-content formatting hint to mention lists/code/headings, not just
+  bold/italic, so instructors actually discover these tools exist when writing new lessons.
+
+Verified: 262/262 tests passing (1 new heading-hierarchy case in `richText.test.tsx`),
+typecheck/lint/build all clean.
+
 ## Dark code block, non-responsive People chart, sticky nav, audience wordmark (2026-07-28)
 
 Founder pasted a screenshot (the same dark code block from the CSS lesson) plus a screen

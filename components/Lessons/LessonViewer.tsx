@@ -422,7 +422,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
           <LowBandwidthVideoPlayer lesson={lesson} lowBandwidthMode={lowBandwidthMode} />
 
           <div className="text-sm text-gray-500 mb-1">{course.title}</div>
-          <h1 className="font-display text-3xl text-gray-900 mb-1">{lesson.title}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl text-gray-900 mb-1">{lesson.title}</h1>
           <p className="text-sm text-gray-500 mb-6">
             Lesson {currentIndex + 1} of {allLessons.length}
             {lesson.duration_minutes > 0 ? ` · ${lesson.duration_minutes} min` : ''}
@@ -456,33 +456,39 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 pt-6 border-t border-canvas-150">
+          {/* Stacks vertically on mobile with whitespace-nowrap labels --
+              this row used to squeeze all 2-3 buttons onto one line on
+              narrow screens, and "Take completion quiz to finish" would
+              wrap across 4 lines inside a fixed-height pill instead of
+              shrinking or reflowing. */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-canvas-150">
             <button
               onClick={goToPreviousLesson}
               disabled={!hasPrevLesson}
-              className="flex items-center gap-1.5 border border-gray-200 text-gray-700 rounded-[10px] h-11 px-4 hover:bg-gray-50 transition font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-1.5 border border-gray-200 text-gray-700 rounded-[10px] h-11 px-4 hover:bg-gray-50 transition font-medium disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <ChevronLeft size={18} />
               Previous
             </button>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
               {completed ? (
-                <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-[10px] h-11 px-4 font-medium">
+                <div className="flex items-center justify-center gap-2 text-green-700 bg-green-50 rounded-[10px] h-11 px-4 font-medium whitespace-nowrap">
                   <CheckCircle size={18} />
                   Completed
                 </div>
               ) : quiz ? (
                 <button
                   onClick={() => setShowQuiz(true)}
-                  className="bg-white border border-primary-200 text-primary-700 rounded-[10px] h-11 px-4 hover:bg-primary-50 transition font-medium"
+                  className="bg-white border border-primary-200 text-primary-700 rounded-[10px] h-11 px-4 hover:bg-primary-50 transition font-medium whitespace-nowrap"
                 >
-                  Take completion quiz to finish
+                  <span className="sm:hidden">Take quiz to finish</span>
+                  <span className="hidden sm:inline">Take completion quiz to finish</span>
                 </button>
               ) : (
                 <button
                   onClick={markAsComplete}
-                  className="flex items-center gap-1.5 bg-green-600 text-white rounded-[10px] h-11 px-4 hover:bg-green-700 transition font-medium"
+                  className="flex items-center justify-center gap-1.5 bg-green-600 text-white rounded-[10px] h-11 px-4 hover:bg-green-700 transition font-medium whitespace-nowrap"
                 >
                   <CheckCircle size={18} />
                   Mark complete
@@ -491,7 +497,7 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
               {hasNextLesson && (
                 <button
                   onClick={goToNextLesson}
-                  className="flex items-center gap-1.5 bg-primary-500 text-gray-900 rounded-[10px] h-11 px-4 hover:bg-primary-400 transition font-medium"
+                  className="flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 rounded-[10px] h-11 px-4 hover:bg-primary-400 transition font-medium whitespace-nowrap"
                 >
                   Next lesson
                   <ChevronRight size={18} />
