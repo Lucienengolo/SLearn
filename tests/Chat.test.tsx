@@ -18,6 +18,8 @@ const REQUEST: TutorRequest = {
   child_identifier: null,
   preferred_language: 'fr',
   status: 'matched',
+  location_lat: null,
+  location_lng: null,
   created_at: '',
 };
 

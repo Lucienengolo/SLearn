@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
+import { MapPin } from 'lucide-react';
 import { supabase, Category, TutorRequest } from '../../lib/supabase';
 import { createTutorRequest, matchTutorRequest, isValidWhatsappContact } from '../../lib/tutorRequests';
+import { getCurrentLocation } from '../../lib/geolocation';
 
 type RequestFormProps = {
-  onSubmitted: (request: TutorRequest, matched: boolean) => void;
+  onSubmitted: (requests: TutorRequest[]) => void;
 };
 
-type FieldErrors = Partial<{
-  categoryId: string;
+type ChildEntry = {
+  key: string;
+  identifier: string;
   grade: string;
+  categoryIds: string[];
+};
+
+function emptyChild(): ChildEntry {
+  return { key: crypto.randomUUID(), identifier: '', grade: '', categoryIds: [] };
+}
+
+type ChildErrors = Partial<{ grade: string; categoryIds: string }>;
+
+type SharedErrors = Partial<{
   neighborhood: string;
   whatsappContact: string;
   budget: string;
@@ -18,16 +31,26 @@ type FieldErrors = Partial<{
 // tutor-mvp-screens-20260721/wireframe.html (Screen 2). Built against
 // DESIGN.md's ink-and-paper system, not the app's existing gold/DM-Sans
 // pages (see tailwind.config.js's `ink`/`paper`/`oxblood`/`forest` comment).
+//
+// Founder feedback (2026-07-29): needs to support several children (each
+// with their own level) and several subjects per child, plus a precise
+// location the matched instructor can navigate to. Locked via
+// AskUserQuestion rather than guessed: one TutorRequest row per child PER
+// subject (not one row holding an array) -- keeps today's schema and
+// matching model unchanged; the form just lets a parent submit several in
+// one sitting instead of repeating the whole form.
 export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryId, setCategoryId] = useState('');
-  const [grade, setGrade] = useState('');
+  const [children, setChildren] = useState<ChildEntry[]>([emptyChild()]);
   const [neighborhood, setNeighborhood] = useState('');
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
   const [whatsappContact, setWhatsappContact] = useState('');
-  const [childIdentifier, setChildIdentifier] = useState('');
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'granted' | 'error'>('idle');
+  const [locationError, setLocationError] = useState('');
+  const [childErrors, setChildErrors] = useState<Record<string, ChildErrors>>({});
+  const [sharedErrors, setSharedErrors] = useState<SharedErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -45,67 +68,129 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
     };
   }, []);
 
-  function validate(): FieldErrors {
-    const next: FieldErrors = {};
-    if (!categoryId) next.categoryId = 'Choisissez une matière';
-    if (!grade.trim()) next.grade = 'Indiquez le niveau';
-    if (!neighborhood.trim()) next.neighborhood = 'Indiquez le quartier';
+  function updateChild(key: string, patch: Partial<ChildEntry>) {
+    setChildren((prev) => prev.map((c) => (c.key === key ? { ...c, ...patch } : c)));
+  }
+
+  function toggleSubject(key: string, categoryId: string) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.key === key
+          ? {
+              ...c,
+              categoryIds: c.categoryIds.includes(categoryId)
+                ? c.categoryIds.filter((id) => id !== categoryId)
+                : [...c.categoryIds, categoryId],
+            }
+          : c
+      )
+    );
+  }
+
+  function addChild() {
+    setChildren((prev) => [...prev, emptyChild()]);
+  }
+
+  function removeChild(key: string) {
+    setChildren((prev) => (prev.length > 1 ? prev.filter((c) => c.key !== key) : prev));
+  }
+
+  async function handleShareLocation() {
+    setLocationStatus('loading');
+    setLocationError('');
+    try {
+      setLocation(await getCurrentLocation());
+      setLocationStatus('granted');
+    } catch (err) {
+      setLocationStatus('error');
+      setLocationError(err instanceof Error ? err.message : "Impossible d'obtenir votre position.");
+    }
+  }
+
+  function validate(): { children: Record<string, ChildErrors>; shared: SharedErrors } {
+    const nextChildErrors: Record<string, ChildErrors> = {};
+    for (const child of children) {
+      const errs: ChildErrors = {};
+      if (!child.grade.trim()) errs.grade = 'Indiquez le niveau';
+      if (child.categoryIds.length === 0) errs.categoryIds = 'Choisissez au moins une matière';
+      if (Object.keys(errs).length > 0) nextChildErrors[child.key] = errs;
+    }
+
+    const nextSharedErrors: SharedErrors = {};
+    if (!neighborhood.trim()) nextSharedErrors.neighborhood = 'Indiquez le quartier';
     if (!whatsappContact.trim()) {
-      next.whatsappContact = 'Numéro WhatsApp requis';
+      nextSharedErrors.whatsappContact = 'Numéro WhatsApp requis';
     } else if (!isValidWhatsappContact(whatsappContact)) {
-      next.whatsappContact = 'Format attendu : +237 6XX XXX XXX';
+      nextSharedErrors.whatsappContact = 'Format attendu : +237 6XX XXX XXX';
     }
     const min = budgetMin ? Number(budgetMin) : null;
     const max = budgetMax ? Number(budgetMax) : null;
     if (min !== null && max !== null && min > max) {
-      next.budget = 'Le minimum doit être inférieur au maximum';
+      nextSharedErrors.budget = 'Le minimum doit être inférieur au maximum';
     }
-    return next;
+
+    return { children: nextChildErrors, shared: nextSharedErrors };
   }
 
   // Client-side disable is UX only (prevents an accidental extra click while
-  // the first request is in flight) -- the real double-submit guard is the
+  // requests are in flight) -- the real double-submit guard is the
   // server-side idempotency key in create_tutor_request(), which this form
   // never tries to reimplement.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
 
-    const fieldErrors = validate();
-    setErrors(fieldErrors);
-    if (Object.keys(fieldErrors).length > 0) return;
+    const { children: nextChildErrors, shared: nextSharedErrors } = validate();
+    setChildErrors(nextChildErrors);
+    setSharedErrors(nextSharedErrors);
+    if (Object.keys(nextChildErrors).length > 0 || Object.keys(nextSharedErrors).length > 0) return;
 
     setSubmitting(true);
     setSubmitError('');
 
     try {
-      const request = await createTutorRequest({
-        categoryId,
-        grade: grade.trim(),
-        neighborhood: neighborhood.trim(),
-        budgetMin: budgetMin ? Number(budgetMin) : null,
-        budgetMax: budgetMax ? Number(budgetMax) : null,
-        whatsappContact,
-        childIdentifier: childIdentifier.trim() || null,
-        // T9 (bilingual UI toggle) isn't built yet -- defaults to French
-        // per Design Review D10 until the real toggle state is available.
-        preferredLanguage: 'fr',
-      });
+      // One request per child, per subject that child needs -- e.g. 2
+      // children with 2 subjects each creates 4 requests. Collected
+      // individually (not Promise.all) so one failure doesn't lose track of
+      // requests that already succeeded -- same resilience principle as the
+      // match-step fix below.
+      const created: TutorRequest[] = [];
+      for (const child of children) {
+        for (const categoryId of child.categoryIds) {
+          created.push(
+            await createTutorRequest({
+              categoryId,
+              grade: child.grade.trim(),
+              neighborhood: neighborhood.trim(),
+              budgetMin: budgetMin ? Number(budgetMin) : null,
+              budgetMax: budgetMax ? Number(budgetMax) : null,
+              whatsappContact,
+              childIdentifier: child.identifier.trim() || null,
+              // T9 (bilingual UI toggle) isn't built yet -- defaults to
+              // French per Design Review D10 until the real toggle state is
+              // available.
+              preferredLanguage: 'fr',
+              locationLat: location?.lat ?? null,
+              locationLng: location?.lng ?? null,
+            })
+          );
+        }
+      }
 
-      // The request itself is already saved at this point -- a failure to
+      // Each request is already saved at this point -- a failure to
       // immediately match (e.g. the matching edge function being briefly
       // unavailable) must not look like the whole submission failed. Same
       // "zero-match/unavailable is not an error state" handling as
-      // MatchStatus.tsx's own retry action, just applied here too so the
-      // very first submission gets the same resilience.
-      let matched = false;
-      try {
-        matched = (await matchTutorRequest(request.id)).matched;
-      } catch {
-        // Fall through to onSubmitted below -- the request was created;
-        // the "still searching" screen's own retry covers this case.
-      }
-      onSubmitted(request, matched);
+      // MatchStatus.tsx's own retry action.
+      await Promise.all(
+        created.map((request) =>
+          matchTutorRequest(request.id).catch(() => {
+            // Fall through -- the "still searching" screen's own retry covers this.
+          })
+        )
+      );
+
+      onSubmitted(created);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'La demande a échoué. Réessayez.');
     } finally {
@@ -116,61 +201,92 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-paper border border-ink-border rounded-xl p-6 max-w-[520px] font-general-sans text-ink"
+      className="bg-paper border border-ink-border rounded-xl p-6 max-w-[560px] font-general-sans text-ink"
     >
       <h1 className="font-fraunces text-[28px] font-medium mb-6">Décrivez ce dont votre enfant a besoin</h1>
 
-      <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-subject">
-          Matière
-        </label>
-        <select
-          id="tutor-request-subject"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm bg-white focus:outline-none focus:border-ink"
-        >
-          <option value="">Choisir une matière</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        {errors.categoryId && <p className="text-[12px] text-oxblood font-medium mt-1">{errors.categoryId}</p>}
-      </div>
+      {children.map((child, index) => (
+        <div key={child.key} className="border border-ink-border rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[13px] font-semibold uppercase tracking-wide text-warm-gray">
+              Enfant {index + 1}
+            </p>
+            {children.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeChild(child.key)}
+                className="text-[12px] font-medium text-oxblood hover:text-oxblood-hover"
+              >
+                Retirer
+              </button>
+            )}
+          </div>
 
-      <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-grade">
-          Niveau
-        </label>
-        <input
-          id="tutor-request-grade"
-          type="text"
-          value={grade}
-          onChange={(e) => setGrade(e.target.value)}
-          placeholder="ex. 3ème"
-          className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
-        />
-        {errors.grade && <p className="text-[12px] text-oxblood font-medium mt-1">{errors.grade}</p>}
-      </div>
+          <div className="mb-3">
+            <label className="block text-[13px] font-medium mb-1.5" htmlFor={`child-identifier-${child.key}`}>
+              Pour quel enfant ? <span className="text-warm-gray font-normal">(optionnel)</span>
+            </label>
+            <input
+              id={`child-identifier-${child.key}`}
+              type="text"
+              value={child.identifier}
+              onChange={(e) => updateChild(child.key, { identifier: e.target.value })}
+              placeholder='ex. "Junior" ou "ma fille cadette"'
+              className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
+            />
+          </div>
 
-      <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-child">
-          Pour quel enfant ? <span className="text-warm-gray font-normal">(optionnel, si vous avez plusieurs enfants)</span>
-        </label>
-        <input
-          id="tutor-request-child"
-          type="text"
-          value={childIdentifier}
-          onChange={(e) => setChildIdentifier(e.target.value)}
-          placeholder='ex. "Junior" ou "ma fille cadette"'
-          className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
-        />
-        <p className="text-[12px] text-warm-gray mt-1">
-          Ceci nous aide seulement à organiser vos demandes — pas un profil complet.
-        </p>
-      </div>
+          <div className="mb-3">
+            <label className="block text-[13px] font-medium mb-1.5" htmlFor={`child-grade-${child.key}`}>
+              Niveau
+            </label>
+            <input
+              id={`child-grade-${child.key}`}
+              type="text"
+              value={child.grade}
+              onChange={(e) => updateChild(child.key, { grade: e.target.value })}
+              placeholder="ex. 3ème"
+              className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
+            />
+            {childErrors[child.key]?.grade && (
+              <p className="text-[12px] text-oxblood font-medium mt-1">{childErrors[child.key]?.grade}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-medium mb-1.5">Matière(s)</label>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={`Matières pour l'enfant ${index + 1}`}>
+              {categories.map((category) => {
+                const active = child.categoryIds.includes(category.id);
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => toggleSubject(child.key, category.id)}
+                    className={`px-3 py-1.5 rounded-full border text-[13px] font-medium transition-colors ${
+                      active ? 'border-ink bg-ink text-paper' : 'border-ink-border text-ink hover:border-ink'
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                );
+              })}
+            </div>
+            {childErrors[child.key]?.categoryIds && (
+              <p className="text-[12px] text-oxblood font-medium mt-1">{childErrors[child.key]?.categoryIds}</p>
+            )}
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addChild}
+        className="text-[13px] font-medium text-ink underline underline-offset-2 mb-5"
+      >
+        + Ajouter un autre enfant
+      </button>
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-neighborhood">
@@ -184,7 +300,30 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
           placeholder="ex. Bonamoussadi"
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
         />
-        {errors.neighborhood && <p className="text-[12px] text-oxblood font-medium mt-1">{errors.neighborhood}</p>}
+        {sharedErrors.neighborhood && <p className="text-[12px] text-oxblood font-medium mt-1">{sharedErrors.neighborhood}</p>}
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-[13px] font-medium mb-1.5">
+          Localisation précise <span className="text-warm-gray font-normal">(optionnel)</span>
+        </label>
+        <button
+          type="button"
+          onClick={handleShareLocation}
+          disabled={locationStatus === 'loading'}
+          className="flex items-center gap-2 px-3 py-2.5 border border-ink-border rounded-lg text-sm hover:border-ink transition-colors disabled:opacity-60"
+        >
+          <MapPin size={16} />
+          {locationStatus === 'granted'
+            ? 'Position partagée ✓'
+            : locationStatus === 'loading'
+              ? 'Localisation en cours…'
+              : 'Partager ma position sur Google Maps'}
+        </button>
+        <p className="text-[12px] text-warm-gray mt-1">
+          Le tuteur retenu pourra suivre l&apos;itinéraire jusqu&apos;à votre domicile.
+        </p>
+        {locationError && <p className="text-[12px] text-oxblood font-medium mt-1">{locationError}</p>}
       </div>
 
       <div className="mb-4">
@@ -215,7 +354,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
             className="w-full min-w-0 px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
           />
         </div>
-        {errors.budget && <p className="text-[12px] text-oxblood font-medium mt-1">{errors.budget}</p>}
+        {sharedErrors.budget && <p className="text-[12px] text-oxblood font-medium mt-1">{sharedErrors.budget}</p>}
       </div>
 
       <div className="mb-5">
@@ -230,7 +369,9 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
           placeholder="+237 6XX XXX XXX"
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
         />
-        {errors.whatsappContact && <p className="text-[12px] text-oxblood font-medium mt-1">{errors.whatsappContact}</p>}
+        {sharedErrors.whatsappContact && (
+          <p className="text-[12px] text-oxblood font-medium mt-1">{sharedErrors.whatsappContact}</p>
+        )}
       </div>
 
       {submitError && <p className="text-[13px] text-oxblood font-medium mb-3">{submitError}</p>}

@@ -279,6 +279,8 @@ export type TutorRequest = {
   child_identifier: string | null;
   preferred_language: 'fr' | 'en';
   status: TutorRequestStatus;
+  location_lat: number | null;
+  location_lng: number | null;
   created_at: string;
 };
 

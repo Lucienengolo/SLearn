@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MatchStatus from '../components/Tutors/MatchStatus';
 import * as matchesLib from '../lib/matches';
@@ -11,6 +11,17 @@ vi.mock('../components/Tutors/Chat', () => ({
 }));
 vi.mock('../components/Tutors/PaymentStatus', () => ({
   default: ({ matchId }: { matchId: string }) => <div data-testid="payment-status-mock">Payment for {matchId}</div>,
+}));
+vi.mock('../lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        order: vi.fn(() =>
+          Promise.resolve({ data: [{ id: 'cat-1', name: 'Mathématiques', description: null, created_at: '' }] })
+        ),
+      })),
+    })),
+  },
 }));
 
 const SAMPLE_REQUEST: TutorRequest = {
@@ -25,8 +36,14 @@ const SAMPLE_REQUEST: TutorRequest = {
   child_identifier: null,
   preferred_language: 'fr',
   status: 'searching',
+  location_lat: null,
+  location_lng: null,
   created_at: '',
 };
+
+function renderMatchStatus(onCancelled = vi.fn()) {
+  return render(<MatchStatus requestId="req-1" currentUserId="parent-1" onCancelled={onCancelled} />);
+}
 
 describe('MatchStatus', () => {
   beforeEach(() => {
@@ -40,7 +57,7 @@ describe('MatchStatus', () => {
       hadPriorMatch: false,
     });
 
-    render(<MatchStatus requestId="req-1" currentUserId="parent-1" />);
+    renderMatchStatus();
 
     expect(await screen.findByText('On cherche toujours votre tuteur')).toBeInTheDocument();
     expect(screen.queryByText(/précédent match/i)).not.toBeInTheDocument();
@@ -54,7 +71,7 @@ describe('MatchStatus', () => {
       hadPriorMatch: true,
     });
 
-    render(<MatchStatus requestId="req-1" currentUserId="parent-1" />);
+    renderMatchStatus();
 
     expect(await screen.findByText(/précédent match n'a pas abouti/i)).toBeInTheDocument();
   });
@@ -84,7 +101,7 @@ describe('MatchStatus', () => {
       hadPriorMatch: false,
     });
 
-    render(<MatchStatus requestId="req-1" currentUserId="parent-1" />);
+    renderMatchStatus();
 
     expect(await screen.findByTestId('chat-mock')).toHaveTextContent('match-1');
     expect(screen.getByTestId('payment-status-mock')).toHaveTextContent('match-1');
@@ -100,11 +117,55 @@ describe('MatchStatus', () => {
     });
     const matchSpy = vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
 
-    render(<MatchStatus requestId="req-1" currentUserId="parent-1" />);
+    renderMatchStatus();
 
     await user.click(await screen.findByRole('button', { name: /réessayer la recherche/i }));
 
     await waitFor(() => expect(matchSpy).toHaveBeenCalledWith('req-1'));
     expect(matchesLib.fetchRequestMatchState).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens an edit panel pre-filled with the request, and saves changes via updateTutorRequest', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(matchesLib, 'fetchRequestMatchState').mockResolvedValue({
+      request: SAMPLE_REQUEST,
+      activeMatch: null,
+      hadPriorMatch: false,
+    });
+    const updateSpy = vi.spyOn(tutorRequestsLib, 'updateTutorRequest').mockResolvedValue(undefined);
+
+    renderMatchStatus();
+    await user.click(await screen.findByRole('button', { name: /modifier la demande/i }));
+
+    const gradeInput = await screen.findByLabelText(/niveau/i);
+    expect(gradeInput).toHaveValue('3ème');
+    await user.clear(gradeInput);
+    await user.type(gradeInput, '4ème');
+
+    await user.click(screen.getByRole('button', { name: /^enregistrer$/i }));
+
+    await waitFor(() =>
+      expect(updateSpy).toHaveBeenCalledWith('req-1', expect.objectContaining({ grade: '4ème' }))
+    );
+  });
+
+  it('cancels the request via a confirm dialog and calls onCancelled', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(matchesLib, 'fetchRequestMatchState').mockResolvedValue({
+      request: SAMPLE_REQUEST,
+      activeMatch: null,
+      hadPriorMatch: false,
+    });
+    const cancelSpy = vi.spyOn(tutorRequestsLib, 'cancelTutorRequest').mockResolvedValue(undefined);
+    const onCancelled = vi.fn();
+
+    renderMatchStatus(onCancelled);
+    await user.click(await screen.findByRole('button', { name: /supprimer la demande/i }));
+
+    const dialog = screen.getByRole('alertdialog');
+    await user.click(within(dialog).getByRole('button', { name: /supprimer la demande/i }));
+
+    await waitFor(() => expect(cancelSpy).toHaveBeenCalledWith('req-1'));
+    expect(onCancelled).toHaveBeenCalled();
   });
 });

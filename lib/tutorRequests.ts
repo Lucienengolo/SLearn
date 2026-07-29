@@ -9,6 +9,8 @@ export type CreateTutorRequestInput = {
   whatsappContact: string;
   childIdentifier: string | null;
   preferredLanguage: 'fr' | 'en';
+  locationLat?: number | null;
+  locationLng?: number | null;
 };
 
 // Cameroon mobile format: +237 6XX XXX XXX (MTN/Orange/Camtel ranges all
@@ -41,10 +43,67 @@ export async function createTutorRequest(input: CreateTutorRequestInput): Promis
     p_whatsapp_contact: normalizedWhatsapp,
     p_child_identifier: input.childIdentifier,
     p_preferred_language: input.preferredLanguage,
+    p_location_lat: input.locationLat ?? null,
+    p_location_lng: input.locationLng ?? null,
   });
 
   if (error) throw error;
   return data as TutorRequest;
+}
+
+// A Google Maps deep link an instructor can tap to navigate straight to the
+// family's home -- built from device geolocation (0040_tutor_request_location_edit.sql),
+// not a typed address, since a raw lat/lng pin is unambiguous where a typed
+// neighborhood name isn't.
+export function googleMapsLinkFor(request: Pick<TutorRequest, 'location_lat' | 'location_lng'>): string | null {
+  if (request.location_lat == null || request.location_lng == null) return null;
+  return `https://www.google.com/maps?q=${request.location_lat},${request.location_lng}`;
+}
+
+export type UpdateTutorRequestInput = {
+  categoryId: string;
+  grade: string;
+  neighborhood: string;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  whatsappContact: string;
+  childIdentifier: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+};
+
+// Only reaches rows the "parents edit or cancel their own still-searching
+// request" RLS policy (0040_tutor_request_location_edit.sql) actually
+// allows -- already matched/cancelled requests are locked, so this throws
+// (0 rows updated surfaces as a Supabase "no rows" style outcome handled by
+// the caller) rather than silently no-op'ing.
+export async function updateTutorRequest(requestId: string, input: UpdateTutorRequestInput): Promise<void> {
+  const normalizedWhatsapp = input.whatsappContact.replace(/\s+/g, '');
+  if (!isValidWhatsappContact(normalizedWhatsapp)) {
+    throw new Error('Invalid WhatsApp number -- expected format +237 6XX XXX XXX');
+  }
+
+  const { error } = await supabase
+    .from('tutor_requests')
+    .update({
+      category_id: input.categoryId,
+      grade: input.grade,
+      neighborhood: input.neighborhood,
+      budget_min: input.budgetMin,
+      budget_max: input.budgetMax,
+      whatsapp_contact: normalizedWhatsapp,
+      child_identifier: input.childIdentifier,
+      location_lat: input.locationLat ?? null,
+      location_lng: input.locationLng ?? null,
+    })
+    .eq('id', requestId);
+
+  if (error) throw error;
+}
+
+export async function cancelTutorRequest(requestId: string): Promise<void> {
+  const { error } = await supabase.from('tutor_requests').update({ status: 'cancelled' }).eq('id', requestId);
+  if (error) throw error;
 }
 
 export type TutorRequestListItem = TutorRequest & { categories: { name: string } | null };

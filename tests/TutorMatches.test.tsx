@@ -84,6 +84,8 @@ describe('TutorMatches', () => {
         child_identifier: 'Junior',
         preferred_language: 'fr',
         status: 'matched',
+        location_lat: null,
+        location_lng: null,
         created_at: '',
         categories: { name: 'Maths' },
       },

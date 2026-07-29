@@ -1,5 +1,50 @@
 # TODOS
 
+## RequestForm redesign: multi-child, multi-subject, location, edit/cancel (2026-07-29)
+
+Founder's screenshot batch asked for a more precise tutor-request form (multiple children
+with a level per child, multiple subjects, a Google Maps location so the matched instructor
+can navigate to the house) plus a way to edit or delete a submitted request. Three scope
+forks were locked in via AskUserQuestion rather than guessed, given the size of the schema
+change each option implied:
+
+- **One TutorRequest row per child, per subject** (not one row holding an array) -- keeps
+  today's schema and matching model completely unchanged. A parent with 2 children needing 2
+  subjects each now submits once and gets 4 rows created, not 1 row with nested data the
+  matching engine would need to learn to unpack.
+- **Editable/cancellable only while status is 'searching'** -- once a tutor is matched,
+  they've already committed; editing at that point would be confusing, so it's locked both
+  in the UI and in a new RLS policy. "Delete" is a soft-cancel (`status = 'cancelled'`,
+  already a valid value in the original check constraint), never a hard row delete.
+
+**Schema** (`0040_tutor_request_location_edit.sql`, verified against a local Postgres stub
+including the RLS rejection paths, then deployed to production the same way as 0034-0039):
+`location_lat`/`location_lng` columns; `create_tutor_request()` extended with 2 new
+default-null params (backward compatible); a brand-new UPDATE policy on `tutor_requests` --
+there was previously no UPDATE policy at all, only SELECT, so editing/cancelling genuinely
+didn't exist as a capability before this. Verified specifically that a parent cannot use this
+new policy to self-promote a request to `'matched'` (that transition stays the matching
+engine's alone) -- caught this by first writing a test where the row was already
+`'cancelled'` from a prior step in the same fixture, which passed for the wrong reason
+(`using` already excluded it); rewrote with a genuinely still-`'searching'` row to confirm
+the `with check` clause itself is what blocks it.
+
+**Frontend**: `RequestForm.tsx` rebuilt around repeatable child blocks (each with its own
+level + a multi-select subject picker as toggle pills, not a native multi-select), a "share
+my exact location" button using the browser Geolocation API (`lib/geolocation.ts`) -- a real
+device position, not a typed address, so the link is unambiguous -- shared across every
+request created in one submission. `lib/tutorRequests.ts` gained `googleMapsLinkFor()`,
+`updateTutorRequest()`, `cancelTutorRequest()`. `MatchStatus.tsx`'s "still searching" screen
+(where the founder's screenshot circled empty space next to "Réessayer la recherche") gained
+"Modifier la demande" (opens an inline edit panel, pre-filled) and "Supprimer la demande"
+(a real `ConfirmDialog`, not a fake button) -- addressing the specific gap. `onSubmitted`'s
+signature changed from a single request to an array; `App.tsx` navigates straight to
+`MatchStatus` when exactly one request was created (unchanged UX for the common case) or to
+`MyRequests` when several were.
+
+Verified: 279/279 tests passing (25 new across `RequestForm`, `MatchStatus`,
+`lib/tutorRequests.ts`, and a new `lib/geolocation.ts`), typecheck/lint/build all clean.
+
 ## Footer mobile link-grid (2026-07-29, follow-up)
 
 Founder's screenshot circled the "For Learners"/"For Educators"/"For Organizations" link

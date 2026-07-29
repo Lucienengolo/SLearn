@@ -248,7 +248,20 @@ function AppContent() {
         {currentPage === 'tutor-request-new' && user && profile?.role === 'student' && (
           <Suspense fallback={<PageFallback />}>
             <div className="max-w-[1200px] mx-auto px-6 py-10">
-              <RequestForm onSubmitted={(request) => handleSelectTutorRequest(request.id)} />
+              <RequestForm
+                onSubmitted={(requests) => {
+                  // Multiple children/subjects can now create several
+                  // requests in one submission -- jump straight to the
+                  // single request's status page only when there really is
+                  // just one, matching the original single-request UX;
+                  // otherwise land on the list where all of them show up.
+                  if (requests.length === 1) {
+                    handleSelectTutorRequest(requests[0].id);
+                  } else {
+                    handleBackToMyRequests();
+                  }
+                }}
+              />
             </div>
           </Suspense>
         )}
@@ -259,7 +272,7 @@ function AppContent() {
               <button onClick={handleBackToMyRequests} className="text-sm text-gray-500 hover:text-gray-800 transition mb-5">
                 ← Back to my requests
               </button>
-              <MatchStatus requestId={selectedTutorRequestId} currentUserId={user.id} />
+              <MatchStatus requestId={selectedTutorRequestId} currentUserId={user.id} onCancelled={handleBackToMyRequests} />
             </div>
           </Suspense>
         )}
