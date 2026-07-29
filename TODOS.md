@@ -1,5 +1,15 @@
 # TODOS
 
+## Footer mobile link-grid (2026-07-29, follow-up)
+
+Founder's screenshot circled the "For Learners"/"For Educators"/"For Organizations" link
+columns, which collapse to a single stacked column below the `sm` breakpoint -- a long
+scroll of links instead of a scannable grid. Changed `grid-cols-1 sm:grid-cols-3` to
+`grid-cols-2 sm:grid-cols-3` so mobile gets 2 columns (3 sections fit as 2+1) instead of 1.
+Left the top audience-links row (`Individuals`/`Courses`/etc.) alone -- it wasn't
+specifically circled, and it already degrades to a reasonable 3-row x2 grid via `flex-wrap`,
+not a long single-column scroll.
+
 ## Migrations 0034-0039 deployed to production; real matching + Header bugs fixed (2026-07-29)
 
 Founder sent a batch of screenshots. One (the totem picker showing "Could not find the

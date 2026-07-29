@@ -69,7 +69,7 @@ export default function Footer({ onNavigate }: FooterProps) {
           </nav>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 py-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 py-10">
           {COLUMNS.map((col) => (
             <div key={col.title}>
               <h3 className="text-white font-semibold mb-3">{col.title}</h3>
