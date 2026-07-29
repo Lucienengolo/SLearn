@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import CourseCard from '../components/Courses/CourseCard';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import type { Course } from '../lib/supabase';
 
 const BASE_COURSE: Course = {
@@ -20,34 +21,53 @@ const BASE_COURSE: Course = {
   updated_at: '',
 };
 
+function renderCard(props: Partial<Parameters<typeof CourseCard>[0]> = {}) {
+  return render(
+    <LocaleProvider>
+      <CourseCard course={props.course ?? BASE_COURSE} onClick={props.onClick ?? vi.fn()} {...props} />
+    </LocaleProvider>
+  );
+}
+
 describe('CourseCard', () => {
   it('shows a verified badge next to the instructor name when verified', () => {
-    render(
-      <CourseCard
-        course={{ ...BASE_COURSE, instructor: { full_name: 'Aïcha Mbarga', verified: true } }}
-        onClick={vi.fn()}
-      />
-    );
+    renderCard({ course: { ...BASE_COURSE, instructor: { full_name: 'Aïcha Mbarga', verified: true } } });
 
     expect(screen.getByText('Aïcha Mbarga')).toBeInTheDocument();
     expect(screen.getByLabelText('Verified instructor')).toBeInTheDocument();
   });
 
   it('does not show a verified badge for an unverified instructor', () => {
-    render(
-      <CourseCard
-        course={{ ...BASE_COURSE, instructor: { full_name: 'Junior Ngassa', verified: false } }}
-        onClick={vi.fn()}
-      />
-    );
+    renderCard({ course: { ...BASE_COURSE, instructor: { full_name: 'Junior Ngassa', verified: false } } });
 
     expect(screen.getByText('Junior Ngassa')).toBeInTheDocument();
     expect(screen.queryByLabelText('Verified instructor')).not.toBeInTheDocument();
   });
 
   it('renders without an instructor at all (defensive, e.g. mid-migration data)', () => {
-    render(<CourseCard course={BASE_COURSE} onClick={vi.fn()} />);
+    renderCard();
     expect(screen.getByText('Intro to SQL')).toBeInTheDocument();
     expect(screen.queryByLabelText('Verified instructor')).not.toBeInTheDocument();
+  });
+
+  it('translates the level label and Free price tag', () => {
+    renderCard({ course: { ...BASE_COURSE, level: 'advanced', price: 0 } });
+    expect(screen.getByText('Advanced')).toBeInTheDocument();
+    expect(screen.getByText('Free')).toBeInTheDocument();
+  });
+
+  // Regression: founder feedback that "the language doesn't apply to all
+  // the platform" -- CourseCard's level/price/aria-labels were hardcoded
+  // English regardless of the FR/EN toggle.
+  it('renders in French when the locale is French', () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+
+    renderCard({ course: { ...BASE_COURSE, level: 'beginner', price: 0 } });
+
+    expect(screen.getByText('Débutant')).toBeInTheDocument();
+    expect(screen.getByText('Gratuit')).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

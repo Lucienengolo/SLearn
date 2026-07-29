@@ -3,6 +3,8 @@ import { Clock, Users, Star, BookOpen, CheckCircle, Lock, PlayCircle, ChevronRig
 import { renderRichText } from '../../lib/richText';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useLocale } from '../../contexts/LocaleContext';
+import { TranslationKey } from '../../lib/i18n';
 import { supabase, Course, Lesson, Review, Enrollment, Quiz } from '../../lib/supabase';
 import { getGuestCourseProgress, isGuestLessonComplete, guestEnroll, isGuestEnrolled } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
@@ -26,9 +28,16 @@ type CourseWithRelations = Course & {
 
 type ReviewWithStudent = Review & { student: { full_name: string } };
 
+const LEVEL_KEYS: Record<string, TranslationKey> = {
+  beginner: 'courses.level.beginner',
+  intermediate: 'courses.level.intermediate',
+  advanced: 'courses.level.advanced',
+};
+
 export default function CourseDetail({ courseId, onBack, onStartLesson }: CourseDetailProps) {
   const { user, profile } = useAuth();
   const { showToast } = useToast();
+  const { t } = useLocale();
   const isInstructor = profile?.role === 'instructor';
   const [course, setCourse] = useState<CourseWithRelations | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -160,7 +169,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
         setIsEnrolled(true);
         trackEvent('course_enrolled', { courseId, guest: true, price: course.price });
       } else {
-        showToast('Please sign in to enroll in paid courses', 'error');
+        showToast(t('courseDetail.signInForPaid'), 'error');
       }
       return;
     }
@@ -174,7 +183,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
       if (error || !data?.url) {
         console.error('Error starting checkout:', error);
-        showToast('Could not start checkout. Please try again.', 'error');
+        showToast(t('courseDetail.checkoutError'), 'error');
         return;
       }
 
@@ -189,7 +198,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
     if (error) {
       console.error('Error enrolling:', error);
-      showToast('Failed to enroll in course', 'error');
+      showToast(t('courseDetail.enrollError'), 'error');
     } else {
       setIsEnrolled(true);
       trackEvent('course_enrolled', { courseId, guest: false, price: course?.price });
@@ -254,14 +263,14 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
       className={`${className} bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm`}
     >
       {startingCheckout
-        ? 'Redirecting to checkout…'
+        ? t('courseDetail.redirecting')
         : user
         ? course.price > 0
-          ? 'Enroll now — pay & enroll'
-          : 'Enroll now'
+          ? t('courseDetail.enrollPay')
+          : t('courseDetail.enrollNow')
         : course.price === 0
-        ? 'Start free (guest)'
-        : 'Sign in to enroll'}
+        ? t('courseDetail.startFreeGuest')
+        : t('courseDetail.signInToEnroll')}
     </button>
   );
 
@@ -270,7 +279,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
       <div className="max-w-[1200px] mx-auto px-6 pt-5">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-5">
-          <button onClick={onBack} className="hover:text-gray-800 transition">Courses</button>
+          <button onClick={onBack} className="hover:text-gray-800 transition">{t('nav.courses')}</button>
           {course.category?.name && (
             <>
               <ChevronRight size={14} />
@@ -305,8 +314,8 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                       {course.category.name}
                     </span>
                   )}
-                  <span className="text-2xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full capitalize">
-                    {course.level}
+                  <span className="text-2xs font-semibold text-white bg-white/15 px-2.5 py-1 rounded-full">
+                    {LEVEL_KEYS[course.level] ? t(LEVEL_KEYS[course.level]) : course.level}
                   </span>
                 </div>
                 <h1 className="font-display text-3xl sm:text-4xl text-white leading-tight">{course.title}</h1>
@@ -319,27 +328,27 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 <div className="flex items-center gap-2">
                   <Star size={18} className="fill-primary-500 text-primary-500" />
                   <span className="font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
-                  <span className="text-gray-500">({reviews.length} reviews)</span>
+                  <span className="text-gray-500">({reviews.length} {t('courseDetail.reviewsSuffix')})</span>
                 </div>
               )}
               <div className="flex items-center gap-2 text-gray-600">
                 <Users size={18} className="text-primary-600" />
-                {lessons.length > 0 ? `Open to all levels` : 'No lessons yet'}
+                {lessons.length > 0 ? t('courseDetail.openToAllLevels') : t('courseDetail.noLessonsYet')}
               </div>
               <div className="flex items-center gap-2 text-gray-600">
                 <Clock size={18} className="text-blue-500" />
-                {course.duration_hours} hours
+                {course.duration_hours} {t('courseDetail.hours')}
               </div>
               <div className="flex items-center gap-2 text-gray-600">
                 <BookOpen size={18} className="text-green-600" />
-                {lessons.length} lessons
+                {lessons.length} {t('courses.lessons')}
               </div>
             </div>
 
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <IconBadge icon={Info} tone="gold" size={32} iconSize={16} shape="square" />
-                <h2 className="font-display text-2xl text-gray-900">About this course</h2>
+                <h2 className="font-display text-2xl text-gray-900">{t('courseDetail.about')}</h2>
               </div>
               <div className="text-gray-600 leading-relaxed">{renderRichText(course.description)}</div>
             </div>
@@ -349,9 +358,11 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               <div className="flex justify-between items-baseline mb-4">
                 <div className="flex items-center gap-2.5">
                   <IconBadge icon={ListChecks} tone="gold" size={32} iconSize={16} shape="square" />
-                  <h2 className="font-display text-2xl text-gray-900">Course content</h2>
+                  <h2 className="font-display text-2xl text-gray-900">{t('courseDetail.content')}</h2>
                 </div>
-                <span className="text-sm text-gray-500">{lessons.length} lessons · {course.duration_hours}h total</span>
+                <span className="text-sm text-gray-500">
+                  {lessons.length} {t('courses.lessons')} · {course.duration_hours}h {t('courseDetail.total')}
+                </span>
               </div>
               <div className="space-y-2">
                 {lessons.map((lesson) => {
@@ -385,7 +396,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                         )}
                       </div>
                       {lesson.duration_minutes > 0 && (
-                        <span className="text-sm text-gray-500 flex-shrink-0">{lesson.duration_minutes} min</span>
+                        <span className="text-sm text-gray-500 flex-shrink-0">{lesson.duration_minutes} {t('courseDetail.min')}</span>
                       )}
                     </div>
                   );
@@ -414,16 +425,16 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                     .toUpperCase()}
                 </span>
                 <div>
-                  <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Instructor</span>
+                  <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">{t('courseDetail.instructor')}</span>
                   <p className="text-lg font-semibold text-gray-900 mt-0.5 flex items-center gap-1.5">
                     {course.instructor.full_name}
                     {course.instructor.verified && (
                       <span
                         className="text-2xs font-semibold bg-green-50 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1 normal-case tracking-normal"
-                        title="Verified instructor"
+                        title={t('courses.verifiedInstructor')}
                       >
                         <CheckCircle size={12} />
-                        Verified
+                        {t('courseDetail.verified')}
                       </span>
                     )}
                   </p>
@@ -439,7 +450,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               <div>
                 <div className="flex items-center gap-2.5 mb-4">
                   <IconBadge icon={MessageSquare} tone="gold" size={32} iconSize={16} shape="square" />
-                  <h2 className="font-display text-2xl text-gray-900">Student reviews</h2>
+                  <h2 className="font-display text-2xl text-gray-900">{t('courseDetail.studentReviews')}</h2>
                 </div>
                 {canReview && (
                   <div className="mb-4">
@@ -479,24 +490,24 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             <div className="rounded-[14px] border border-canvas-150 shadow-lg p-5">
               {checkoutNotice === 'success' && !isEnrolled && (
                 <div className="mb-4 text-sm text-primary-700 bg-primary-50 p-3 rounded-[10px]">
-                  Payment received — activating your enrollment…
+                  {t('courseDetail.paymentReceived')}
                 </div>
               )}
               {checkoutNotice === 'cancel' && (
                 <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-[10px]">
-                  Checkout cancelled — you have not been charged.
+                  {t('courseDetail.checkoutCancelled')}
                 </div>
               )}
 
               <p className="font-display text-4xl text-gray-900 mb-4">
-                {course.price > 0 ? `$${course.price.toFixed(2)}` : 'Free'}
+                {course.price > 0 ? `$${course.price.toFixed(2)}` : t('common.free')}
               </p>
 
               {isEnrolled ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm font-medium bg-green-50 text-green-700 px-3 py-2.5 rounded-[10px]">
                     <CheckCircle size={18} />
-                    Enrolled — {progressPercentage}% complete
+                    {t('courseDetail.enrolledPrefix')} {progressPercentage}{t('courseDetail.completeSuffix')}
                   </div>
                   {lessons.length > 0 && (
                     <div className="h-2 rounded-full bg-canvas-150 overflow-hidden">
@@ -508,20 +519,20 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   )}
                   {!user && (
                     <p className="text-2xs text-gray-500">
-                      Browsing as guest — your progress is only saved for this session.
+                      {t('courseDetail.guestNotice')}
                     </p>
                   )}
                   {finalExamPending ? (
                     <>
                       <p className="text-2xs text-gray-500">
-                        All lessons complete — pass the final exam to earn your certificate.
+                        {t('courseDetail.finalExamReady')}
                       </p>
                       <button
                         onClick={() => setShowFinalExam(true)}
                         className="w-full flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold h-12 rounded-[10px]"
                       >
                         <GraduationCap size={18} />
-                        Take final exam
+                        {t('courseDetail.takeFinalExam')}
                       </button>
                     </>
                   ) : (
@@ -529,13 +540,13 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                       onClick={() => firstAvailableLessonId && onStartLesson(firstAvailableLessonId)}
                       className="w-full bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold h-12 rounded-[10px]"
                     >
-                      Continue learning
+                      {t('courseDetail.continueLearning')}
                     </button>
                   )}
                 </div>
               ) : isInstructor ? (
                 <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-[10px] text-center">
-                  Instructor accounts can't enroll in courses
+                  {t('courseDetail.instructorCantEnroll')}
                 </div>
               ) : (
                 enrollButton('w-full h-12 rounded-[10px]')
@@ -549,7 +560,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   >
                     <Wifi size={13} className="text-white" fill="currentColor" fillOpacity={0.25} />
                   </span>
-                  Learn on any device, offline-friendly
+                  {t('courseDetail.perkOffline')}
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span
@@ -558,7 +569,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   >
                     <Award size={13} className="text-white" fill="currentColor" fillOpacity={0.25} />
                   </span>
-                  Certificate of completion
+                  {t('courseDetail.perkCertificate')}
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span
@@ -567,7 +578,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   >
                     <BookOpen size={13} className="text-white" fill="currentColor" fillOpacity={0.25} />
                   </span>
-                  {lessons.length} lessons · {course.duration_hours}h of content
+                  {lessons.length} {t('courses.lessons')} · {course.duration_hours}h {t('courseDetail.ofContent')}
                 </div>
               </div>
             </div>
@@ -582,13 +593,13 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             {isEnrolled ? (
               <>
                 <div className="text-2xs text-gray-500">
-                  {finalExamPending ? 'Final exam remaining' : `${progressPercentage}% complete`}
+                  {finalExamPending ? t('courseDetail.finalExamRemaining') : `${progressPercentage}${t('courseDetail.completeSuffix')}`}
                 </div>
-                <div className="font-bold text-gray-900">{finalExamPending ? 'Take final exam' : 'Continue learning'}</div>
+                <div className="font-bold text-gray-900">{finalExamPending ? t('courseDetail.takeFinalExam') : t('courseDetail.continueLearning')}</div>
               </>
             ) : (
               <div className="font-bold text-lg text-gray-900">
-                {course.price > 0 ? `$${course.price.toFixed(2)}` : 'Free'}
+                {course.price > 0 ? `$${course.price.toFixed(2)}` : t('common.free')}
               </div>
             )}
           </div>
@@ -599,7 +610,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               }
               className="bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-11 px-5 rounded-[10px] flex-shrink-0"
             >
-              {finalExamPending ? 'Take exam' : 'Continue'}
+              {finalExamPending ? t('courseDetail.takeExam') : t('courseDetail.continue')}
             </button>
           ) : (
             enrollButton('h-11 px-5 rounded-[10px] flex-shrink-0')

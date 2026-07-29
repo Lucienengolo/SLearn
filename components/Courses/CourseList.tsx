@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Bookmark } from 'lucide-react';
 import { supabase, Course, Category, CourseStats } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale } from '../../contexts/LocaleContext';
 import CourseCard from './CourseCard';
 import { getCourseCover } from '../../lib/courseCovers';
 
@@ -22,15 +23,15 @@ type SortOption = 'newest' | 'price_low' | 'price_high' | 'title';
 
 const PAGE_SIZE = 12;
 
-const SORT_LABELS: Record<SortOption, string> = {
-  newest: 'Newest',
-  price_low: 'Price: low to high',
-  price_high: 'Price: high to low',
-  title: 'Title A-Z',
-};
-
 export default function CourseList({ onCourseSelect, initialSearch, initialCategory }: CourseListProps) {
   const { user } = useAuth();
+  const { t } = useLocale();
+  const SORT_LABELS: Record<SortOption, string> = {
+    newest: t('courses.sort.newest'),
+    price_low: t('courses.sort.priceLow'),
+    price_high: t('courses.sort.priceHigh'),
+    title: t('courses.sort.title'),
+  };
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory ?? 'all');
@@ -199,14 +200,14 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10">
       <div className="mb-7">
-        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-6">Explore courses</h1>
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-6">{t('courses.explore')}</h1>
 
         <div className="relative mb-4">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Search courses..."
-            aria-label="Search courses"
+            placeholder={t('common.searchPlaceholder')}
+            aria-label={t('common.searchAria')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 h-12 border border-gray-200 rounded-[10px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
@@ -228,7 +229,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
                   : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
               }`}
             >
-              All categories
+              {t('courses.allCategories')}
             </button>
             {categories.map((category) => {
               const CategoryIcon = getCourseCover(category.name).icon;
@@ -262,14 +263,14 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
                 }`}
               >
                 <Bookmark size={15} className={savedOnly ? 'fill-primary-600' : ''} />
-                Saved
+                {t('courses.saved')}
               </button>
             )}
             {!savedOnly && (
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                aria-label="Sort courses"
+                aria-label={t('courses.sortAria')}
                 className="h-9 pl-3.5 pr-8 border border-gray-200 rounded-full text-sm font-medium text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-primary-300"
               >
                 {Object.entries(SORT_LABELS).map(([value, label]) => (
@@ -286,12 +287,12 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Loading courses...</p>
+          <p className="mt-4 text-gray-600">{t('courses.loadingCourses')}</p>
         </div>
       ) : courses.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg">
-            {savedOnly ? "You haven't saved any courses yet" : 'No courses found'}
+            {savedOnly ? t('courses.noSaved') : t('courses.noneFound')}
           </p>
         </div>
       ) : (
@@ -314,7 +315,9 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
                 disabled={loadingMore}
                 className="bg-white border border-gray-200 text-gray-700 shadow-sm hover:shadow-md hover:bg-gray-50 transition-[box-shadow,background-color] font-medium h-11 px-6 rounded-[10px] disabled:opacity-50"
               >
-                {loadingMore ? 'Loading…' : `Load more (${totalCount - courses.length} remaining)`}
+                {loadingMore
+                  ? t('common.loadingEllipsis')
+                  : `${t('courses.loadMore')} (${totalCount - courses.length} ${t('courses.remaining')})`}
               </button>
             </div>
           )}

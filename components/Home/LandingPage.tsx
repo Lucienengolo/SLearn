@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Users, Award, Wifi, ArrowRight, GraduationCap, MessageCircle, Star } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useLocale } from '../../contexts/LocaleContext';
 import { renderRichText } from '../../lib/richText';
 import IconBadge from '../UI/IconBadge';
 
@@ -23,6 +24,7 @@ type Testimonial = {
 // disrupt the existing product experience, only adds a real first
 // impression for someone who's never seen the platform.
 export default function LandingPage({ onNavigate, onGetStarted }: LandingPageProps) {
+  const { t } = useLocale();
   const [stats, setStats] = useState({ totalCourses: 0, totalStudents: 0, totalInstructors: 0 });
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
@@ -75,20 +77,20 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
   const pillars = [
     {
       icon: BookOpen,
-      title: 'Practical courses',
-      body: 'Learn real, income-generating skills from local experts — at your own pace, on any device.',
+      title: t('landing.pillars.courses.title'),
+      body: t('landing.pillars.courses.body'),
       tone: 'gold' as const,
     },
     {
       icon: MessageCircle,
-      title: 'Verified tutors',
-      body: "Book a vetted, identity-checked tutor for your child, matched to your neighborhood and budget.",
+      title: t('landing.pillars.tutors.title'),
+      body: t('landing.pillars.tutors.body'),
       tone: 'blue' as const,
     },
     {
       icon: Award,
-      title: 'Real certificates',
-      body: 'Finish a course, pass the final exam, and earn a certificate that proves what you actually learned.',
+      title: t('landing.pillars.certificates.title'),
+      body: t('landing.pillars.certificates.body'),
       tone: 'green' as const,
     },
   ];
@@ -110,28 +112,27 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold text-gold-200 mb-6"
             style={{ background: 'rgba(226,165,42,0.15)', border: '1px solid rgba(226,165,42,0.35)' }}
           >
-            Built for African learners
+            {t('common.builtForLearners')}
           </span>
           <h1 className="font-display text-4xl sm:text-5xl lg:text-[64px] leading-[1.05] text-white mb-5 max-w-3xl mx-auto">
-            One platform to learn, teach, and get tutored — built for how you actually connect
+            {t('landing.hero.title')}
           </h1>
           <p className="text-lg leading-relaxed text-white/70 mb-8 max-w-xl mx-auto">
-            Practical courses from local experts, a marketplace to book verified tutors, and certificates that
-            mean something. Works on any device, even on a slow connection.
+            {t('landing.hero.subtitle')}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={onGetStarted}
               className="flex items-center gap-2 bg-primary-500 text-gray-900 shadow-md hover:shadow-lg hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold rounded-full h-12 px-6"
             >
-              Get started free
+              {t('landing.hero.getStarted')}
               <ArrowRight size={18} />
             </button>
             <button
               onClick={() => onNavigate('courses')}
               className="bg-white/10 text-white border border-white/25 hover:bg-white/15 transition font-semibold rounded-full h-12 px-6"
             >
-              Browse courses
+              {t('common.browseCourses')}
             </button>
           </div>
         </div>
@@ -141,15 +142,15 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
       <section className="border-b border-canvas-150 bg-white">
         <div className="max-w-[1200px] mx-auto px-6 py-5 flex flex-wrap gap-8 justify-center items-center">
           {[
-            { icon: BookOpen, value: stats.totalCourses, label: 'courses' },
-            { icon: Users, value: stats.totalStudents, label: 'learners' },
-            { icon: GraduationCap, value: stats.totalInstructors, label: 'expert instructors' },
-            { icon: Wifi, value: null, label: 'Low-data friendly' },
-          ].map((t) => (
-            <div key={t.label} className="flex items-center gap-2.5">
-              <t.icon size={18} className="text-primary-700" />
+            { icon: BookOpen, value: stats.totalCourses, label: t('common.trust.courses') },
+            { icon: Users, value: stats.totalStudents, label: t('common.trust.learners') },
+            { icon: GraduationCap, value: stats.totalInstructors, label: t('common.trust.instructors') },
+            { icon: Wifi, value: null, label: t('common.trust.lowData') },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-2.5">
+              <item.icon size={18} className="text-primary-700" />
               <span className="text-sm text-gray-600">
-                {t.value !== null && <strong className="text-gray-900">{t.value}</strong>} {t.label}
+                {item.value !== null && <strong className="text-gray-900">{item.value}</strong>} {item.label}
               </span>
             </div>
           ))}
@@ -159,8 +160,8 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
       {/* What we do */}
       <section className="max-w-[1200px] mx-auto px-6 py-16 sm:py-20">
         <div className="text-center mb-10">
-          <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">What we do</span>
-          <h2 className="font-display text-3xl sm:text-4xl mt-1.5 text-gray-900">Everything to learn and grow</h2>
+          <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">{t('landing.whatWeDo.eyebrow')}</span>
+          <h2 className="font-display text-3xl sm:text-4xl mt-1.5 text-gray-900">{t('landing.whatWeDo.title')}</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {pillars.map((p) => (
@@ -183,9 +184,9 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
           <div className="max-w-[1200px] mx-auto px-6 py-16 sm:py-20">
             <div className="text-center mb-10">
               <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">
-                From real students
+                {t('landing.testimonials.eyebrow')}
               </span>
-              <h2 className="font-display text-3xl sm:text-4xl mt-1.5 text-gray-900">What learners are saying</h2>
+              <h2 className="font-display text-3xl sm:text-4xl mt-1.5 text-gray-900">{t('landing.testimonials.title')}</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {testimonials.map((review) => (
@@ -212,12 +213,10 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
       {/* Vision */}
       <section className="max-w-[1200px] mx-auto px-6 py-16 sm:py-20">
         <div className="max-w-2xl mx-auto text-center">
-          <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">Our vision</span>
-          <h2 className="font-display text-3xl sm:text-4xl mt-1.5 mb-4 text-gray-900">World-class, built for us</h2>
+          <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">{t('landing.vision.eyebrow')}</span>
+          <h2 className="font-display text-3xl sm:text-4xl mt-1.5 mb-4 text-gray-900">{t('landing.vision.title')}</h2>
           <p className="text-gray-600 leading-relaxed">
-            Not a stripped-down version of a Western product — a genuinely polished platform designed around how
-            African learners actually connect: local currency, local exam systems, tutors your family can trust,
-            and a product that works even on a slow connection.
+            {t('landing.vision.body')}
           </p>
         </div>
       </section>
@@ -228,23 +227,22 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
           className="rounded-[20px] overflow-hidden p-8 sm:p-12 text-center shadow-lg hover:shadow-xl transition-shadow"
           style={{ background: 'linear-gradient(120deg,#0F5F3C,#157A4D)' }}
         >
-          <h2 className="font-display text-3xl sm:text-4xl text-white mb-3">Ready to get started?</h2>
+          <h2 className="font-display text-3xl sm:text-4xl text-white mb-3">{t('landing.finalCta.title')}</h2>
           <p className="text-white/80 max-w-md mx-auto mb-6">
-            Join for free — browse courses as a guest, or create an account to save progress, book tutors, and
-            earn certificates.
+            {t('landing.finalCta.body')}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={onGetStarted}
               className="bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold rounded-full h-12 px-6"
             >
-              Create free account
+              {t('landing.finalCta.button')}
             </button>
             <button
               onClick={() => onNavigate('courses')}
               className="bg-white/10 text-white border border-white/25 hover:bg-white/15 transition font-semibold rounded-full h-12 px-6 flex items-center gap-2"
             >
-              Browse courses
+              {t('common.browseCourses')}
               <ArrowRight size={16} />
             </button>
           </div>

@@ -1,5 +1,41 @@
 # TODOS
 
+## i18n Phase 1: public/marketing surfaces now follow the FR/EN toggle (2026-07-29)
+
+Founder reported "the language doesn't apply to all the platform" -- the FR/EN toggle only
+ever touched the header nav; every other surface was hardcoded (mostly English, with the
+tutor-marketplace flow hardcoded French instead). A background audit found ~53 component
+files, ~49 of them ignoring locale entirely. Given the size, locked in scope via
+AskUserQuestion before writing code rather than guessing:
+
+- **Rollout order**: public/marketing surfaces first (Header was already done; this phase
+  covers Home/Landing, Footer, and course-browsing chrome). Dashboards, tutor-marketplace,
+  account settings, and the auth modal are later phases -- not touched here.
+- **Mechanism**: keep hand-rolling the existing flat-key `lib/i18n.ts` dictionary rather than
+  pulling in `react-i18next`. `t(key)` indexes `translations[locale][key]`, and TypeScript's
+  structural indexing on `TranslationKey = keyof translations['fr']` already enforces FR/EN
+  key-set parity for free -- confirmed via a clean typecheck after every dictionary edit.
+
+**Shipped**: `HomePage.tsx`, `LandingPage.tsx`, `Footer.tsx`, `CourseList.tsx`,
+`CourseCard.tsx`, and `CourseDetail.tsx`'s browsing chrome (section headers, meta labels,
+enroll button variants, sidebar perks, toasts) all wired to `useLocale()`/`t()`. ~120 new
+keys added to `lib/i18n.ts` across `common.*`/`home.*`/`landing.*`/`footer.*`/`courses.*`/
+`courseDetail.*`. `course.level` is treated as translatable UI chrome (a fixed 3-value enum)
+via a small `LEVEL_KEYS` lookup in `CourseCard`/`CourseDetail`; `course.description`,
+`instructor.bio`, and review comments are deliberately left alone -- that's instructor- and
+student-authored content, not UI chrome, and stays out of scope for this sweep. No
+interpolation was added to `t()` -- composed strings ("Load more (N remaining)", "Enrolled --
+X% complete") are built by joining separately-translated fragments in JSX instead.
+
+Caught a real bug while wiring, not via a failing test: `LandingPage.tsx`'s trust-strip
+`.map((t) => ...)` callback shadowed the newly-destructured `const { t } = useLocale();`,
+which would have silently rendered every trust-strip label as `undefined`. Renamed the loop
+variable before it ever ran.
+
+Verified: full suite passing (238/238 -- 2 apparent failures in the full parallel run were
+the sandbox's known worker-timeout flake under memory pressure, confirmed by rerunning both
+files, and all 6 touched/new test files, in isolation), typecheck/lint/build all clean.
+
 ## RequestForm redesign: multi-child, multi-subject, location, edit/cancel (2026-07-29)
 
 Founder's screenshot batch asked for a more precise tutor-request form (multiple children

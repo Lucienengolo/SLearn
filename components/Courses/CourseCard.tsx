@@ -1,6 +1,14 @@
 import { Clock, Users, Star, Bookmark, CheckCircle } from 'lucide-react';
 import { Course } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
+import { useLocale } from '../../contexts/LocaleContext';
+import { TranslationKey } from '../../lib/i18n';
+
+const LEVEL_KEYS: Record<string, TranslationKey> = {
+  beginner: 'courses.level.beginner',
+  intermediate: 'courses.level.intermediate',
+  advanced: 'courses.level.advanced',
+};
 
 type CourseCardProps = {
   course: Course & {
@@ -15,8 +23,10 @@ type CourseCardProps = {
 };
 
 export default function CourseCard({ course, onClick, isSaved, onToggleSave }: CourseCardProps) {
+  const { t } = useLocale();
   const cover = getCourseCover(course.category?.name);
   const CoverIcon = cover.icon;
+  const levelKey = LEVEL_KEYS[course.level];
 
   return (
     <div
@@ -41,7 +51,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
             e.stopPropagation();
             onToggleSave();
           }}
-          aria-label={isSaved ? 'Remove from saved courses' : 'Save course for later'}
+          aria-label={isSaved ? t('courses.removeSaved') : t('courses.saveForLater')}
           aria-pressed={isSaved}
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition"
         >
@@ -55,7 +65,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
               {course.category.name}
             </span>
           )}
-          <span className="text-2xs text-gray-500 capitalize">{course.level}</span>
+          <span className="text-2xs text-gray-500">{levelKey ? t(levelKey) : course.level}</span>
         </div>
         <h3 className="font-semibold text-lg text-gray-900 mb-1.5 line-clamp-2">
           {course.title}
@@ -91,7 +101,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
                 <CheckCircle
                   size={13}
                   className="text-green-600 flex-shrink-0"
-                  aria-label="Verified instructor"
+                  aria-label={t('courses.verifiedInstructor')}
                 />
               )}
             </p>
@@ -101,7 +111,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
               ${course.price.toFixed(2)}
             </p>
           ) : (
-            <p className="text-base font-bold text-green-700 flex-shrink-0">Free</p>
+            <p className="text-base font-bold text-green-700 flex-shrink-0">{t('common.free')}</p>
           )}
         </div>
       </div>

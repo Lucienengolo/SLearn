@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, BookOpen, Users, Award, Wifi, ArrowRight, CheckCircle } from 'lucide-react';
 import { supabase, Course, CourseStats, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale } from '../../contexts/LocaleContext';
 import CourseCard from '../Courses/CourseCard';
 import { getCourseCover } from '../../lib/courseCovers';
 import IconBadge from '../UI/IconBadge';
@@ -18,6 +19,7 @@ type CourseWithStats = CourseRow & { enrollmentCount: number; averageRating: num
 
 export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, onFilterByCategory }: HomePageProps) {
   const { user } = useAuth();
+  const { t } = useLocale();
   const [featuredCourses, setFeaturedCourses] = useState<CourseWithStats[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState({
@@ -98,10 +100,17 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
   };
 
   const trust = [
-    { icon: BookOpen, value: stats.totalCourses, label: 'courses' },
-    { icon: Users, value: stats.totalStudents, label: 'learners' },
-    { icon: Award, value: stats.totalInstructors, label: 'expert instructors' },
-    { icon: Wifi, value: null, label: 'Low-data friendly' },
+    { icon: BookOpen, value: stats.totalCourses, label: t('common.trust.courses') },
+    { icon: Users, value: stats.totalStudents, label: t('common.trust.learners') },
+    { icon: Award, value: stats.totalInstructors, label: t('common.trust.instructors') },
+    { icon: Wifi, value: null, label: t('common.trust.lowData') },
+  ];
+
+  const topics = [
+    t('home.hero.topics.web'),
+    t('home.hero.topics.marketing'),
+    t('home.hero.topics.data'),
+    t('home.hero.topics.design'),
   ];
 
   return (
@@ -124,14 +133,13 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold text-gold-200 mb-5"
               style={{ background: 'rgba(226,165,42,0.15)', border: '1px solid rgba(226,165,42,0.35)' }}
             >
-              Built for African learners
+              {t('common.builtForLearners')}
             </span>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-[66px] leading-[1.05] text-white mb-4">
-              Learn the skills that grow your income
+              {t('home.hero.title')}
             </h1>
             <p className="text-lg leading-relaxed text-white/70 mb-7 max-w-lg">
-              Practical courses from local experts — build, market and run real projects. Learn at your own
-              pace, on any device, even on a slow connection.
+              {t('home.hero.subtitle')}
             </p>
 
             <form
@@ -142,19 +150,19 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search courses..."
+                placeholder={t('common.searchPlaceholder')}
                 className="flex-1 min-w-0 border-none outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
               />
               <button
                 type="submit"
                 className="bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold rounded-[10px] h-11 px-5 flex-shrink-0"
               >
-                Search
+                {t('home.hero.search')}
               </button>
             </form>
 
             <div className="flex gap-4 mt-4 flex-wrap">
-              {['Web development', 'Digital marketing', 'Data analysis', 'Design'].map((topic) => (
+              {topics.map((topic) => (
                 <span key={topic} className="text-sm text-white/60">{topic}</span>
               ))}
             </div>
@@ -186,7 +194,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
             onClick={() => onNavigate('courses')}
             className="flex-shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium shadow-sm hover:shadow-md hover:bg-primary-100 transition-[box-shadow,background-color]"
           >
-            All
+            {t('home.categories.all')}
           </button>
           {categories.map((category) => {
             const CategoryIcon = getCourseCover(category.name).icon;
@@ -208,21 +216,21 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
       <section className="max-w-[1200px] mx-auto px-6 pt-7 pb-16 sm:pb-[72px]">
         <div className="flex justify-between items-end mb-6">
           <div>
-            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">Most popular</span>
-            <h2 className="font-display text-3xl sm:text-4xl mt-1.5 text-gray-900">Featured courses</h2>
+            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-primary-700">{t('home.featured.eyebrow')}</span>
+            <h2 className="font-display text-3xl sm:text-4xl mt-1.5 text-gray-900">{t('home.featured.title')}</h2>
           </div>
           <button
             onClick={() => onNavigate('courses')}
             className="hidden sm:flex items-center gap-1.5 text-primary-700 hover:text-primary-800 font-semibold transition"
           >
-            View all
+            {t('home.featured.viewAll')}
             <ArrowRight size={18} />
           </button>
         </div>
 
         {featuredCourses.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">No courses available yet</p>
+            <p className="text-gray-600">{t('home.featured.empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -247,13 +255,12 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
           style={{ background: 'linear-gradient(120deg,#0F5F3C,#157A4D)' }}
         >
           <div>
-            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-green-200">For instructors</span>
+            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-green-200">{t('home.instructorCta.eyebrow')}</span>
             <h2 className="font-display text-3xl sm:text-4xl text-white mt-2 mb-3">
-              Teach what you know. Earn as you grow.
+              {t('home.instructorCta.title')}
             </h2>
             <p className="text-white/80 max-w-md">
-              Publish your first course in an afternoon. We handle hosting, payments and certificates — you
-              focus on your students.
+              {t('home.instructorCta.body')}
             </p>
           </div>
           <div className="flex flex-col items-start gap-3">
@@ -261,9 +268,9 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
               onClick={() => onNavigate(user ? 'become-instructor' : 'courses')}
               className="bg-primary-500 text-gray-900 shadow-sm hover:shadow-md hover:bg-primary-400 hover:-translate-y-0.5 transition-[box-shadow,transform,background-color] font-semibold rounded-[10px] h-12 px-6"
             >
-              Become an instructor
+              {t('home.instructorCta.button')}
             </button>
-            <span className="text-sm text-white/70">Free to start · Keep up to 85% of sales</span>
+            <span className="text-sm text-white/70">{t('home.instructorCta.terms')}</span>
           </div>
         </div>
       </section>
@@ -273,12 +280,12 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
           + instructor CTA above), since it's real, useful content. */}
       <section className="bg-canvas-25 border-t border-canvas-150">
         <div className="max-w-[1200px] mx-auto px-6 py-16">
-          <h2 className="font-display text-3xl text-gray-900 mb-8 text-center">Why choose S@Learn?</h2>
+          <h2 className="font-display text-3xl text-gray-900 mb-8 text-center">{t('home.whyChoose.title')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { title: 'Learn at your own pace', body: 'Access courses anytime, anywhere', tone: 'blue' as const },
-              { title: 'Earn certificates', body: 'Get recognized for your achievements', tone: 'gold' as const },
-              { title: 'Expert instructors', body: 'Learn from industry professionals', tone: 'green' as const },
+              { title: t('home.whyChoose.pace.title'), body: t('home.whyChoose.pace.body'), tone: 'blue' as const },
+              { title: t('home.whyChoose.certificates.title'), body: t('home.whyChoose.certificates.body'), tone: 'gold' as const },
+              { title: t('home.whyChoose.experts.title'), body: t('home.whyChoose.experts.body'), tone: 'green' as const },
             ].map((item) => (
               <div
                 key={item.title}
