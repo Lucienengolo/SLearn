@@ -101,4 +101,31 @@ describe('RequestForm', () => {
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     expect(matchSpy).toHaveBeenCalledWith('req-1');
   });
+
+  // Regression: a founder-reported bug where "the request tutor matching is
+  // not sent" turned out to be createTutorRequest succeeding but
+  // matchTutorRequest throwing (the match-tutor-request edge function was
+  // undeployed in production) inside the same try block, so the whole
+  // submission looked like it failed even though the request row was
+  // already saved. onSubmitted must still fire so the parent lands on the
+  // "still searching" screen instead of a raw error.
+  it('still calls onSubmitted (as unmatched) when the request is created but matching fails', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(tutorRequestsLib, 'createTutorRequest').mockResolvedValue(SAMPLE_REQUEST);
+    vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockRejectedValue(new Error('match-tutor-request unavailable'));
+    const onSubmitted = vi.fn();
+
+    render(<RequestForm onSubmitted={onSubmitted} />);
+
+    await waitFor(() => expect(screen.getByLabelText(/matière/i)).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText(/matière/i), 'cat-1');
+    await user.type(screen.getByLabelText(/niveau/i), '3ème');
+    await user.type(screen.getByLabelText(/quartier/i), 'Bonamoussadi');
+    await user.type(screen.getByLabelText(/whatsapp/i), '+237 650 123 456');
+
+    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+
+    await waitFor(() => expect(onSubmitted).toHaveBeenCalledWith(SAMPLE_REQUEST, false));
+    expect(screen.queryByText(/la demande a échoué/i)).not.toBeInTheDocument();
+  });
 });

@@ -1,5 +1,64 @@
 # TODOS
 
+## Migrations 0034-0039 deployed to production; real matching + Header bugs fixed (2026-07-29)
+
+Founder sent a batch of screenshots. One (the totem picker showing "Could not find the
+'totem' column of 'profiles' in the schema cache") was the first hard proof that migrations
+0034-0039 had never actually reached production, despite being committed and locally
+verified all session -- every session note calling this "pending deployment" turned out to
+be actively broken in the live app, not just an abstract gap.
+
+- **Deployed migrations 0034-0039 to production.** `.env` has a `SUPABASE_DB_URL` (a session
+  pooler connection string) that doesn't need `SUPABASE_ACCESS_TOKEN`/`supabase login` at
+  all -- `supabase db push --db-url ...` works without either. Two gotchas hit along the way:
+  (1) the password in `.env` has an unescaped `@`/`+` that breaks naive URI parsing --
+  needed percent-encoding (`%40`, `%2B`) before `psql`/`supabase` would accept it; (2) the
+  pooler's transaction-mode port (6543) fails migration pushes with `prepared statement
+  "..." already exists` (PgBouncer transaction pooling doesn't support prepared statements
+  reliably) -- the session-mode port (5432) on the same pooler host works. Verified after
+  the fact: `totem` column exists, `classwork_posts`/`classwork_submissions` tables exist,
+  `get_global_league`/`get_course_league`/`get_instructor_league` all exist. This retroactively
+  turns on the League and Classwork features in production for the first time -- they were
+  fully built and tested locally but never live until now.
+- **Diagnosed "tutor request matching is not sent" to its actual root cause**, rather than
+  guessing: confirmed via a direct HTTP call that `match-tutor-request` (along with
+  `create-tutor-deposit-checkout`, `cancel-tutor-booking`, `delete-account`) is a real 404 in
+  production -- those edge functions were written and locally verified this session but
+  **still can't be deployed without `SUPABASE_ACCESS_TOKEN`/`supabase login`**, which is a
+  different credential than the DB URL above and remains unavailable. Given that constraint,
+  fixed what's actually fixable in the client: `RequestForm.tsx`'s `handleSubmit` had
+  `matchTutorRequest` inside the same `try` block as `createTutorRequest`, so when matching
+  failed, the whole submission looked like it failed even though the request row was already
+  saved -- `MatchStatus.tsx`'s own retry button already treats a match failure as non-fatal
+  ("zero-match is not an error state"); `RequestForm` just wasn't following its own
+  established pattern. Now it does: the request is created, matching is attempted and its
+  failure is swallowed the same way, and the parent always lands on the "still searching"
+  screen instead of a raw error. **The underlying 404 is still there** -- this fix means a
+  parent's request now actually gets saved and they see the right screen, but real matching
+  won't run until the edge functions are deployed. Still needs the founder to either run
+  `supabase login` (they can do this themselves via the `!` prefix in this session, which
+  would then let deployment happen) or share an access token.
+- **Fixed a real Header layout bug** (confirmed via 2 landscape-orientation screenshots): at
+  roughly 768-1024px width (landscape phones, small tablets), the full desktop nav (5 links +
+  the entire profile/actions cluster) doesn't actually fit, and was rendering with the
+  wordmark and "Home" nav pill visibly overlapping, and "Find a Tutor" wrapping across 3
+  lines. Root cause: the desktop-nav-vs-hamburger breakpoint was `md:` (768px), too narrow
+  for how much this nav actually contains. Moved to `lg:` (1024px) and added
+  `whitespace-nowrap` to every nav button as a second layer of defense.
+- **Category filter chips now scroll horizontally instead of wrapping to 3 rows on mobile**
+  (`CourseList.tsx` and `HomePage.tsx` both had this, same root cause both places) --
+  confirmed via screenshot showing the wrapped state eating most of the visible viewport
+  before any course content appeared.
+
+Verified: 264/264 tests passing (2 new: a `RequestForm` regression test for the resilience
+fix, a `Header` regression test for the breakpoint fix), typecheck/lint/build all clean.
+
+**Still open from this same founder batch, deliberately not guessed at** (see the
+AskUserQuestion round that followed): RequestForm precision (multiple children with a level
+per child, multi-subject selection, a Google Maps location picker), an edit/delete action on
+a submitted tutor request, and footer mobile intuitiveness -- each has a real data-model or
+scope fork that shouldn't be guessed on given the size of what's being committed to.
+
 ## Mobile button-wrap bug + heading hierarchy (2026-07-28, second pass)
 
 Founder sent 2 WhatsApp screenshots of the mobile lesson page: one showing "Take completion

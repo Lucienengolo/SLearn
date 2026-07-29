@@ -214,10 +214,15 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
         </div>
 
         <div className="flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex gap-2 flex-wrap">
+          {/* Horizontal scroll, not wrap -- on mobile this used to wrap into
+              3 stacked rows of pills, eating a lot of vertical space before
+              any course content was visible. min-w-0 is required for a flex
+              item's own overflow-x-auto to actually kick in instead of the
+              item just growing past its container. */}
+          <div className="flex gap-2 overflow-x-auto pb-1 w-full sm:w-auto sm:min-w-0">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] ${
+              className={`flex-shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] ${
                 selectedCategory === 'all'
                   ? 'border-primary-200 bg-primary-50 text-primary-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'
@@ -232,7 +237,7 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] whitespace-nowrap ${
+                  className={`flex-shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-sm font-medium shadow-sm hover:shadow-md transition-[box-shadow,background-color,border-color,color] ${
                     active
                       ? 'border-primary-200 bg-primary-50 text-primary-700'
                       : 'border-gray-200 bg-white text-gray-600 hover:border-primary-200 hover:text-gray-900'

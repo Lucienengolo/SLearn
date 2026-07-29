@@ -92,8 +92,20 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
         preferredLanguage: 'fr',
       });
 
-      const matchResult = await matchTutorRequest(request.id);
-      onSubmitted(request, matchResult.matched);
+      // The request itself is already saved at this point -- a failure to
+      // immediately match (e.g. the matching edge function being briefly
+      // unavailable) must not look like the whole submission failed. Same
+      // "zero-match/unavailable is not an error state" handling as
+      // MatchStatus.tsx's own retry action, just applied here too so the
+      // very first submission gets the same resilience.
+      let matched = false;
+      try {
+        matched = (await matchTutorRequest(request.id)).matched;
+      } catch {
+        // Fall through to onSubmitted below -- the request was created;
+        // the "still searching" screen's own retry covers this case.
+      }
+      onSubmitted(request, matched);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'La demande a échoué. Réessayez.');
     } finally {

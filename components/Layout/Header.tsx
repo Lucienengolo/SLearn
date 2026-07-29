@@ -81,10 +81,10 @@ export default function Header({
               </span>
             </div>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1">
               <button
                 onClick={() => onNavigate('home')}
-                className={`text-md px-3 py-2 rounded-full transition ${
+                className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
                   currentPage === 'home' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
@@ -92,7 +92,7 @@ export default function Header({
               </button>
               <button
                 onClick={() => onNavigate('courses')}
-                className={`text-md px-3 py-2 rounded-full transition ${
+                className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
                   currentPage === 'courses' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
@@ -101,7 +101,7 @@ export default function Header({
               {user && (
                 <button
                   onClick={() => onNavigate('dashboard')}
-                  className={`text-md px-3 py-2 rounded-full transition ${
+                  className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
                     currentPage === 'dashboard' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
@@ -111,7 +111,7 @@ export default function Header({
               {user && profile?.role === 'student' && (
                 <button
                   onClick={() => onNavigate('my-requests')}
-                  className={`text-md px-3 py-2 rounded-full transition ${
+                  className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
                     currentPage === 'my-requests' || currentPage === 'tutor-request-new' || currentPage === 'tutor-request-detail'
                       ? 'font-semibold text-gray-900 bg-primary-50'
                       : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -123,7 +123,7 @@ export default function Header({
               {profile?.is_reviewer && (
                 <button
                   onClick={() => onNavigate('review-queue')}
-                  className={`text-md px-3 py-2 rounded-full transition ${
+                  className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
                     currentPage === 'review-queue' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
@@ -132,7 +132,7 @@ export default function Header({
               )}
             </nav>
 
-            <div className="hidden md:flex items-center space-x-3">
+            <div className="hidden lg:flex items-center space-x-3">
               <LanguageToggle />
               {user && profile ? (
                 <div className="flex items-center space-x-3">
@@ -197,7 +197,7 @@ export default function Header({
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="lg:hidden p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg"
               aria-label={mobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
               aria-expanded={mobileMenuOpen}
             >
@@ -207,7 +207,7 @@ export default function Header({
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t">
+          <div className="lg:hidden border-t">
             <nav className="px-4 py-4 space-y-2">
               <div className="px-4 pb-2">
                 <LanguageToggle />

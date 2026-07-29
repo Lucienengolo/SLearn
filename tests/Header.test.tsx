@@ -56,4 +56,19 @@ describe('Header', () => {
     expect(stickyWrapper?.querySelector('nav[aria-label="Audience"]')).toBeInTheDocument();
     expect(stickyWrapper?.querySelector('header')).toBeInTheDocument();
   });
+
+  // Regression: at landscape-phone/tablet widths (roughly 768-1024px) the
+  // full desktop nav (5 links + the whole profile/actions cluster) doesn't
+  // actually fit, and used to render with the wordmark and nav visibly
+  // overlapping instead of falling back to the hamburger menu. Confirmed via
+  // 2 screenshots. The fix moved the breakpoint from md (768px) to lg
+  // (1024px) -- this locks in that neither the desktop nav's own container
+  // nor the mobile hamburger button use the narrower `md:` breakpoint.
+  it('shows the desktop nav and hides the hamburger only from the lg breakpoint up, not md', () => {
+    const { container } = renderHeader('home');
+    expect(container.querySelector('nav.hidden.lg\\:flex')).toBeInTheDocument();
+    expect(container.querySelector('nav.hidden.md\\:flex')).not.toBeInTheDocument();
+    expect(container.querySelector('button.lg\\:hidden[aria-label]')).toBeInTheDocument();
+    expect(container.querySelector('button.md\\:hidden[aria-label]')).not.toBeInTheDocument();
+  });
 });

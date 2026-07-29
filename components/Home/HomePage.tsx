@@ -176,12 +176,15 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Categories -- horizontal scroll, not wrap, so this doesn't turn
+          into 3 stacked rows of pills on mobile before any course content
+          is visible (min-w-0 lets a flex item's own overflow-x-auto
+          actually apply instead of just growing past its container). */}
       <section className="max-w-[1200px] mx-auto px-6 pt-14 pb-2">
-        <div className="flex gap-2.5 flex-wrap">
+        <div className="flex gap-2.5 overflow-x-auto pb-1 min-w-0">
           <button
             onClick={() => onNavigate('courses')}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium shadow-sm hover:shadow-md hover:bg-primary-100 transition-[box-shadow,background-color]"
+            className="flex-shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-primary-200 bg-primary-50 text-primary-700 text-sm font-medium shadow-sm hover:shadow-md hover:bg-primary-100 transition-[box-shadow,background-color]"
           >
             All
           </button>
@@ -191,7 +194,7 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
               <button
                 key={category.id}
                 onClick={() => onFilterByCategory(category.id)}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-medium shadow-sm hover:shadow-md hover:border-primary-200 hover:text-gray-900 transition-[box-shadow,border-color,color] whitespace-nowrap"
+                className="flex-shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-medium shadow-sm hover:shadow-md hover:border-primary-200 hover:text-gray-900 transition-[box-shadow,border-color,color]"
               >
                 <CategoryIcon size={16} />
                 {category.name}
