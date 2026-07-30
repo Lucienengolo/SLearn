@@ -18,6 +18,8 @@ import GradingPanel from './GradingPanel';
 import InstructorLeague from './InstructorLeague';
 import TutorMatches from '../Tutors/TutorMatches';
 import Chat from '../Tutors/Chat';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
 
 type SLearnClassroomProps = {
   onBack: () => void;
@@ -26,18 +28,18 @@ type SLearnClassroomProps = {
 type StatusFilter = 'all' | 'completed' | 'in_progress' | 'not_started';
 type Section = 'stream' | 'classwork' | 'people' | 'league' | 'tutor-matches';
 
-const SECTION_LABELS: Record<Section, string> = {
-  stream: 'Stream',
-  classwork: 'Classwork',
-  people: 'People',
-  league: 'League',
-  'tutor-matches': 'Tutor Matches',
+const SECTION_LABEL_KEYS: Record<Section, TranslationKey> = {
+  stream: 'dashboard.classroom.sectionStream',
+  classwork: 'dashboard.classroom.sectionClasswork',
+  people: 'dashboard.classroom.sectionPeople',
+  league: 'dashboard.league.title',
+  'tutor-matches': 'dashboard.classroom.sectionTutorMatches',
 };
 
-const TYPE_META: Record<ClassworkPostWithCourse['type'], { label: string; Icon: typeof Megaphone; tint: string }> = {
-  announcement: { label: 'Announcement', Icon: Megaphone, tint: 'bg-gray-100 text-gray-600' },
-  material: { label: 'Material', Icon: FileText, tint: 'bg-primary-50 text-primary-700' },
-  assignment: { label: 'Assignment', Icon: ClipboardList, tint: 'bg-green-50 text-green-700' },
+const TYPE_META_KEYS: Record<ClassworkPostWithCourse['type'], { labelKey: TranslationKey; Icon: typeof Megaphone; tint: string }> = {
+  announcement: { labelKey: 'dashboard.classroom.postType.announcement', Icon: Megaphone, tint: 'bg-gray-100 text-gray-600' },
+  material: { labelKey: 'dashboard.classroom.postType.material', Icon: FileText, tint: 'bg-primary-50 text-primary-700' },
+  assignment: { labelKey: 'dashboard.classroom.postType.assignment', Icon: ClipboardList, tint: 'bg-green-50 text-green-700' },
 };
 
 const statusOf = (row: LearnerRow): StatusFilter =>
@@ -52,6 +54,7 @@ const statusOf = (row: LearnerRow): StatusFilter =>
 // course the instructor teaches -- matching the founder's choice of "one
 // workspace, course-switcher inside" over a per-course Classroom clone.
 export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
+  const { t } = useLocale();
   const { user } = useAuth();
   const { showToast } = useToast();
   const [section, setSection] = useState<Section>('stream');
@@ -100,10 +103,10 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   const handleDeletePost = async (postId: string) => {
     try {
       await deleteClassworkPost(postId);
-      showToast('Removed.', 'success');
+      showToast(t('dashboard.classroom.removedToast'), 'success');
       loadPosts(courses.map((c) => c.id));
     } catch {
-      showToast('Failed to remove.', 'error');
+      showToast(t('dashboard.classroom.removeFailedToast'), 'error');
     }
   };
 
@@ -135,21 +138,21 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   const chartMax = Math.max(1, ...courseProgressBars.map((b) => b.averageProgress));
 
   const statTiles = [
-    { value: distinctLearnerCount, label: 'learners' },
-    { value: completedCount, label: 'completions' },
-    { value: totalQuizAttempts, label: 'quiz attempts' },
-    { value: certifiedCount, label: 'certificates earned' },
+    { value: distinctLearnerCount, label: t('dashboard.classroom.statLearners') },
+    { value: completedCount, label: t('dashboard.classroom.statCompletions') },
+    { value: totalQuizAttempts, label: t('dashboard.classroom.quizAttempts') },
+    { value: certifiedCount, label: t('dashboard.classroom.certificatesEarnedLower') },
   ];
 
   const statusBadge = (row: LearnerRow) => {
     const status = statusOf(row);
     if (status === 'completed') {
-      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">Completed</span>;
+      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">{t('dashboard.classroom.status.completed')}</span>;
     }
     if (status === 'in_progress') {
-      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">In progress</span>;
+      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">{t('dashboard.classroom.status.inProgress')}</span>;
     }
-    return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">Not started</span>;
+    return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">{t('dashboard.classroom.status.notStarted')}</span>;
   };
 
   const courseOptions = courses.map((c) => ({ id: c.id, title: c.title }));
@@ -157,14 +160,14 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4 sm:hidden">
-        ← Back to dashboard
+        ← {t('dashboard.backToDashboard')}
       </button>
 
-      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">S@Learn Classroom</h1>
-      <p className="text-gray-500 mb-6">One workspace for everything across your courses.</p>
+      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">{t('dashboard.classroom.title')}</h1>
+      <p className="text-gray-500 mb-6">{t('dashboard.classroom.subtitle')}</p>
 
       <div className="flex items-center gap-1 mb-6 border-b border-canvas-150 overflow-x-auto">
-        {(Object.keys(SECTION_LABELS) as Section[]).map((s) => (
+        {(Object.keys(SECTION_LABEL_KEYS) as Section[]).map((s) => (
           <button
             key={s}
             onClick={() => setSection(s)}
@@ -174,7 +177,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                 : 'font-medium text-gray-500 hover:text-gray-900'
             }`}
           >
-            {SECTION_LABELS[s]}
+            {t(SECTION_LABEL_KEYS[s])}
           </button>
         ))}
       </div>
@@ -186,8 +189,8 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
       ) : courses.length === 0 ? (
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
           <Users size={40} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">No courses yet</h3>
-          <p className="text-gray-500 text-sm">Create a course first, then your classroom will come to life here.</p>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">{t('dashboard.common.noCoursesYet')}</h3>
+          <p className="text-gray-500 text-sm">{t('dashboard.classroom.noCoursesBody')}</p>
         </div>
       ) : (
         <>
@@ -208,7 +211,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                   onChange={(e) => setCourseFilter(e.target.value)}
                   className="h-10 px-3 mb-4 border border-gray-200 rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                 >
-                  <option value="all">All courses</option>
+                  <option value="all">{t('dashboard.classroom.allCourses')}</option>
                   {courseOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.title}
@@ -224,32 +227,32 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
               ) : visiblePosts.length === 0 ? (
                 <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
                   <p className="text-gray-500 text-sm">
-                    {section === 'stream' ? 'Nothing posted yet.' : 'No classwork posted yet.'}
+                    {section === 'stream' ? t('dashboard.classroom.nothingPostedYet') : t('dashboard.classroom.noClassworkPostedYet')}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {visiblePosts.map((post) => {
-                    const meta = TYPE_META[post.type];
+                    const meta = TYPE_META_KEYS[post.type];
                     return (
                       <div key={post.id} className="rounded-[14px] border border-canvas-150 p-4 shadow-sm">
                         <div className="flex items-start justify-between gap-3 mb-1.5">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`inline-flex items-center gap-1 text-2xs font-semibold px-2 py-1 rounded-full ${meta.tint}`}>
                               <meta.Icon size={12} />
-                              {meta.label}
+                              {t(meta.labelKey)}
                             </span>
                             {courseFilter === 'all' && post.course && (
                               <span className="text-2xs text-gray-400">{post.course.title}</span>
                             )}
                             {post.due_at && (
-                              <span className="text-2xs text-gray-500">Due {new Date(post.due_at).toLocaleDateString()}</span>
+                              <span className="text-2xs text-gray-500">{t('dashboard.classroom.duePrefix')} {new Date(post.due_at).toLocaleDateString()}</span>
                             )}
                           </div>
                           <button
                             onClick={() => handleDeletePost(post.id)}
                             className="text-gray-300 hover:text-red-500 transition flex-shrink-0"
-                            title="Remove"
+                            title={t('dashboard.classroom.removeTitle')}
                           >
                             <Trash2 size={15} />
                           </button>
@@ -271,7 +274,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                             onClick={() => setGradingPost(post)}
                             className="mt-3 text-sm font-medium text-primary-700 hover:underline"
                           >
-                            View submissions & grade
+                            {t('dashboard.classroom.viewSubmissionsGrade')}
                           </button>
                         )}
                       </div>
@@ -294,7 +297,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                     onClick={() => setSelectedMatchId(null)}
                     className="text-sm text-gray-500 hover:text-gray-800 transition mb-4"
                   >
-                    ← Back to matches
+                    ← {t('dashboard.classroom.backToMatches')}
                   </button>
                   <Chat matchId={selectedMatchId} currentUserId={user.id} viewerRole="tutor" />
                 </div>
@@ -309,39 +312,40 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
               <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_280px] gap-4 mb-6">
                 <div className="space-y-4">
                   <div className="rounded-[10px] border border-canvas-150 bg-canvas-25 p-4 shadow-sm">
-                    <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Information</p>
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{t('dashboard.classroom.information')}</p>
                     <p className="text-sm text-gray-700">
-                      {courses.length} course{courses.length === 1 ? '' : 's'}
+                      {courses.length} {t(courses.length === 1 ? 'dashboard.classroom.courseSingular' : 'dashboard.classroom.coursePlural')}
                     </p>
                     <p className="text-sm text-gray-700">
-                      {distinctLearnerCount} learner{distinctLearnerCount === 1 ? '' : 's'}
+                      {distinctLearnerCount} {t(distinctLearnerCount === 1 ? 'dashboard.classroom.learnerSingular' : 'dashboard.classroom.learnerPlural')}
                     </p>
                     <p className="text-2xs text-gray-500 mt-1.5">
-                      {rows.length} total enrollment{rows.length === 1 ? '' : 's'}
+                      {rows.length} {t(rows.length === 1 ? 'dashboard.classroom.totalEnrollmentSingular' : 'dashboard.classroom.totalEnrollmentPlural')}
                     </p>
                   </div>
 
                   {notStartedCount > 0 || staleCount > 0 ? (
                     <div className="rounded-[10px] border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                      <p className="text-2xs font-semibold uppercase tracking-wide text-amber-900 mb-2">Attention</p>
+                      <p className="text-2xs font-semibold uppercase tracking-wide text-amber-900 mb-2">{t('dashboard.classroom.attention')}</p>
                       <ul className="text-sm text-amber-800 space-y-0.5">
                         {notStartedCount > 0 && (
                           <li>
-                            {notStartedCount} enrollment{notStartedCount === 1 ? '' : 's'}{' '}
-                            {notStartedCount === 1 ? "hasn't" : "haven't"} started yet
+                            {notStartedCount} {t(notStartedCount === 1 ? 'dashboard.classroom.enrollmentSingular' : 'dashboard.classroom.enrollmentPlural')}{' '}
+                            {t(notStartedCount === 1 ? 'dashboard.classroom.hasntStartedYet' : 'dashboard.classroom.haventStartedYet')}
                           </li>
                         )}
                         {staleCount > 0 && (
                           <li>
-                            {staleCount} enrollment{staleCount === 1 ? '' : 's'} inactive for {STALE_THRESHOLD_DAYS}+ days
+                            {staleCount} {t(staleCount === 1 ? 'dashboard.classroom.enrollmentSingular' : 'dashboard.classroom.enrollmentPlural')}{' '}
+                            {t('dashboard.classroom.inactiveSince')} {STALE_THRESHOLD_DAYS}+ {t('dashboard.streak.days')}
                           </li>
                         )}
                       </ul>
                     </div>
                   ) : (
                     <div className="rounded-[10px] border border-canvas-150 bg-canvas-25 p-4 shadow-sm">
-                      <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">Attention</p>
-                      <p className="text-sm text-gray-500">Nothing needs your attention right now.</p>
+                      <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">{t('dashboard.classroom.attention')}</p>
+                      <p className="text-sm text-gray-500">{t('dashboard.classroom.nothingNeedsAttention')}</p>
                     </div>
                   )}
                 </div>
@@ -352,7 +356,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Looking for a specific learner?"
+                      placeholder={t('dashboard.classroom.searchPlaceholderLearner')}
                       className="w-full pl-10 pr-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                     />
                   </div>
@@ -370,7 +374,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                 </div>
 
                 <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <p className="text-2xs font-semibold text-gray-500 mb-3">Class overall progress</p>
+                  <p className="text-2xs font-semibold text-gray-500 mb-3">{t('dashboard.classroom.classOverallProgress')}</p>
                   {/* Course count is unbounded -- flex-1 bars used to squeeze
                       to unreadable slivers (and overflow the viewport
                       entirely) once an instructor had more than a handful of
@@ -402,32 +406,32 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 className="font-semibold text-gray-900">Learners ({rows.length})</h2>
+                <h2 className="font-semibold text-gray-900">{t('dashboard.classroom.learnersHeading')} ({rows.length})</h2>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setAddStudentOpen(true)}
                     className="inline-flex items-center gap-1.5 bg-primary-500 text-gray-900 h-9 px-3.5 rounded-full text-sm font-medium shadow-sm hover:shadow-md hover:bg-primary-400 transition-[box-shadow,background-color]"
                   >
                     <UserPlus size={15} />
-                    Add student
+                    {t('dashboard.classroom.addStudent')}
                   </button>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                    title="Filter by status"
+                    title={t('dashboard.classroom.filterByStatusTitle')}
                     className="h-9 px-3 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                   >
-                    <option value="all">All learners</option>
-                    <option value="completed">Completed</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="not_started">Not started</option>
+                    <option value="all">{t('dashboard.classroom.allLearners')}</option>
+                    <option value="completed">{t('dashboard.classroom.status.completed')}</option>
+                    <option value="in_progress">{t('dashboard.classroom.status.inProgress')}</option>
+                    <option value="not_started">{t('dashboard.classroom.status.notStarted')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="rounded-[14px] border border-canvas-150 divide-y divide-canvas-150 shadow-sm">
                 {filteredRows.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-10">No learners match your search.</p>
+                  <p className="text-sm text-gray-500 text-center py-10">{t('dashboard.classroom.noLearnersMatch')}</p>
                 ) : (
                   filteredRows.map((row) => (
                     <div key={row.enrollmentId} className="flex items-center gap-3.5 p-4 hover:bg-gray-50 transition-colors">
@@ -448,12 +452,12 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                           {row.hasCertificate && (
                             <span className="flex items-center gap-1 text-2xs font-semibold px-2 py-1 rounded-full bg-gold-50 text-gold-700">
                               <Award size={12} />
-                              Certified
+                              {t('dashboard.myProgress.certifiedBadge')}
                             </span>
                           )}
                           {row.isStale && (
                             <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-800">
-                              Needs attention
+                              {t('dashboard.classroom.needsAttention')}
                             </span>
                           )}
                         </div>
@@ -471,7 +475,7 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
                         <p className="text-2xs text-gray-500 text-right">{row.progressPercentage}%</p>
                       </div>
                       <p className="text-2xs text-gray-400 flex-shrink-0 hidden md:block w-28 text-right">
-                        Last active {new Date(row.lastActivityAt).toLocaleDateString()}
+                        {t('dashboard.classroom.lastActive')} {new Date(row.lastActivityAt).toLocaleDateString()}
                       </p>
                     </div>
                   ))

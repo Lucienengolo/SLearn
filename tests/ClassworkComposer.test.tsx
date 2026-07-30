@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as classworkLib from '../lib/classwork';
 import ClassworkComposer from '../components/Dashboard/ClassworkComposer';
 import { ToastProvider } from '../contexts/ToastContext';
+import { LocaleProvider } from '../contexts/LocaleContext';
 
 vi.mock('../lib/classwork');
 
@@ -14,14 +15,16 @@ const COURSES = [
 
 function renderComposer(props: Partial<Parameters<typeof ClassworkComposer>[0]> = {}) {
   return render(
-    <ToastProvider>
-      <ClassworkComposer
-        instructorId="instructor-1"
-        courses={props.courses ?? COURSES}
-        defaultCourseId={props.defaultCourseId ?? null}
-        onPosted={props.onPosted ?? vi.fn()}
-      />
-    </ToastProvider>
+    <LocaleProvider>
+      <ToastProvider>
+        <ClassworkComposer
+          instructorId="instructor-1"
+          courses={props.courses ?? COURSES}
+          defaultCourseId={props.defaultCourseId ?? null}
+          onPosted={props.onPosted ?? vi.fn()}
+        />
+      </ToastProvider>
+    </LocaleProvider>
   );
 }
 
@@ -80,5 +83,19 @@ describe('ClassworkComposer', () => {
     await user.click(screen.getByRole('button', { name: 'Post' }));
 
     expect(await screen.findByText('nope')).toBeInTheDocument();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+
+    renderComposer({ courses: [COURSES[0]] });
+
+    expect(screen.getByRole('button', { name: 'Annonce' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Devoir' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Titre')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Publier' })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

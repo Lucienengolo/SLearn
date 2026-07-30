@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as classworkLib from '../lib/classwork';
 import GradingPanel from '../components/Dashboard/GradingPanel';
 import { ToastProvider } from '../contexts/ToastContext';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import type { ClassworkPostWithCourse } from '../lib/classwork';
 
 vi.mock('../lib/classwork', async (importOriginal) => {
@@ -27,9 +28,11 @@ const POST: ClassworkPostWithCourse = {
 
 function renderPanel(onBack = vi.fn()) {
   return render(
-    <ToastProvider>
-      <GradingPanel post={POST} onBack={onBack} />
-    </ToastProvider>
+    <LocaleProvider>
+      <ToastProvider>
+        <GradingPanel post={POST} onBack={onBack} />
+      </ToastProvider>
+    </LocaleProvider>
   );
 }
 
@@ -102,5 +105,18 @@ describe('GradingPanel', () => {
 
     await user.click(screen.getByRole('button', { name: /back to classwork/i }));
     expect(onBack).toHaveBeenCalled();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.mocked(classworkLib.fetchSubmissionsForPost).mockResolvedValue([]);
+
+    renderPanel();
+
+    expect(await screen.findByText(/aucune soumission pour le moment/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retour aux travaux/i })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

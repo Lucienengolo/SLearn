@@ -5,8 +5,18 @@ import * as authContext from '../contexts/AuthContext';
 import * as gamificationLib from '../lib/gamification';
 import * as leagueLib from '../lib/league';
 import League from '../components/Dashboard/League';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import type { ComponentProps } from 'react';
 
 vi.mock('../lib/league');
+
+function renderLeague(props: ComponentProps<typeof League>) {
+  return render(
+    <LocaleProvider>
+      <League {...props} />
+    </LocaleProvider>
+  );
+}
 
 function mockAuth() {
   vi.spyOn(authContext, 'useAuth').mockReturnValue({
@@ -44,14 +54,14 @@ describe('League', () => {
   });
 
   it('defaults to the Global League tab', async () => {
-    render(<League onBack={vi.fn()} onNavigate={vi.fn()} />);
+    renderLeague({ onBack: vi.fn(), onNavigate: vi.fn() });
     await waitFor(() => expect(leagueLib.fetchGlobalLeague).toHaveBeenCalled());
     expect(await screen.findByText('30 XP')).toBeInTheDocument();
   });
 
   it('switching to Classroom League shows the course dropdown and fetches the first course by default', async () => {
     const user = userEvent.setup();
-    render(<League onBack={vi.fn()} onNavigate={vi.fn()} />);
+    renderLeague({ onBack: vi.fn(), onNavigate: vi.fn() });
     await waitFor(() => expect(leagueLib.fetchStudentCourseOptions).toHaveBeenCalled());
 
     await user.click(screen.getByRole('button', { name: /classroom league/i }));
@@ -62,7 +72,7 @@ describe('League', () => {
 
   it('re-fetches the classroom league when the dropdown selection changes', async () => {
     const user = userEvent.setup();
-    render(<League onBack={vi.fn()} onNavigate={vi.fn()} />);
+    renderLeague({ onBack: vi.fn(), onNavigate: vi.fn() });
     await waitFor(() => expect(leagueLib.fetchStudentCourseOptions).toHaveBeenCalled());
     await user.click(screen.getByRole('button', { name: /classroom league/i }));
     await waitFor(() => expect(leagueLib.fetchCourseLeague).toHaveBeenCalledWith('course-1'));
@@ -75,7 +85,7 @@ describe('League', () => {
   it('shows an empty-state message instead of a dropdown when the student has no enrolled courses', async () => {
     vi.mocked(leagueLib.fetchStudentCourseOptions).mockResolvedValue([]);
     const user = userEvent.setup();
-    render(<League onBack={vi.fn()} onNavigate={vi.fn()} />);
+    renderLeague({ onBack: vi.fn(), onNavigate: vi.fn() });
     await waitFor(() => expect(leagueLib.fetchStudentCourseOptions).toHaveBeenCalled());
 
     await user.click(screen.getByRole('button', { name: /classroom league/i }));

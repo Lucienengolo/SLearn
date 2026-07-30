@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ClassworkPostWithCourse, ClassworkSubmissionWithStudent, fetchSubmissionsForPost, gradeSubmission } from '../../lib/classwork';
 import { useToast } from '../../contexts/ToastContext';
 import { renderRichText } from '../../lib/richText';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type GradingPanelProps = {
   post: ClassworkPostWithCourse;
@@ -9,6 +10,7 @@ type GradingPanelProps = {
 };
 
 function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSubmissionWithStudent; maxPoints: number | null; onGraded: () => void }) {
+  const { t } = useLocale();
   const { showToast } = useToast();
   const [grade, setGrade] = useState(submission.grade?.toString() ?? '');
   const [feedback, setFeedback] = useState(submission.feedback ?? '');
@@ -17,16 +19,16 @@ function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSu
   const handleSave = async () => {
     const gradeNum = Number(grade);
     if (!grade || Number.isNaN(gradeNum)) {
-      showToast('Enter a numeric grade.', 'error');
+      showToast(t('dashboard.gradingPanel.enterNumericGrade'), 'error');
       return;
     }
     setSaving(true);
     try {
       await gradeSubmission(submission.id, gradeNum, feedback);
-      showToast('Grade saved.', 'success');
+      showToast(t('dashboard.gradingPanel.gradeSaved'), 'success');
       onGraded();
     } catch {
-      showToast('Failed to save grade.', 'error');
+      showToast(t('dashboard.gradingPanel.failedSaveGrade'), 'error');
     } finally {
       setSaving(false);
     }
@@ -35,8 +37,8 @@ function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSu
   return (
     <div className="rounded-[10px] border border-canvas-150 p-4">
       <div className="flex items-center justify-between gap-3 mb-2">
-        <p className="font-medium text-gray-900">{submission.student?.full_name ?? 'Student'}</p>
-        <span className="text-2xs text-gray-500">Submitted {new Date(submission.submitted_at).toLocaleDateString()}</span>
+        <p className="font-medium text-gray-900">{submission.student?.full_name ?? t('dashboard.sidebar.studentFallback')}</p>
+        <span className="text-2xs text-gray-500">{t('dashboard.gradingPanel.submittedPrefix')} {new Date(submission.submitted_at).toLocaleDateString()}</span>
       </div>
       <div className="text-sm text-gray-700 mb-3">{renderRichText(submission.content ?? '')}</div>
       <div className="flex flex-wrap items-center gap-2">
@@ -45,13 +47,13 @@ function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSu
           onChange={(e) => setGrade(e.target.value)}
           type="number"
           min={0}
-          placeholder={maxPoints ? `/ ${maxPoints}` : 'Grade'}
+          placeholder={maxPoints ? `/ ${maxPoints}` : t('dashboard.gradingPanel.gradePlaceholder')}
           className="w-24 h-9 px-2.5 border border-gray-200 rounded-[8px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
         />
         <input
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
-          placeholder="Feedback (optional)"
+          placeholder={t('dashboard.gradingPanel.feedbackPlaceholder')}
           className="flex-1 min-w-[160px] h-9 px-2.5 border border-gray-200 rounded-[8px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
         />
         <button
@@ -59,7 +61,7 @@ function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSu
           disabled={saving}
           className="h-9 px-3.5 rounded-[8px] bg-primary-500 text-gray-900 text-sm font-medium hover:bg-primary-400 transition disabled:opacity-50"
         >
-          {submission.grade !== null ? 'Update' : 'Save'}
+          {submission.grade !== null ? t('dashboard.gradingPanel.update') : t('dashboard.gradingPanel.save')}
         </button>
       </div>
     </div>
@@ -70,6 +72,7 @@ function GradeRow({ submission, maxPoints, onGraded }: { submission: ClassworkSu
 // established pattern of full-page drill-ins (CourseEditor, CourseStudents)
 // for anything more complex than a single-field form, rather than a modal.
 export default function GradingPanel({ post, onBack }: GradingPanelProps) {
+  const { t } = useLocale();
   const [submissions, setSubmissions] = useState<ClassworkSubmissionWithStudent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,11 +93,11 @@ export default function GradingPanel({ post, onBack }: GradingPanelProps) {
   return (
     <div>
       <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4">
-        ← Back to Classwork
+        ← {t('dashboard.gradingPanel.backToClasswork')}
       </button>
       <h2 className="font-display text-2xl text-gray-900 mb-1">{post.title}</h2>
       <p className="text-gray-500 mb-6">
-        {submissions.length} submission{submissions.length === 1 ? '' : 's'} · {gradedCount} graded
+        {submissions.length} {t(submissions.length === 1 ? 'dashboard.gradingPanel.submissionSingular' : 'dashboard.gradingPanel.submissionPlural')} · {gradedCount} {t('dashboard.gradingPanel.graded')}
       </p>
 
       {loading ? (
@@ -103,7 +106,7 @@ export default function GradingPanel({ post, onBack }: GradingPanelProps) {
         </div>
       ) : submissions.length === 0 ? (
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
-          <p className="text-gray-500 text-sm">No submissions yet.</p>
+          <p className="text-gray-500 text-sm">{t('dashboard.gradingPanel.noSubmissionsYet')}</p>
         </div>
       ) : (
         <div className="space-y-3">

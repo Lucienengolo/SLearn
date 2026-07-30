@@ -1,5 +1,56 @@
 # TODOS
 
+## i18n Phase 2: dashboards (student, instructor, reviewer) now follow the FR/EN toggle (2026-07-29)
+
+Continuation of the platform-wide i18n sweep (see Phase 1 below) into the largest remaining
+chunk: all 21 Dashboard component files (student dashboard, League, instructor course
+management, S@Learn Classroom, the reviewer queue, and the instructor application wizard) --
+~500+ strings, previously 100% hardcoded regardless of the FR/EN toggle. Shipped as 4
+sequential batches to keep each diff reviewable:
+
+- **Batch A** -- shared dashboard chrome (`DashboardSidebar`, `StreakXPCard`, `LeagueBoard`)
+  and the student-facing pages (`League`, `MyProgress`, `StudentDashboard`).
+- **Batch B** -- instructor-core surfaces (`InstructorDashboard`, `CourseStudents`,
+  `SLearnClassroom`, `InstructorLeague`, `AdminMetrics`). `AdminMetrics.tsx` was previously
+  hardcoded *French* (not English) with zero locale-awareness -- brought into the same
+  dictionary rather than left as a special case.
+- **Batch C** -- content-creation tools (`CourseEditor` -- the largest single file touched
+  all sweep, `QuizBuilder`, `ClassworkComposer`, `GradingPanel`, `AddStudentModal`,
+  `ReviewQueue`).
+- **Batch D** -- the instructor application wizard (`ApplicationWizard`, `IdentityCapture`,
+  `VerificationPipeline`).
+
+`CourseStudents.tsx` and `SLearnClassroom.tsx` share a large amount of near-identical copy
+("Information"/"Attention" panels, status badges, "Class overall progress" chart, "Add
+student") since they're both classroom-management surfaces -- pulled into a shared
+`dashboard.classroom.*` key namespace instead of duplicating translations across both files.
+`course.level` and moderation-status enums (`pending`/`approved`/`rejected`) continue the
+established pattern of translating fixed-value enums as UI chrome via small `*_KEYS` lookup
+maps, while free-text instructor-authored content (course descriptions, application bios,
+reviewer notes) stays untranslated by design.
+
+QuizBuilder's True/False quiz-answer options needed special handling: the underlying stored
+value (`'True'`/`'False'`, used for `correct_answer` comparison and persisted to the DB) had
+to stay in English regardless of locale, while only the *displayed* radio label translates --
+same "translate the label, not the underlying value" pattern as the level/status enums, just
+applied to data the app itself writes back rather than reads.
+
+A genuine regression was caught by the full suite, not introduced by scope creep:
+`AccountSettings.test.tsx` (a file **outside** this phase's scope) broke because
+`AccountSettings.tsx` renders the now-`useLocale()`-dependent `DashboardSidebar` --
+its test render helper needed a `LocaleProvider` wrapper even though `AccountSettings.tsx`
+itself wasn't touched. Fixed by wrapping its existing render helper, not by translating
+`AccountSettings.tsx` (that's a later phase).
+
+Verified: full suite passing (315/315 across 57 files, including 8 new test files for
+previously-untested components -- `QuizBuilder`, `ReviewQueue`, `CourseEditor`,
+`InstructorDashboard`, `StudentDashboard`, `VerificationPipeline`, `IdentityCapture`, plus
+`ApplicationWizard`'s existing tutoring-section test extended with a French case),
+typecheck/lint/build all clean. Lint's warning count moved from 15 to 16 -- the new one is
+the same pre-existing "missing effect dependency on a locally-defined mount-once function"
+shape already present ~7 times elsewhere in this codebase (`CourseStudents`,
+`InstructorDashboard`, `StudentDashboard`, `CourseEditor`, etc.), not a new category of issue.
+
 ## i18n Phase 1: public/marketing surfaces now follow the FR/EN toggle (2026-07-29)
 
 Founder reported "the language doesn't apply to all the platform" -- the FR/EN toggle only

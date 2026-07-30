@@ -13,15 +13,17 @@ import {
   uploadCredential,
 } from '../../../lib/instructorApplications';
 import IdentityCapture from './IdentityCapture';
+import { useLocale } from '../../../contexts/LocaleContext';
+import type { TranslationKey } from '../../../lib/i18n';
 
-const STEPS = [
-  'Profile & qualifications',
-  'Experience',
-  'Tutoring (optional)',
-  'Course proposal',
-  'Credentials & identity',
-  'Interview scheduling',
-] as const;
+const STEP_KEYS: TranslationKey[] = [
+  'dashboard.instructorApplication.stepProfile',
+  'dashboard.instructorApplication.stepExperience',
+  'dashboard.instructorApplication.stepTutoring',
+  'dashboard.instructorApplication.stepCourseProposal',
+  'dashboard.instructorApplication.stepCredentialsIdentity',
+  'dashboard.instructorApplication.stepInterviewScheduling',
+];
 
 type Props = {
   initialApplication: InstructorApplication | null;
@@ -29,6 +31,7 @@ type Props = {
 };
 
 export default function ApplicationWizard({ initialApplication, onSubmitted }: Props) {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [application, setApplication] = useState<InstructorApplication | null>(initialApplication);
   const [step, setStep] = useState(0);
@@ -87,7 +90,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       if (isFirstSave) trackEvent('instructor_application_started');
       return saved;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save your progress');
+      setError(err instanceof Error ? err.message : t('dashboard.instructorApplication.couldNotSaveProgress'));
       return null;
     } finally {
       setSaving(false);
@@ -96,7 +99,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
   const goNext = async () => {
     const saved = await persist();
-    if (saved) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    if (saved) setStep((s) => Math.min(s + 1, STEP_KEYS.length - 1));
   };
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
@@ -109,7 +112,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       const credential = await uploadCredential(user.id, application.id, type, file);
       setCredentials((prev) => [...prev, credential]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      setError(err instanceof Error ? err.message : t('dashboard.instructorApplication.uploadFailed'));
     } finally {
       setUploadingType(null);
     }
@@ -118,28 +121,28 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
   const handleSubmit = async () => {
     if (!application?.id) return;
     if (!hasGovernmentId) {
-      setError('A government-issued ID is required before you can submit.');
+      setError(t('dashboard.instructorApplication.govIdRequiredError'));
       return;
     }
     if (!hasSelfie) {
-      setError('A live selfie is required before you can submit.');
+      setError(t('dashboard.instructorApplication.selfieRequiredError'));
       return;
     }
     if (form.offers_tutoring) {
       if (!form.tutoring_category_ids || form.tutoring_category_ids.length === 0) {
-        setError('Select at least one subject to tutor, or turn off tutoring above.');
+        setError(t('dashboard.instructorApplication.selectSubjectError'));
         return;
       }
       if (!form.tutoring_neighborhood?.trim()) {
-        setError('Add your neighborhood for tutoring, or turn off tutoring above.');
+        setError(t('dashboard.instructorApplication.addNeighborhoodError'));
         return;
       }
       if (!form.tutoring_rate_per_session || form.tutoring_rate_per_session <= 0) {
-        setError('Add your per-session tutoring rate, or turn off tutoring above.');
+        setError(t('dashboard.instructorApplication.addRateError'));
         return;
       }
       if (!form.tutoring_whatsapp || !isValidWhatsappContact(form.tutoring_whatsapp)) {
-        setError('Add a valid WhatsApp number for tutoring (+237 6XX XXX XXX), or turn off tutoring above.');
+        setError(t('dashboard.instructorApplication.addWhatsappError'));
         return;
       }
     }
@@ -150,7 +153,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       trackEvent('instructor_application_submitted');
       onSubmitted();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not submit your application');
+      setError(err instanceof Error ? err.message : t('dashboard.instructorApplication.couldNotSubmit'));
     } finally {
       setSaving(false);
     }
@@ -158,16 +161,15 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">Apply to teach</h1>
+      <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">{t('dashboard.student.applyToTeach')}</h1>
       <p className="text-gray-500 mb-8">
-        Every applicant passes qualification, credential, identity and a compulsory
-        interview review before their studio unlocks.
+        {t('dashboard.instructorApplication.wizardSubtitle')}
       </p>
 
       <ol className="flex flex-wrap gap-2 mb-8">
-        {STEPS.map((label, i) => (
+        {STEP_KEYS.map((labelKey, i) => (
           <li
-            key={label}
+            key={labelKey}
             className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full ${
               i === step
                 ? 'bg-primary-500 text-gray-900'
@@ -177,7 +179,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
             }`}
           >
             {i < step && <CheckCircle size={14} />}
-            {i + 1}. {label}
+            {i + 1}. {t(labelKey)}
           </li>
         ))}
       </ol>
@@ -187,29 +189,29 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       <div className="rounded-[14px] border border-canvas-150 p-6 space-y-4">
         {step === 0 && (
           <>
-            <Field label="Full name">
+            <Field label={t('dashboard.instructorApplication.fullNameLabel')}>
               <input
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 value={form.full_name ?? ''}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               />
             </Field>
-            <Field label="Home address">
+            <Field label={t('dashboard.instructorApplication.homeAddressLabel')}>
               <input
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 value={form.address ?? ''}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Street, city, country"
+                placeholder={t('dashboard.instructorApplication.addressPlaceholder')}
               />
             </Field>
-            <Field label="Headline (e.g. 'Backend engineer & Python instructor')">
+            <Field label={t('dashboard.instructorApplication.headlineLabel')}>
               <input
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 value={form.headline ?? ''}
                 onChange={(e) => setForm({ ...form, headline: e.target.value })}
               />
             </Field>
-            <Field label="Bio">
+            <Field label={t('dashboard.reviewQueue.bioLabel')}>
               <textarea
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 rows={4}
@@ -217,7 +219,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
               />
             </Field>
-            <Field label="Qualifications (degrees, certifications, notable achievements)">
+            <Field label={t('dashboard.instructorApplication.qualificationsFullLabel')}>
               <textarea
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 rows={3}
@@ -230,7 +232,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
         {step === 1 && (
           <>
-            <Field label="Years of teaching / professional experience">
+            <Field label={t('dashboard.instructorApplication.yearsExperienceLabel')}>
               <input
                 type="number"
                 min={0}
@@ -239,7 +241,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                 onChange={(e) => setForm({ ...form, years_experience: Number(e.target.value) })}
               />
             </Field>
-            <Field label="Areas of expertise (comma-separated)">
+            <Field label={t('dashboard.instructorApplication.areasExpertiseCommaLabel')}>
               <input
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 value={(form.areas_of_expertise ?? []).join(', ')}
@@ -260,11 +262,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
         {step === 2 && (
           <>
             <div className="bg-primary-50 border border-primary-100 rounded-[10px] p-3.5 text-sm text-gray-700">
-              This section is used only for matching you with parents looking for a private
-              tutor for their child — it's completely optional and separate from your course.
-              If you turn it on, please fill it in accurately: incomplete or incorrect
-              information here means missed tutoring opportunities, since parents are matched
-              automatically from what you enter.
+              {t('dashboard.instructorApplication.tutoringIntro')}
             </div>
 
             <label className="flex items-center gap-2.5 text-sm font-medium text-gray-800">
@@ -274,12 +272,12 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                 onChange={(e) => setForm({ ...form, offers_tutoring: e.target.checked })}
                 className="w-4 h-4"
               />
-              I also want to be matched with parents for 1-on-1 tutoring
+              {t('dashboard.instructorApplication.wantTutoringCheckbox')}
             </label>
 
             {form.offers_tutoring && (
               <>
-                <Field label="Subjects you can tutor">
+                <Field label={t('dashboard.instructorApplication.subjectsToTutorLabel')}>
                   <div className="flex flex-wrap gap-1.5">
                     {categories.map((c) => {
                       const selected = (form.tutoring_category_ids ?? []).includes(c.id);
@@ -309,15 +307,15 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                     })}
                   </div>
                 </Field>
-                <Field label="Neighborhood (for in-person tutoring)">
+                <Field label={t('dashboard.instructorApplication.neighborhoodLabel')}>
                   <input
                     className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                     value={form.tutoring_neighborhood ?? ''}
                     onChange={(e) => setForm({ ...form, tutoring_neighborhood: e.target.value })}
-                    placeholder="e.g. Bonamoussadi"
+                    placeholder={t('dashboard.instructorApplication.neighborhoodPlaceholder')}
                   />
                 </Field>
-                <Field label="Teaching mode">
+                <Field label={t('dashboard.instructorApplication.teachingModeLabel')}>
                   <select
                     className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                     value={form.tutoring_teaching_mode ?? 'both'}
@@ -325,12 +323,12 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                       setForm({ ...form, tutoring_teaching_mode: e.target.value as 'online' | 'in_person' | 'both' })
                     }
                   >
-                    <option value="both">Online and in-person</option>
-                    <option value="online">Online only</option>
-                    <option value="in_person">In-person only</option>
+                    <option value="both">{t('dashboard.instructorApplication.onlineInPerson')}</option>
+                    <option value="online">{t('dashboard.instructorApplication.onlineOnly')}</option>
+                    <option value="in_person">{t('dashboard.instructorApplication.inPersonOnly')}</option>
                   </select>
                 </Field>
-                <Field label="Languages you can tutor in">
+                <Field label={t('dashboard.instructorApplication.languagesTutorLabel')}>
                   <div className="flex gap-1.5">
                     {(['fr', 'en'] as const).map((lang) => {
                       const selected = (form.tutoring_languages ?? []).includes(lang);
@@ -339,7 +337,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                           key={lang}
                           type="button"
                           aria-pressed={selected}
-                          aria-label={`Language: ${lang === 'fr' ? 'French' : 'English'}`}
+                          aria-label={`${t('dashboard.instructorApplication.languageAriaPrefix')} ${lang === 'fr' ? t('dashboard.instructorApplication.french') : t('dashboard.instructorApplication.english')}`}
                           onClick={() =>
                             setForm((prev) => {
                               const current = prev.tutoring_languages ?? [];
@@ -355,13 +353,13 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                             selected ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-200 hover:border-gray-400'
                           }`}
                         >
-                          {lang === 'fr' ? 'French' : 'English'}
+                          {lang === 'fr' ? t('dashboard.instructorApplication.french') : t('dashboard.instructorApplication.english')}
                         </button>
                       );
                     })}
                   </div>
                 </Field>
-                <Field label="Rate per tutoring session (FCFA)">
+                <Field label={t('dashboard.instructorApplication.ratePerSessionLabel')}>
                   <input
                     type="number"
                     min={0}
@@ -371,7 +369,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                     placeholder="8000"
                   />
                 </Field>
-                <Field label="Usual response time">
+                <Field label={t('dashboard.instructorApplication.responseTimeLabel')}>
                   <select
                     className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                     value={form.tutoring_response_time_minutes ?? ''}
@@ -382,13 +380,13 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                       })
                     }
                   >
-                    <option value="">Not specified</option>
-                    <option value={60}>Under 1 hour</option>
-                    <option value={240}>1 to 4 hours</option>
-                    <option value={1440}>More than 4 hours</option>
+                    <option value="">{t('dashboard.instructorApplication.notSpecified')}</option>
+                    <option value={60}>{t('dashboard.instructorApplication.underOneHour')}</option>
+                    <option value={240}>{t('dashboard.instructorApplication.oneToFourHours')}</option>
+                    <option value={1440}>{t('dashboard.instructorApplication.moreThanFourHours')}</option>
                   </select>
                 </Field>
-                <Field label="WhatsApp number for tutoring">
+                <Field label={t('dashboard.instructorApplication.whatsappNumberLabel')}>
                   <input
                     type="tel"
                     className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
@@ -404,14 +402,14 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
         {step === 3 && (
           <>
-            <Field label="Proposed course title">
+            <Field label={t('dashboard.instructorApplication.proposedCourseTitleLabel')}>
               <input
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 value={form.proposed_course_title ?? ''}
                 onChange={(e) => setForm({ ...form, proposed_course_title: e.target.value })}
               />
             </Field>
-            <Field label="Proposed course description">
+            <Field label={t('dashboard.instructorApplication.proposedCourseDescLabel')}>
               <textarea
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 rows={4}
@@ -419,13 +417,13 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                 onChange={(e) => setForm({ ...form, proposed_course_description: e.target.value })}
               />
             </Field>
-            <Field label="Category">
+            <Field label={t('dashboard.courseEditor.categoryLabel')}>
               <select
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 value={form.proposed_course_category_id ?? ''}
                 onChange={(e) => setForm({ ...form, proposed_course_category_id: e.target.value || null })}
               >
-                <option value="">Select a category</option>
+                <option value="">{t('dashboard.courseEditor.selectCategory')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -439,9 +437,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
         {step === 4 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Verify your identity with a document and a live selfie (both required), plus any
-              degrees, certificates, a CV or a short sample lesson. Files are stored privately
-              and only reviewers can access them.
+              {t('dashboard.instructorApplication.credentialsIntro')}
             </p>
 
             {application?.id && (
@@ -457,17 +453,17 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
             {(
               [
-                ['degree', 'Degree'],
-                ['certificate', 'Certificate'],
-                ['cv', 'CV / résumé'],
-                ['sample_lesson', 'Sample lesson'],
+                ['degree', 'dashboard.instructorApplication.degreeLabel'],
+                ['certificate', 'dashboard.instructorApplication.certificateLabel'],
+                ['cv', 'dashboard.instructorApplication.cvLabel'],
+                ['sample_lesson', 'dashboard.instructorApplication.sampleLessonLabel'],
               ] as const
-            ).map(([type, label]) => {
+            ).map(([type, labelKey]) => {
               const uploaded = credentials.filter((c) => c.credential_type === type);
               return (
                 <div key={type} className="flex items-center justify-between border border-canvas-150 rounded-[10px] p-3">
                   <div>
-                    <p className="font-medium text-gray-800 text-sm">{label}</p>
+                    <p className="font-medium text-gray-800 text-sm">{t(labelKey)}</p>
                     {uploaded.map((c) => (
                       <p key={c.id} className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                         <CheckCircle size={12} className="text-primary-600" /> {c.file_name}
@@ -476,7 +472,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                   </div>
                   <label className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-[10px] cursor-pointer">
                     <Upload size={14} />
-                    {uploadingType === type ? 'Uploading…' : 'Upload'}
+                    {uploadingType === type ? t('dashboard.courseEditor.uploadingEllipsis') : t('dashboard.instructorApplication.upload')}
                     <input
                       type="file"
                       className="hidden"
@@ -501,8 +497,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
               return calLink ? (
                 <>
                   <p className="text-sm text-gray-500">
-                    Book your compulsory interview on Cal.com — pick any time that works for you.
-                    A reviewer confirms it once your credentials and application have been checked.
+                    {t('dashboard.instructorApplication.bookInterviewIntro')}
                   </p>
                   <a
                     href={calLink}
@@ -510,16 +505,15 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                     rel="noopener noreferrer"
                     className="inline-block h-11 px-4 flex items-center rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 text-sm font-semibold"
                   >
-                    Schedule interview on Cal.com
+                    {t('dashboard.instructorApplication.scheduleInterviewCal')}
                   </a>
                   <p className="text-xs text-gray-500">
-                    You can also submit now and schedule later from your dashboard.
+                    {t('dashboard.instructorApplication.submitLaterNote')}
                   </p>
                 </>
               ) : (
                 <p className="text-sm text-gray-500">
-                  Interview scheduling isn't configured yet — submit your application and
-                  we'll follow up by email to schedule.
+                  {t('dashboard.instructorApplication.interviewNotConfigured')}
                 </p>
               );
             })()}
@@ -532,15 +526,15 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
             disabled={step === 0 || saving}
             className="h-11 px-4 rounded-[10px] text-gray-600 hover:bg-gray-100 disabled:opacity-40"
           >
-            Back
+            {t('dashboard.instructorApplication.back')}
           </button>
-          {step < STEPS.length - 1 ? (
+          {step < STEP_KEYS.length - 1 ? (
             <button
               onClick={goNext}
               disabled={saving}
               className="h-11 px-6 rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 font-semibold disabled:opacity-50"
             >
-              {saving ? 'Saving…' : 'Save & continue'}
+              {saving ? t('dashboard.courseEditor.savingEllipsis') : t('dashboard.instructorApplication.saveContinue')}
             </button>
           ) : (
             <button
@@ -548,7 +542,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
               disabled={saving}
               className="h-11 px-6 rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 font-semibold disabled:opacity-50"
             >
-              {saving ? 'Submitting…' : 'Submit application'}
+              {saving ? t('dashboard.instructorApplication.submittingEllipsis') : t('dashboard.instructorApplication.submitApplication')}
             </button>
           )}
         </div>

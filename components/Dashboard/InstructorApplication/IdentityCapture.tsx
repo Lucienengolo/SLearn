@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CheckCircle, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { supabase, InstructorCredential } from '../../../lib/supabase';
 import { uploadCredential } from '../../../lib/instructorApplications';
+import { useLocale } from '../../../contexts/LocaleContext';
 
 type VerificationResult = {
   extracted_name: string | null;
@@ -35,6 +36,7 @@ export default function IdentityCapture({
   credentials,
   onCredentialUploaded,
 }: IdentityCaptureProps) {
+  const { t } = useLocale();
   const governmentId = credentials.find((c) => c.credential_type === 'government_id');
   const selfie = credentials.find((c) => c.credential_type === 'selfie');
 
@@ -65,7 +67,7 @@ export default function IdentityCapture({
         body: { applicationId },
       });
       if (error) {
-        setVerifyError('Could not verify the document automatically — a reviewer will check it manually.');
+        setVerifyError(t('dashboard.instructorApplication.couldNotVerifyAuto'));
         return;
       }
       setVerification(data as VerificationResult);
@@ -82,7 +84,7 @@ export default function IdentityCapture({
       onCredentialUploaded(credential);
       await runVerification();
     } catch (err) {
-      setDocError(err instanceof Error ? err.message : 'Upload failed');
+      setDocError(err instanceof Error ? err.message : t('dashboard.instructorApplication.uploadFailed'));
     } finally {
       setUploadingDoc(false);
     }
@@ -95,7 +97,7 @@ export default function IdentityCapture({
       streamRef.current = stream;
       setCameraOpen(true);
     } catch {
-      setCameraError('Could not access your camera. Check your browser permissions and try again.');
+      setCameraError(t('dashboard.instructorApplication.couldNotAccessCamera'));
     }
   };
 
@@ -151,11 +153,11 @@ export default function IdentityCapture({
     <div className="space-y-4">
       <div className="border border-canvas-150 rounded-[10px] p-4">
         <div className="flex items-center justify-between mb-1">
-          <p className="font-medium text-gray-800 text-sm">Government-issued ID (required)</p>
+          <p className="font-medium text-gray-800 text-sm">{t('dashboard.instructorApplication.governmentIdRequired')}</p>
           {governmentId && (
             <label className="flex items-center gap-2 text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-[10px] cursor-pointer">
               <Upload size={12} />
-              Replace
+              {t('dashboard.instructorApplication.replace')}
               <input
                 type="file"
                 accept="image/*"
@@ -176,12 +178,12 @@ export default function IdentityCapture({
             <CheckCircle size={12} className="text-primary-600" /> {governmentId.file_name}
           </p>
         ) : (
-          <p className="text-xs text-gray-500 mb-3">A national ID, passport, or driver's license. JPG or PNG.</p>
+          <p className="text-xs text-gray-500 mb-3">{t('dashboard.instructorApplication.idHint')}</p>
         )}
         {!governmentId && (
           <label className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] cursor-pointer font-medium">
             <Upload size={14} />
-            {uploadingDoc ? 'Uploading…' : 'Upload document'}
+            {uploadingDoc ? t('dashboard.courseEditor.uploadingEllipsis') : t('dashboard.instructorApplication.uploadDocument')}
             <input
               type="file"
               accept="image/*"
@@ -198,7 +200,7 @@ export default function IdentityCapture({
         )}
         {docError && <p className="text-xs text-red-600 mt-2">{docError}</p>}
 
-        {verifying && <p className="text-xs text-gray-500 mt-2">Checking document details…</p>}
+        {verifying && <p className="text-xs text-gray-500 mt-2">{t('dashboard.instructorApplication.checkingDocumentDetails')}</p>}
         {verifyError && (
           <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
             <AlertTriangle size={12} /> {verifyError}
@@ -206,23 +208,23 @@ export default function IdentityCapture({
         )}
         {verification && (
           <div className="mt-3 text-xs bg-gray-50 rounded-[10px] p-3 space-y-1">
-            <p className="font-medium text-gray-700">Automated check (not a final decision — a reviewer confirms):</p>
-            <MatchRow label="Name" typed={fullName} extracted={verification.extracted_name} match={verification.name_match} />
-            <MatchRow label="Address" typed={address} extracted={verification.extracted_address} match={verification.address_match} />
+            <p className="font-medium text-gray-700">{t('dashboard.instructorApplication.automatedCheckNote')}</p>
+            <MatchRow label={t('dashboard.instructorApplication.nameFieldLabel')} typed={fullName} extracted={verification.extracted_name} match={verification.name_match} />
+            <MatchRow label={t('dashboard.reviewQueue.addressFieldLabel')} typed={address} extracted={verification.extracted_address} match={verification.address_match} />
             {verification.notes && <p className="text-gray-500 italic mt-1">{verification.notes}</p>}
           </div>
         )}
       </div>
 
       <div className="border border-canvas-150 rounded-[10px] p-4">
-        <p className="font-medium text-gray-800 text-sm mb-1">Live selfie (required)</p>
+        <p className="font-medium text-gray-800 text-sm mb-1">{t('dashboard.instructorApplication.liveSelfieRequired')}</p>
         {selfie ? (
           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1 mb-2">
-            <CheckCircle size={12} className="text-primary-600" /> Captured
+            <CheckCircle size={12} className="text-primary-600" /> {t('dashboard.instructorApplication.captured')}
           </p>
         ) : (
           <p className="text-xs text-gray-500 mb-3">
-            A live photo via your camera — reviewers compare this to your ID visually.
+            {t('dashboard.instructorApplication.selfieHint')}
           </p>
         )}
 
@@ -237,13 +239,13 @@ export default function IdentityCapture({
                 className="flex items-center gap-2 bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] text-sm font-medium"
               >
                 <Camera size={14} />
-                Capture
+                {t('dashboard.instructorApplication.capture')}
               </button>
               <button
                 onClick={closeCamera}
                 className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-[10px] text-sm"
               >
-                Cancel
+                {t('dashboard.courseEditor.cancel')}
               </button>
             </div>
           </div>
@@ -254,7 +256,7 @@ export default function IdentityCapture({
             className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] font-medium disabled:opacity-50"
           >
             <Camera size={14} />
-            {uploadingSelfie ? 'Uploading…' : selfie ? 'Retake selfie' : 'Open camera'}
+            {uploadingSelfie ? t('dashboard.courseEditor.uploadingEllipsis') : selfie ? t('dashboard.instructorApplication.retakeSelfie') : t('dashboard.instructorApplication.openCamera')}
           </button>
         )}
       </div>
@@ -273,16 +275,17 @@ function MatchRow({
   extracted: string | null;
   match: boolean | null;
 }) {
+  const { t } = useLocale();
   if (!extracted) {
     return (
       <p className="text-gray-500">
-        {label}: not clearly visible on the document — a reviewer will confirm manually.
+        {label}: {t('dashboard.instructorApplication.notClearlyVisible')}
       </p>
     );
   }
   return (
     <p className={match ? 'text-primary-700' : 'text-red-600'}>
-      {match ? '✓' : '⚠'} {label}: document shows "{extracted}" — {match ? 'matches' : 'does not clearly match'} "{typed}"
+      {match ? '✓' : '⚠'} {label}: {t('dashboard.instructorApplication.documentShows')} "{extracted}" — {match ? t('dashboard.instructorApplication.matches') : t('dashboard.instructorApplication.doesNotClearlyMatch')} "{typed}"
     </p>
   );
 }

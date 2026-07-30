@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchInstructorLeague, LeagueRow } from '../../lib/league';
 import LeagueBoard from './LeagueBoard';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type InstructorLeagueProps = {
   courses: { id: string; title: string }[];
@@ -14,6 +15,7 @@ type Scope = 'global' | 'course';
 // call get_instructor_league (0038_league.sql), which enforces that the
 // caller can only ever see courses they themselves teach.
 export default function InstructorLeague({ courses }: InstructorLeagueProps) {
+  const { t } = useLocale();
   const [scope, setScope] = useState<Scope>('global');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(courses[0]?.id ?? null);
   const [rows, setRows] = useState<LeagueRow[]>([]);
@@ -52,7 +54,7 @@ export default function InstructorLeague({ courses }: InstructorLeagueProps) {
                 scope === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
               }`}
             >
-              {s === 'global' ? 'Global (all my courses)' : 'Single course'}
+              {s === 'global' ? t('dashboard.instructorLeague.globalTab') : t('dashboard.instructorLeague.singleCourseTab')}
             </button>
           ))}
         </div>
@@ -78,10 +80,10 @@ export default function InstructorLeague({ courses }: InstructorLeagueProps) {
         </div>
       ) : scope === 'course' && courses.length === 0 ? (
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
-          <p className="text-gray-500 text-sm">Create a course to see its league.</p>
+          <p className="text-gray-500 text-sm">{t('dashboard.instructorLeague.createCourseToSeeLeague')}</p>
         </div>
       ) : (
-        <LeagueBoard rows={rows} emptyMessage="No students have earned XP yet." />
+        <LeagueBoard rows={rows} emptyMessage={t('dashboard.instructorLeague.noStudentsEarnedXp')} />
       )}
     </div>
   );

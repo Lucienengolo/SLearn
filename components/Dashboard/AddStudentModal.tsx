@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { enrollStudentByEmail } from '../../lib/instructorEnrollment';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type CourseOption = { id: string; title: string };
 
@@ -16,6 +17,7 @@ type AddStudentModalProps = {
 // the centralized S@Learn Classroom page (many options -- 2026-07-24). A
 // single course renders as a static label; 2+ render a real dropdown.
 export default function AddStudentModal({ isOpen, courses, onClose, onEnrolled }: AddStudentModalProps) {
+  const { t } = useLocale();
   const [email, setEmail] = useState('');
   const [courseId, setCourseId] = useState(courses[0]?.id ?? '');
   const [submitting, setSubmitting] = useState(false);
@@ -45,7 +47,7 @@ export default function AddStudentModal({ isOpen, courses, onClose, onEnrolled }
       onEnrolled();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add student.');
+      setError(err instanceof Error ? err.message : t('dashboard.addStudentModal.failedToAdd'));
     } finally {
       setSubmitting(false);
     }
@@ -53,25 +55,25 @@ export default function AddStudentModal({ isOpen, courses, onClose, onEnrolled }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[14px] max-w-sm w-full p-6 relative" role="dialog" aria-modal="true" aria-label="Add student">
+      <div className="bg-white rounded-[14px] max-w-sm w-full p-6 relative" role="dialog" aria-modal="true" aria-label={t('dashboard.classroom.addStudent')}>
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 p-2.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition"
-          aria-label="Close"
+          aria-label={t('dashboard.addStudentModal.close')}
         >
           <X size={20} />
         </button>
 
-        <h2 className="font-display text-xl text-gray-900 mb-1">Add a student</h2>
+        <h2 className="font-display text-xl text-gray-900 mb-1">{t('dashboard.courseStudents.addStudentCta')}</h2>
         <p className="text-sm text-gray-500 mb-5">
-          Enroll a student who paid outside checkout (bank transfer, mobile money).
+          {t('dashboard.addStudentModal.subtitle')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {courses.length > 1 && (
             <div>
               <label htmlFor="add-student-course" className="block text-sm font-medium text-gray-700 mb-1">
-                Course
+                {t('dashboard.addStudentModal.courseLabel')}
               </label>
               <select
                 id="add-student-course"
@@ -89,7 +91,7 @@ export default function AddStudentModal({ isOpen, courses, onClose, onEnrolled }
           )}
           <div>
             <label htmlFor="add-student-email" className="block text-sm font-medium text-gray-700 mb-1">
-              Student email
+              {t('dashboard.addStudentModal.studentEmailLabel')}
             </label>
             <input
               id="add-student-email"
@@ -106,7 +108,7 @@ export default function AddStudentModal({ isOpen, courses, onClose, onEnrolled }
             disabled={submitting || !courseId}
             className="w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
           >
-            {submitting ? 'Adding…' : 'Add student'}
+            {submitting ? t('dashboard.common.addingEllipsis') : t('dashboard.classroom.addStudent')}
           </button>
         </form>
       </div>

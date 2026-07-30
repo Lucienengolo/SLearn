@@ -7,6 +7,7 @@ import { fetchStudentProgress, StudentProgress } from '../../lib/gamification';
 import { totemByName } from '../../lib/totems';
 import DashboardSidebar from './DashboardSidebar';
 import StatTile from '../UI/StatTile';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type MyProgressProps = {
   onBack: () => void;
@@ -25,6 +26,7 @@ type ProgressRow = EnrollmentRow & {
 };
 
 export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyProgressProps) {
+  const { t } = useLocale();
   const { user, profile } = useAuth();
   const [rows, setRows] = useState<ProgressRow[]>([]);
   const [progress, setProgress] = useState<StudentProgress | null>(null);
@@ -94,10 +96,10 @@ export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyPro
   const avgProgress = rows.length > 0 ? Math.round(rows.reduce((sum, r) => sum + r.progress_percentage, 0) / rows.length) : 0;
 
   const statTiles = [
-    { icon: BookOpen, value: rows.length, label: 'Courses enrolled', tone: 'gold' as const },
-    { icon: CheckCircle, value: completedCount, label: 'Completed', tone: 'green' as const },
-    { icon: Zap, value: `${avgProgress}%`, label: 'Average progress', tone: 'blue' as const },
-    { icon: Award, value: certificateCount, label: 'Certificates earned', tone: 'gray' as const },
+    { icon: BookOpen, value: rows.length, label: t('dashboard.myProgress.coursesEnrolled'), tone: 'gold' as const },
+    { icon: CheckCircle, value: completedCount, label: t('dashboard.common.completedPlural'), tone: 'green' as const },
+    { icon: Zap, value: `${avgProgress}%`, label: t('dashboard.myProgress.avgProgress'), tone: 'blue' as const },
+    { icon: Award, value: certificateCount, label: t('dashboard.myProgress.certificatesEarned'), tone: 'gray' as const },
   ];
 
   return (
@@ -111,11 +113,11 @@ export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyPro
       />
       <div>
         <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4 lg:hidden">
-          ← Back to dashboard
+          ← {t('dashboard.backToDashboard')}
         </button>
 
-        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">My Progress</h1>
-        <p className="text-gray-500 mb-7">Your progress across every course you're enrolled in.</p>
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">{t('dashboard.myProgress.title')}</h1>
+        <p className="text-gray-500 mb-7">{t('dashboard.myProgress.subtitle')}</p>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {statTiles.map((tile) => (
@@ -126,8 +128,8 @@ export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyPro
         {rows.length === 0 ? (
           <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
             <BookOpen size={40} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">No courses yet</h3>
-            <p className="text-gray-500 text-sm">Enroll in a course to start tracking your progress.</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">{t('dashboard.common.noCoursesYet')}</h3>
+            <p className="text-gray-500 text-sm">{t('dashboard.myProgress.noCoursesBody')}</p>
           </div>
         ) : (
           <div className="rounded-[14px] border border-canvas-150 overflow-hidden shadow-sm">
@@ -157,12 +159,12 @@ export default function MyProgress({ onBack, onNavigate, onCourseSelect }: MyPro
                       {row.hasCertificate && (
                         <span className="inline-flex items-center gap-1 text-2xs font-semibold text-primary-700 flex-shrink-0">
                           <Award size={12} />
-                          Certified
+                          {t('dashboard.myProgress.certifiedBadge')}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-gray-500">
-                      {row.completedLessons} of {row.totalLessons} lessons · {row.course.instructor.full_name}
+                      {row.completedLessons} {t('dashboard.common.of')} {row.totalLessons} {t('courses.lessons')} · {row.course.instructor.full_name}
                     </p>
                   </div>
                   <div className="w-32 flex-shrink-0 flex items-center gap-2.5">

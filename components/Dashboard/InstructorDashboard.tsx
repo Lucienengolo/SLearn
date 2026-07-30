@@ -7,6 +7,8 @@ import CourseEditor from './CourseEditor';
 import CourseStudents from './CourseStudents';
 import SLearnClassroom from './SLearnClassroom';
 import ConfirmDialog from '../UI/ConfirmDialog';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
 
 type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number };
 // S@Learn Classroom absorbed Tutor Matches and League as internal sections
@@ -15,9 +17,9 @@ type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number }
 // separate at this top level.
 type DashboardTab = 'courses' | 'classroom';
 
-const TAB_LABELS: Record<DashboardTab, string> = {
-  courses: 'Courses',
-  classroom: 'S@Learn Classroom',
+const TAB_LABEL_KEYS: Record<DashboardTab, TranslationKey> = {
+  courses: 'nav.courses',
+  classroom: 'dashboard.classroom.title',
 };
 
 type StatusFilter = 'all' | 'draft' | 'pending' | 'live' | 'rejected';
@@ -30,19 +32,20 @@ function courseStatus(course: Course): StatusFilter {
 }
 
 function TabNav({ tab, onSelect }: { tab: DashboardTab; onSelect: (t: DashboardTab) => void }) {
+  const { t: translate } = useLocale();
   return (
     <div className="flex items-center gap-1 mb-6 border-b border-canvas-150">
-      {(Object.keys(TAB_LABELS) as DashboardTab[]).map((t) => (
+      {(Object.keys(TAB_LABEL_KEYS) as DashboardTab[]).map((tabKey) => (
         <button
-          key={t}
-          onClick={() => onSelect(t)}
+          key={tabKey}
+          onClick={() => onSelect(tabKey)}
           className={`text-md px-3 py-2.5 transition ${
-            tab === t
+            tab === tabKey
               ? 'font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px'
               : 'font-medium text-gray-500 hover:text-gray-900'
           }`}
         >
-          {TAB_LABELS[t]}
+          {translate(TAB_LABEL_KEYS[tabKey])}
         </button>
       ))}
     </div>
@@ -50,6 +53,7 @@ function TabNav({ tab, onSelect }: { tab: DashboardTab; onSelect: (t: DashboardT
 }
 
 export default function InstructorDashboard() {
+  const { t } = useLocale();
   const { user } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<DashboardTab>('courses');
@@ -115,9 +119,9 @@ export default function InstructorDashboard() {
       .eq('id', courseId);
 
     if (error) {
-      showToast('Failed to delete course', 'error');
+      showToast(t('dashboard.instructor.toastDeleteFailed'), 'error');
     } else {
-      showToast('Course deleted', 'success');
+      showToast(t('dashboard.instructor.toastDeleted'), 'success');
       fetchCourses();
     }
   };
@@ -129,7 +133,7 @@ export default function InstructorDashboard() {
       .eq('id', courseId);
 
     if (error) {
-      showToast('Failed to update course status', 'error');
+      showToast(t('dashboard.instructor.toastUpdateStatusFailed'), 'error');
     } else {
       fetchCourses();
     }
@@ -178,8 +182,8 @@ export default function InstructorDashboard() {
 
       <div className="flex justify-between items-center mb-8 gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl text-gray-900">My courses</h1>
-          <p className="text-gray-500 mt-1">Create and manage your courses</p>
+          <h1 className="font-display text-3xl sm:text-4xl text-gray-900">{t('dashboard.student.myCourses')}</h1>
+          <p className="text-gray-500 mt-1">{t('dashboard.instructor.createManageSubtitle')}</p>
         </div>
         <button
           onClick={() => {
@@ -189,7 +193,7 @@ export default function InstructorDashboard() {
           className="flex items-center gap-2 bg-primary-500 text-gray-900 h-11 px-5 rounded-[10px] hover:bg-primary-400 transition font-semibold whitespace-nowrap"
         >
           <Plus size={18} />
-          <span>Create course</span>
+          <span>{t('dashboard.instructor.createCourse')}</span>
         </button>
       </div>
 
@@ -200,7 +204,7 @@ export default function InstructorDashboard() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search your courses..."
+              placeholder={t('dashboard.instructor.searchYourCourses')}
               className="w-full pl-10 pr-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
             />
           </div>
@@ -209,11 +213,11 @@ export default function InstructorDashboard() {
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="h-11 px-3.5 border border-gray-200 rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 sm:w-56"
           >
-            <option value="all">All statuses</option>
-            <option value="draft">Draft</option>
-            <option value="pending">Pending review</option>
-            <option value="live">Live</option>
-            <option value="rejected">Changes requested</option>
+            <option value="all">{t('dashboard.instructor.allStatuses')}</option>
+            <option value="draft">{t('dashboard.instructor.statusDraft')}</option>
+            <option value="pending">{t('dashboard.instructor.statusPendingReview')}</option>
+            <option value="live">{t('dashboard.instructor.statusLive')}</option>
+            <option value="rejected">{t('dashboard.instructor.statusChangesRequested')}</option>
           </select>
         </div>
       )}
@@ -225,20 +229,20 @@ export default function InstructorDashboard() {
       ) : courses.length === 0 ? (
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
           <BookOpen size={40} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">No courses yet</h3>
-          <p className="text-gray-500 text-sm mb-6">Create your first course to get started</p>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">{t('dashboard.common.noCoursesYet')}</h3>
+          <p className="text-gray-500 text-sm mb-6">{t('dashboard.instructor.noCoursesYetBody')}</p>
           <button
             onClick={() => setShowEditor(true)}
             className="bg-primary-500 text-gray-900 h-11 px-5 rounded-[10px] hover:bg-primary-400 transition font-semibold"
           >
-            Create your first course
+            {t('dashboard.instructor.createFirstCourse')}
           </button>
         </div>
       ) : visibleCourses.length === 0 ? (
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
           <Search size={40} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">No matches</h3>
-          <p className="text-gray-500 text-sm">Try a different search or status filter.</p>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">{t('dashboard.instructor.noMatches')}</h3>
+          <p className="text-gray-500 text-sm">{t('dashboard.instructor.tryDifferentSearch')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -253,19 +257,19 @@ export default function InstructorDashboard() {
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900">{course.title}</h3>
                       {!course.is_published ? (
-                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">Draft</span>
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">{t('dashboard.instructor.statusDraft')}</span>
                       ) : course.moderation_status === 'approved' ? (
-                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">Live</span>
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">{t('dashboard.instructor.statusLive')}</span>
                       ) : course.moderation_status === 'rejected' ? (
-                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-red-50 text-red-600">Changes requested</span>
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-red-50 text-red-600">{t('dashboard.instructor.statusChangesRequested')}</span>
                       ) : (
-                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">Pending review</span>
+                        <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">{t('dashboard.instructor.statusPendingReview')}</span>
                       )}
                     </div>
                     <p className="text-gray-500 text-sm line-clamp-2">{course.description}</p>
                     {course.moderation_status === 'rejected' && course.moderation_notes && (
                       <p className="text-sm text-red-600 mt-2">
-                        <strong>Reviewer notes:</strong> {course.moderation_notes}
+                        <strong>{t('dashboard.instructor.reviewerNotes')}</strong> {course.moderation_notes}
                       </p>
                     )}
                   </div>
@@ -280,7 +284,7 @@ export default function InstructorDashboard() {
                       <Users size={14} className="text-white" fill="currentColor" fillOpacity={0.25} />
                     </span>
                     <p className="font-display text-xl text-primary-700">{course.enrollmentCount}</p>
-                    <p className="text-2xs text-gray-500">Students</p>
+                    <p className="text-2xs text-gray-500">{t('dashboard.instructor.studentsStatLabel')}</p>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-[10px]">
                     <span
@@ -290,13 +294,13 @@ export default function InstructorDashboard() {
                       <BookOpen size={14} className="text-white" fill="currentColor" fillOpacity={0.25} />
                     </span>
                     <p className="font-display text-xl text-green-700">{course.lessonCount}</p>
-                    <p className="text-2xs text-gray-500">Lessons</p>
+                    <p className="text-2xs text-gray-500">{t('dashboard.instructor.lessonsStatLabel')}</p>
                   </div>
                   <div className="text-center p-3 bg-gray-50 rounded-[10px]">
                     <p className="font-display text-xl text-gray-900 mt-[22px]">
-                      {course.price > 0 ? `$${course.price}` : 'Free'}
+                      {course.price > 0 ? `$${course.price}` : t('common.free')}
                     </p>
-                    <p className="text-2xs text-gray-500">Price</p>
+                    <p className="text-2xs text-gray-500">{t('dashboard.instructor.priceStatLabel')}</p>
                   </div>
                 </div>
 
@@ -305,7 +309,10 @@ export default function InstructorDashboard() {
                   className="w-full flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-700 h-10 rounded-[10px] hover:bg-gray-50 transition font-medium mb-2"
                 >
                   <Users size={15} />
-                  <span>{course.enrollmentCount} student{course.enrollmentCount === 1 ? '' : 's'}</span>
+                  <span>
+                    {course.enrollmentCount}{' '}
+                    {t(course.enrollmentCount === 1 ? 'dashboard.instructor.studentCountSingular' : 'dashboard.instructor.studentCountPlural')}
+                  </span>
                 </button>
 
                 <div className="flex gap-2">
@@ -317,7 +324,7 @@ export default function InstructorDashboard() {
                     className="flex-1 flex items-center justify-center gap-1.5 bg-primary-500 text-gray-900 h-10 rounded-[10px] hover:bg-primary-400 transition font-medium"
                   >
                     <Edit size={15} />
-                    <span>Edit</span>
+                    <span>{t('dashboard.instructor.edit')}</span>
                   </button>
                   <button
                     onClick={() => handleTogglePublish(course.id, course.is_published)}
@@ -327,12 +334,12 @@ export default function InstructorDashboard() {
                         : 'bg-green-600 text-white hover:bg-green-700'
                     }`}
                   >
-                    {course.is_published ? 'Unpublish' : 'Submit for review'}
+                    {course.is_published ? t('dashboard.instructor.unpublish') : t('dashboard.instructor.submitForReview')}
                   </button>
                   <button
                     onClick={() => setCourseIdPendingDelete(course.id)}
                     className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-600 rounded-[10px] hover:bg-red-100 transition flex-shrink-0"
-                    title="Delete course"
+                    title={t('dashboard.instructor.deleteCourseTitle')}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -345,9 +352,9 @@ export default function InstructorDashboard() {
 
       <ConfirmDialog
         isOpen={!!courseIdPendingDelete}
-        title="Delete this course?"
-        message="This action cannot be undone. Students already enrolled will lose access."
-        confirmLabel="Delete course"
+        title={t('dashboard.instructor.deleteCourseConfirmTitle')}
+        message={t('dashboard.instructor.deleteCourseConfirmMessage')}
+        confirmLabel={t('dashboard.instructor.deleteCourseTitle')}
         destructive
         onConfirm={handleConfirmDeleteCourse}
         onCancel={() => setCourseIdPendingDelete(null)}

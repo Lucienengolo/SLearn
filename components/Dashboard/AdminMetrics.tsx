@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { fetchTutorRequestMatchStats, TutorRequestMatchStat } from '../../lib/adminMetrics';
 import { supabase, Category } from '../../lib/supabase';
+import { useLocale } from '../../contexts/LocaleContext';
 
 // Reviewer-only, same pattern as ReviewQueue.tsx: gated by the nav link and
 // route (profile.is_reviewer), with the real authorization boundary
 // server-side (tutor_request_match_stats' own reviewer check, 0033).
 export default function AdminMetrics() {
+  const { t } = useLocale();
   const [stats, setStats] = useState<TutorRequestMatchStat[]>([]);
   const [categories, setCategories] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -26,35 +28,35 @@ export default function AdminMetrics() {
       setStats(statRows);
       setCategories(Object.fromEntries(((categoryRows ?? []) as Category[]).map((c) => [c.id, c.name])));
     } catch {
-      setError('Impossible de charger les statistiques.');
+      setError(t('dashboard.admin.errorLoad'));
     } finally {
       setLoading(false);
     }
   }
 
-  if (loading) return <p className="text-sm text-warm-gray">Chargement…</p>;
+  if (loading) return <p className="text-sm text-warm-gray">{t('common.loadingEllipsis')}</p>;
   if (error) return <p className="text-sm text-oxblood font-medium">{error}</p>;
 
   return (
     <div className="bg-paper border border-ink-border rounded-xl p-6 max-w-[800px] font-general-sans text-ink">
-      <h1 className="font-fraunces text-[24px] font-medium mb-1">Demandes non satisfaites</h1>
-      <p className="text-sm text-warm-gray mb-5">Par matière et quartier — repère les manques de tuteurs.</p>
+      <h1 className="font-fraunces text-[24px] font-medium mb-1">{t('dashboard.admin.title')}</h1>
+      <p className="text-sm text-warm-gray mb-5">{t('dashboard.admin.subtitle')}</p>
 
       {stats.length === 0 ? (
         <div className="border border-dashed border-ink-border rounded-lg p-6 text-center">
-          <p className="text-sm text-warm-gray">Aucune demande enregistrée pour l&apos;instant.</p>
+          <p className="text-sm text-warm-gray">{t('dashboard.admin.emptyState')}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-border text-left text-[12px] text-warm-gray uppercase font-plex-mono">
-                <th className="pb-2 pr-4">Matière</th>
-                <th className="pb-2 pr-4">Quartier</th>
-                <th className="pb-2 pr-4 text-right">Total</th>
-                <th className="pb-2 pr-4 text-right">Sans tuteur</th>
-                <th className="pb-2 pr-4 text-right">Appariées</th>
-                <th className="pb-2 text-right">Taux non satisfait</th>
+                <th className="pb-2 pr-4">{t('dashboard.admin.colSubject')}</th>
+                <th className="pb-2 pr-4">{t('dashboard.admin.colNeighborhood')}</th>
+                <th className="pb-2 pr-4 text-right">{t('dashboard.admin.colTotal')}</th>
+                <th className="pb-2 pr-4 text-right">{t('dashboard.admin.colUnmatched')}</th>
+                <th className="pb-2 pr-4 text-right">{t('dashboard.admin.colMatched')}</th>
+                <th className="pb-2 text-right">{t('dashboard.admin.colUnmatchedRate')}</th>
               </tr>
             </thead>
             <tbody>

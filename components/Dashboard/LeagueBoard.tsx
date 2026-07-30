@@ -1,6 +1,7 @@
 import { Trophy, User } from 'lucide-react';
 import { LeagueRow } from '../../lib/league';
 import { totemByName } from '../../lib/totems';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type LeagueBoardProps = {
   rows: LeagueRow[];
@@ -16,6 +17,7 @@ const MEDAL_GRADIENT: Record<number, string> = {
 };
 
 export default function LeagueBoard({ rows, emptyMessage }: LeagueBoardProps) {
+  const { t } = useLocale();
   if (rows.length === 0) {
     return (
       <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
@@ -52,11 +54,11 @@ export default function LeagueBoard({ rows, emptyMessage }: LeagueBoardProps) {
             </span>
             <div className="flex-1 min-w-0">
               <p className={`text-sm truncate ${row.isMe ? 'font-semibold text-primary-700' : 'font-medium text-gray-900'}`}>
-                {row.fullName ?? 'Student'}
-                {row.isMe && <span className="ml-1.5 text-2xs font-semibold text-primary-600">(You)</span>}
+                {row.fullName ?? t('dashboard.sidebar.studentFallback')}
+                {row.isMe && <span className="ml-1.5 text-2xs font-semibold text-primary-600">{t('dashboard.league.you')}</span>}
               </p>
             </div>
-            <span className="text-sm font-semibold text-gray-600 flex-shrink-0">{row.xp} XP</span>
+            <span className="text-sm font-semibold text-gray-600 flex-shrink-0">{row.xp} {t('dashboard.league.xpSuffix')}</span>
           </div>
         );
       })}

@@ -5,6 +5,7 @@ import { totemByName } from '../../lib/totems';
 import { fetchGlobalLeague, fetchCourseLeague, fetchStudentCourseOptions, LeagueRow, StudentCourseOption } from '../../lib/league';
 import DashboardSidebar from './DashboardSidebar';
 import LeagueBoard from './LeagueBoard';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type LeagueProps = {
   onBack: () => void;
@@ -19,6 +20,7 @@ type Scope = 'global' | 'classroom';
 // several different instructors). The instructor's own read-only view of
 // these same rankings lives in InstructorDashboard's League tab, not here.
 export default function League({ onBack, onNavigate }: LeagueProps) {
+  const { t } = useLocale();
   const { user, profile } = useAuth();
   const [scope, setScope] = useState<Scope>('global');
   const [progress, setProgress] = useState<StudentProgress | null>(null);
@@ -97,11 +99,11 @@ export default function League({ onBack, onNavigate }: LeagueProps) {
       />
       <div>
         <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4 lg:hidden">
-          ← Back to dashboard
+          ← {t('dashboard.backToDashboard')}
         </button>
 
-        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">League</h1>
-        <p className="text-gray-500 mb-7">See where you rank against other learners.</p>
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">{t('dashboard.league.title')}</h1>
+        <p className="text-gray-500 mb-7">{t('dashboard.league.subtitle')}</p>
 
         <div className="flex items-center gap-1 mb-6 border-b border-canvas-150">
           {(['global', 'classroom'] as const).map((s) => (
@@ -114,14 +116,14 @@ export default function League({ onBack, onNavigate }: LeagueProps) {
                   : 'font-medium text-gray-500 hover:text-gray-900'
               }`}
             >
-              {s === 'global' ? 'Global League' : 'Classroom League'}
+              {s === 'global' ? t('dashboard.league.globalTab') : t('dashboard.league.classroomTab')}
             </button>
           ))}
         </div>
 
         {scope === 'classroom' && courseOptions.length > 0 && (
           <label className="block mb-5">
-            <span className="sr-only">Choose a course</span>
+            <span className="sr-only">{t('dashboard.league.chooseCourseSr')}</span>
             <select
               value={selectedCourseId ?? ''}
               onChange={(e) => setSelectedCourseId(e.target.value)}
@@ -142,12 +144,12 @@ export default function League({ onBack, onNavigate }: LeagueProps) {
           </div>
         ) : scope === 'classroom' && courseOptions.length === 0 ? (
           <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
-            <p className="text-gray-500 text-sm">Enroll in a course to see its classroom league.</p>
+            <p className="text-gray-500 text-sm">{t('dashboard.league.enrollForClassroom')}</p>
           </div>
         ) : (
           <LeagueBoard
             rows={rows}
-            emptyMessage={scope === 'global' ? 'No learners ranked yet.' : 'No one in this classroom has earned XP yet.'}
+            emptyMessage={scope === 'global' ? t('dashboard.league.emptyGlobal') : t('dashboard.league.emptyClassroom')}
           />
         )}
       </div>

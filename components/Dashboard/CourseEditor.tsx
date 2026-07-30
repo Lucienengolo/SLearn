@@ -5,18 +5,27 @@ import { useAuth } from '../../contexts/AuthContext';
 import { uploadLessonVideo, uploadLessonPDF, uploadCourseThumbnail } from '../../lib/storage';
 import { renderRichText } from '../../lib/richText';
 import QuizBuilder, { QuizDraft, emptyQuizDraft } from './QuizBuilder';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
+
+const LEVEL_KEYS: Record<string, TranslationKey> = {
+  beginner: 'courses.level.beginner',
+  intermediate: 'courses.level.intermediate',
+  advanced: 'courses.level.advanced',
+};
 
 // Live "how students will see this" preview -- founder feedback, 2026-07-27:
 // course creation was "the main area where richer text should've been
 // applied." Shown right under the field it previews, so bold/italic
 // formatting is visible while writing, not just after publishing.
 function RichTextPreview({ text }: { text: string }) {
+  const { t } = useLocale();
   if (!text.trim()) return null;
   return (
     <div className="mt-2 rounded-[10px] border border-canvas-150 bg-canvas-25 p-3.5">
       <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
         <Eye size={12} />
-        Preview
+        {t('dashboard.courseEditor.preview')}
       </p>
       <div className="text-sm text-gray-700 leading-relaxed">{renderRichText(text)}</div>
     </div>
@@ -71,16 +80,16 @@ const loadQuizDraft = async (defaultTitle: string, filter: { lesson_id: string }
   };
 };
 
-const validateQuizDraft = (quiz: QuizDraft, label: string): string | null => {
+const validateQuizDraft = (quiz: QuizDraft, label: string, t: (key: TranslationKey) => string): string | null => {
   if (!quiz.enabled) return null;
-  if (!quiz.title.trim()) return `${label} needs a title.`;
-  if (quiz.questions.length === 0) return `${label} needs at least one question.`;
+  if (!quiz.title.trim()) return `${label} ${t('dashboard.courseEditor.needsTitle')}`;
+  if (quiz.questions.length === 0) return `${label} ${t('dashboard.courseEditor.needsQuestion')}`;
   for (let i = 0; i < quiz.questions.length; i++) {
     const q = quiz.questions[i];
-    if (!q.question_text.trim()) return `${label}: question ${i + 1} needs text.`;
-    if (!q.correct_answer.trim()) return `${label}: question ${i + 1} needs a correct answer selected.`;
+    if (!q.question_text.trim()) return `${label}: ${t('dashboard.courseEditor.questionWord')} ${i + 1} ${t('dashboard.courseEditor.needsText')}`;
+    if (!q.correct_answer.trim()) return `${label}: ${t('dashboard.courseEditor.questionWord')} ${i + 1} ${t('dashboard.courseEditor.needsAnswer')}`;
     if (q.question_type === 'multiple_choice' && q.options.filter((o) => o.trim()).length < 2) {
-      return `${label}: question ${i + 1} needs at least 2 options.`;
+      return `${label}: ${t('dashboard.courseEditor.questionWord')} ${i + 1} ${t('dashboard.courseEditor.needsOptions')}`;
     }
   }
   return null;
@@ -129,6 +138,7 @@ type CourseEditorProps = {
 };
 
 export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState('');
@@ -143,7 +153,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [courseQuiz, setCourseQuiz] = useState<QuizDraft>(emptyQuizDraft('Final exam'));
+  const [courseQuiz, setCourseQuiz] = useState<QuizDraft>(emptyQuizDraft(t('dashboard.courseEditor.finalExamLabel')));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -192,7 +202,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
       setAddingCategory(false);
       setNewCategoryName('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create category');
+      setError(err instanceof Error ? err.message : t('dashboard.courseEditor.couldNotCreateCategory'));
     } finally {
       setCreatingCategory(false);
     }
@@ -226,29 +236,29 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         const lessonsWithQuizzes = await Promise.all(
           lessonsData.map(async (l) => ({
             ...l,
-            quiz: await loadQuizDraft('Completion quiz', { lesson_id: l.id }),
+            quiz: await loadQuizDraft(t('dashboard.courseEditor.completionQuizLabel'), { lesson_id: l.id }),
           }))
         );
         setLessons(lessonsWithQuizzes);
       }
 
-      setCourseQuiz(await loadQuizDraft('Final exam', { course_id: courseId }));
+      setCourseQuiz(await loadQuizDraft(t('dashboard.courseEditor.finalExamLabel'), { course_id: courseId }));
     }
   };
 
   const validate = (): string | null => {
-    if (!title.trim()) return 'Course title is required.';
-    if (!description.trim()) return 'Course description is required.';
+    if (!title.trim()) return t('dashboard.courseEditor.titleRequired');
+    if (!description.trim()) return t('dashboard.courseEditor.descriptionRequired');
     for (let i = 0; i < lessons.length; i++) {
       const l = lessons[i];
-      if (!l.title.trim()) return `Lesson ${i + 1} needs a title.`;
+      if (!l.title.trim()) return `${t('dashboard.courseEditor.lessonLabel')} ${i + 1} ${t('dashboard.courseEditor.needsTitle')}`;
       if (!l.content?.trim() && !l.video_url?.trim() && !l.video_file_url && !l.pdf_notes_url) {
-        return `Lesson ${i + 1} ("${l.title}") needs at least one of: text content, video, or PDF notes.`;
+        return `${t('dashboard.courseEditor.lessonLabel')} ${i + 1} ("${l.title}") ${t('dashboard.courseEditor.needsContent')}`;
       }
-      const quizError = validateQuizDraft(l.quiz, `Lesson ${i + 1} completion quiz`);
+      const quizError = validateQuizDraft(l.quiz, `${t('dashboard.courseEditor.lessonLabel')} ${i + 1} ${t('dashboard.courseEditor.completionQuizLower')}`, t);
       if (quizError) return quizError;
     }
-    return validateQuizDraft(courseQuiz, 'Course final exam');
+    return validateQuizDraft(courseQuiz, t('dashboard.courseEditor.finalExamSectionLabel'), t);
   };
 
   const handleSaveCourse = async () => {
@@ -331,11 +341,11 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
       await saveQuizDraft(courseQuiz, { course_id: finalCourseId! });
 
-      setSuccess('Course saved.');
+      setSuccess(t('dashboard.courseEditor.courseSaved'));
       setTimeout(onBack, 700);
     } catch (err) {
       console.error('Error saving course:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save course');
+      setError(err instanceof Error ? err.message : t('dashboard.courseEditor.failedSaveCourse'));
     } finally {
       setSaving(false);
     }
@@ -354,7 +364,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         pdf_notes_url: '',
         file_upload_type: '',
         duration_minutes: 0,
-        quiz: emptyQuizDraft('Completion quiz'),
+        quiz: emptyQuizDraft(t('dashboard.courseEditor.completionQuizLabel')),
       },
     ]);
   };
@@ -374,7 +384,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         .eq('id', lesson.id);
 
       if (deleteError) {
-        setError('Failed to delete lesson');
+        setError(t('dashboard.courseEditor.failedDeleteLesson'));
         return;
       }
     }
@@ -384,7 +394,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const handleThumbnailUpload = async (file: File) => {
     if (!user) return;
     if (file.size > MAX_THUMBNAIL_MB * 1024 * 1024) {
-      setError(`Thumbnail must be under ${MAX_THUMBNAIL_MB}MB.`);
+      setError(`${t('dashboard.courseEditor.thumbnailUnderMbPrefix')} ${MAX_THUMBNAIL_MB}${t('dashboard.courseEditor.mbSuffixPeriod')}`);
       return;
     }
     setError('');
@@ -394,7 +404,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
       if (url) {
         setThumbnailUrl(url);
       } else {
-        setError('Failed to upload thumbnail');
+        setError(t('dashboard.courseEditor.failedUploadThumbnail'));
       }
     } finally {
       setUploadingThumbnail(false);
@@ -408,12 +418,12 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-6"
       >
         <ArrowLeft size={16} />
-        <span>Back to dashboard</span>
+        <span>{t('dashboard.backToDashboard')}</span>
       </button>
 
       <div className="rounded-[14px] border border-canvas-150 p-6 md:p-8">
         <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-8">
-          {courseId ? 'Edit course' : 'Create new course'}
+          {courseId ? t('dashboard.courseEditor.editCourseTitle') : t('dashboard.courseEditor.createCourseTitle')}
         </h1>
 
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-[10px] text-sm mb-6">{error}</div>}
@@ -422,7 +432,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
         <div className="space-y-6">
           <div>
             <label htmlFor="course-title" className="block text-sm font-medium text-gray-700 mb-2">
-              Course Title *
+              {t('dashboard.courseEditor.courseTitleLabel')}
             </label>
             <input
               id="course-title"
@@ -430,14 +440,14 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-              placeholder="Introduction to Web Development"
+              placeholder={t('dashboard.courseEditor.titlePlaceholder')}
               required
             />
           </div>
 
           <div>
             <label htmlFor="course-description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description *
+              {t('dashboard.courseEditor.descriptionLabel')}
             </label>
             <textarea
               id="course-description"
@@ -445,11 +455,11 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               rows={4}
-              placeholder="Describe what students will learn..."
+              placeholder={t('dashboard.courseEditor.descriptionPlaceholder')}
               required
             />
             <p className="text-2xs text-gray-500 mt-1.5">
-              Use **bold** and *italic* for emphasis — shown formatted on the course page.
+              {t('dashboard.courseEditor.descriptionHint')}
             </p>
             <RichTextPreview text={description} />
           </div>
@@ -457,7 +467,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="course-category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                {t('dashboard.courseEditor.categoryLabel')}
               </label>
               {addingCategory ? (
                 <div className="flex gap-2">
@@ -466,7 +476,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
-                    placeholder="New category name"
+                    placeholder={t('dashboard.courseEditor.newCategoryPlaceholder')}
                     autoFocus
                     className="flex-1 px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                   />
@@ -476,7 +486,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                     disabled={creatingCategory || !newCategoryName.trim()}
                     className="px-3.5 rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-medium text-sm disabled:opacity-50 flex-shrink-0"
                   >
-                    {creatingCategory ? 'Adding…' : 'Add'}
+                    {creatingCategory ? t('dashboard.common.addingEllipsis') : t('dashboard.courseEditor.add')}
                   </button>
                   <button
                     type="button"
@@ -485,7 +495,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       setNewCategoryName('');
                     }}
                     className="px-3 rounded-[10px] text-gray-500 hover:bg-gray-100 transition flex-shrink-0"
-                    aria-label="Cancel new category"
+                    aria-label={t('dashboard.courseEditor.cancelNewCategory')}
                   >
                     <X size={16} />
                   </button>
@@ -496,10 +506,10 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                     id="course-category"
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    title="Select a course category"
+                    title={t('dashboard.courseEditor.selectCategoryTitle')}
                     className="flex-1 px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                   >
-                    <option value="">Select a category</option>
+                    <option value="">{t('dashboard.courseEditor.selectCategory')}</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
@@ -512,7 +522,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                     className="flex items-center gap-1 px-3 rounded-[10px] border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition flex-shrink-0 whitespace-nowrap"
                   >
                     <Plus size={14} />
-                    New
+                    {t('dashboard.courseEditor.newCategoryButton')}
                   </button>
                 </div>
               )}
@@ -520,24 +530,24 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
             <div>
               <label htmlFor="course-level" className="block text-sm font-medium text-gray-700 mb-2">
-                Level
+                {t('dashboard.courseEditor.levelLabel')}
               </label>
               <select
                 id="course-level"
-                title="Select course level"
+                title={t('dashboard.courseEditor.selectLevelTitle')}
                 value={level}
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => setLevel(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
+                <option value="beginner">{t(LEVEL_KEYS.beginner)}</option>
+                <option value="intermediate">{t(LEVEL_KEYS.intermediate)}</option>
+                <option value="advanced">{t(LEVEL_KEYS.advanced)}</option>
               </select>
             </div>
 
             <div>
               <label htmlFor="course-duration" className="block text-sm font-medium text-gray-700 mb-2">
-                Duration (hours)
+                {t('dashboard.courseEditor.durationLabel')}
               </label>
               <input
                 id="course-duration"
@@ -551,7 +561,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
             <div>
               <label htmlFor="course-price" className="block text-sm font-medium text-gray-700 mb-2">
-                Price ($)
+                {t('dashboard.courseEditor.priceLabel')}
               </label>
               <input
                 id="course-price"
@@ -567,20 +577,20 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
             <div>
               <p className="block text-sm font-medium text-gray-700 mb-2">
-                Course thumbnail
+                {t('dashboard.courseEditor.thumbnailLabel')}
               </p>
               {thumbnailUrl ? (
                 <div className="flex items-center justify-between bg-white p-3 rounded-[10px] border border-green-300">
                   <div className="flex items-center gap-2">
                     <img src={thumbnailUrl} alt="Thumbnail preview" className="w-12 h-12 rounded-[10px] object-cover" />
-                    <span className="text-sm text-gray-700">Thumbnail ready</span>
+                    <span className="text-sm text-gray-700">{t('dashboard.courseEditor.thumbnailReady')}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setThumbnailUrl('')}
                     className="p-3 text-red-600 hover:text-red-700"
-                    aria-label="Remove thumbnail"
-                    title="Remove thumbnail"
+                    aria-label={t('dashboard.courseEditor.removeThumbnail')}
+                    title={t('dashboard.courseEditor.removeThumbnail')}
                   >
                     <X size={18} />
                   </button>
@@ -589,8 +599,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-[10px] p-6 cursor-pointer hover:bg-gray-50">
                   <div className="text-center">
                     <Upload size={24} className="mx-auto text-gray-500 mb-2" />
-                    <span className="text-sm text-gray-700">{uploadingThumbnail ? 'Uploading…' : 'Click to upload thumbnail'}</span>
-                    <span className="text-2xs text-gray-500 block mt-1">JPG, PNG (Max {MAX_THUMBNAIL_MB}MB)</span>
+                    <span className="text-sm text-gray-700">{uploadingThumbnail ? t('dashboard.courseEditor.uploadingEllipsis') : t('dashboard.courseEditor.clickUploadThumbnail')}</span>
+                    <span className="text-2xs text-gray-500 block mt-1">{t('dashboard.courseEditor.jpgPngPrefix')} {MAX_THUMBNAIL_MB}{t('dashboard.courseEditor.mbSuffix')}</span>
                   </div>
                   <input
                     type="file"
@@ -609,11 +619,11 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
             <div>
               <p className="block text-sm font-medium text-gray-700 mb-2">
-                Course final exam
+                {t('dashboard.courseEditor.finalExamSectionLabel')}
               </p>
               <QuizBuilder
-                label="Final exam"
-                description="Optional. If added, students must pass this quiz to earn a certificate, in addition to completing every lesson."
+                label={t('dashboard.courseEditor.finalExamLabel')}
+                description={t('dashboard.courseEditor.finalExamDescription')}
                 quiz={courseQuiz}
                 onChange={setCourseQuiz}
               />
@@ -621,13 +631,13 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
           <div className="border-t border-canvas-150 pt-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-display text-2xl text-gray-900">Lessons</h2>
+              <h2 className="font-display text-2xl text-gray-900">{t('dashboard.courseEditor.lessonsHeading')}</h2>
               <button
                 onClick={addLesson}
                 className="flex items-center gap-1.5 bg-primary-500 text-gray-900 h-10 px-4 rounded-[10px] hover:bg-primary-400 transition font-medium"
               >
                 <Plus size={16} />
-                <span>Add lesson</span>
+                <span>{t('dashboard.courseEditor.addLesson')}</span>
               </button>
             </div>
 
@@ -637,11 +647,11 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <GripVertical size={20} className="text-gray-400" />
-                      <span className="font-medium text-gray-700">Lesson {index + 1}</span>
+                      <span className="font-medium text-gray-700">{t('dashboard.courseEditor.lessonLabel')} {index + 1}</span>
                     </div>
                     <button
-                      aria-label={`Delete lesson ${index + 1}`}
-                      title={`Delete lesson ${index + 1}`}
+                      aria-label={`${t('dashboard.courseEditor.deleteLesson')} ${index + 1}`}
+                      title={`${t('dashboard.courseEditor.deleteLesson')} ${index + 1}`}
                       onClick={() => removeLesson(index)}
                       className="text-red-600 hover:text-red-700"
                     >
@@ -655,8 +665,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       value={lesson.title}
                       onChange={(e) => updateLesson(index, 'title', e.target.value)}
                       className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-                      placeholder="Lesson title"
-                      aria-label={`Lesson ${index + 1} title`}
+                      placeholder={t('dashboard.courseEditor.lessonTitlePlaceholder')}
+                      aria-label={`${t('dashboard.courseEditor.lessonLabel')} ${index + 1} ${t('dashboard.courseEditor.titleWord')}`}
                       required
                     />
                     <textarea
@@ -664,24 +674,23 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       onChange={(e) => updateLesson(index, 'description', e.target.value)}
                       className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                       rows={2}
-                      placeholder="Lesson description"
-                      aria-label={`Lesson ${index + 1} description`}
+                      placeholder={t('dashboard.courseEditor.lessonDescriptionPlaceholder')}
+                      aria-label={`${t('dashboard.courseEditor.lessonLabel')} ${index + 1} ${t('dashboard.courseEditor.descriptionWord')}`}
                     />
 
                     <div className="bg-primary-50 border border-primary-200 rounded-[10px] p-4">
                       <p className="text-sm font-semibold text-gray-800 mb-3">
-                        Lesson content *
+                        {t('dashboard.courseEditor.lessonContentLabel')}
                       </p>
                       {!courseId && (
                         <p className="text-2xs text-primary-700 bg-white border border-primary-200 rounded-[10px] px-3 py-2 mb-3">
-                          Save the course once (with a title and description) to unlock video/PDF uploads for this lesson.
-                          Text content works right away.
+                          {t('dashboard.courseEditor.saveOnceHint')}
                         </p>
                       )}
                       <div className="space-y-3">
                         <div>
                           <label htmlFor={`lesson-content-${lesson.id}`} className="text-sm text-gray-700 font-medium mb-1 block">
-                            Text content
+                            {t('dashboard.courseEditor.textContentLabel')}
                           </label>
                           <textarea
                             id={`lesson-content-${lesson.id}`}
@@ -689,29 +698,28 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                             onChange={(e) => updateLesson(index, 'content', e.target.value)}
                             className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                             rows={3}
-                            placeholder="Enter lesson text content (optional)"
+                            placeholder={t('dashboard.courseEditor.textContentPlaceholder')}
                           />
                           <p className="text-2xs text-gray-500 mt-1.5">
-                            Use **bold**, *italic*, `code`, - bullet lists, 1. numbered lists, and #/##/### for
-                            chapter/sub-heading/label breaks — shown formatted on the lesson page.
+                            {t('dashboard.courseEditor.markdownHint')}
                           </p>
                           <RichTextPreview text={lesson.content} />
                         </div>
 
                         <div className="border-t border-primary-200 pt-3">
                           <p className="text-sm text-gray-700 font-medium mb-2 block">
-                            Upload video file (optional)
+                            {t('dashboard.courseEditor.uploadVideoLabel')}
                           </p>
                           {lesson.video_file_url ? (
                             <div className="flex items-center justify-between bg-white p-3 rounded-[10px] border border-green-300">
                               <div className="flex items-center gap-2">
                                 <Video size={18} className="text-green-600" />
-                                <span className="text-sm text-gray-700">Video uploaded</span>
+                                <span className="text-sm text-gray-700">{t('dashboard.courseEditor.videoUploaded')}</span>
                               </div>
                               <button
                                 type="button"
-                                title="Remove video file"
-                                aria-label="Remove video file"
+                                title={t('dashboard.courseEditor.removeVideoFile')}
+                                aria-label={t('dashboard.courseEditor.removeVideoFile')}
                                 onClick={() => updateLesson(index, 'video_file_url', '')}
                                 className="text-red-600 hover:text-red-700"
                               >
@@ -726,21 +734,21 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                             >
                               <div className="text-center">
                                 <Upload size={24} className={`mx-auto mb-1 ${courseId ? 'text-primary-600' : 'text-gray-400'}`} />
-                                <span className="text-sm text-gray-700">Click to upload video</span>
-                                <span className="text-2xs text-gray-500 block mt-1">MP4, WebM (Max {MAX_VIDEO_MB}MB)</span>
+                                <span className="text-sm text-gray-700">{t('dashboard.courseEditor.clickUploadVideo')}</span>
+                                <span className="text-2xs text-gray-500 block mt-1">{t('dashboard.courseEditor.mp4WebmPrefix')} {MAX_VIDEO_MB}{t('dashboard.courseEditor.mbSuffix')}</span>
                               </div>
                               <input
                                 type="file"
                                 accept="video/mp4,video/webm"
                                 className="hidden"
                                 disabled={!courseId}
-                                title="Upload video file"
+                                title={t('dashboard.courseEditor.uploadVideoLabel')}
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   e.target.value = '';
                                   if (!file || !courseId) return;
                                   if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
-                                    setError(`Video must be under ${MAX_VIDEO_MB}MB.`);
+                                    setError(`${t('dashboard.courseEditor.videoUnderMbPrefix')} ${MAX_VIDEO_MB}${t('dashboard.courseEditor.mbSuffixPeriod')}`);
                                     return;
                                   }
                                   setError('');
@@ -748,7 +756,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                                   if (url) {
                                     updateLesson(index, 'video_file_url', url);
                                   } else {
-                                    setError('Failed to upload video');
+                                    setError(t('dashboard.courseEditor.failedUploadVideo'));
                                   }
                                 }}
                               />
@@ -758,23 +766,23 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
                         <div>
                           <p className="text-sm text-gray-700 font-medium mb-2 block">
-                            Upload PDF notes (optional)
+                            {t('dashboard.courseEditor.uploadPdfLabel')}
                           </p>
                           {lesson.pdf_notes_url ? (
                             <div className="flex items-center justify-between bg-white p-3 rounded-[10px] border border-green-300">
                               <div className="flex items-center gap-2">
                                 <FileText size={18} className="text-green-600" />
-                                <span className="text-sm text-gray-700">PDF uploaded</span>
+                                <span className="text-sm text-gray-700">{t('dashboard.courseEditor.pdfUploaded')}</span>
                               </div>
                               <button
                                 type="button"
-                                title="Remove PDF notes"
-                                aria-label={`Remove PDF notes for lesson ${index + 1}`}
+                                title={t('dashboard.courseEditor.removePdfNotes')}
+                                aria-label={`${t('dashboard.courseEditor.removePdfNotes')} - ${t('dashboard.courseEditor.lessonLabel')} ${index + 1}`}
                                 onClick={() => updateLesson(index, 'pdf_notes_url', '')}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <X size={18} />
-                                <span className="sr-only">Remove PDF notes</span>
+                                <span className="sr-only">{t('dashboard.courseEditor.removePdfNotes')}</span>
                               </button>
                             </div>
                           ) : (
@@ -785,8 +793,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                             >
                               <div className="text-center">
                                 <Upload size={24} className={`mx-auto mb-1 ${courseId ? 'text-primary-600' : 'text-gray-400'}`} />
-                                <span className="text-sm text-gray-700">Click to upload PDF notes</span>
-                                <span className="text-2xs text-gray-500 block mt-1">PDF only (Max {MAX_PDF_MB}MB)</span>
+                                <span className="text-sm text-gray-700">{t('dashboard.courseEditor.clickUploadPdf')}</span>
+                                <span className="text-2xs text-gray-500 block mt-1">{t('dashboard.courseEditor.pdfOnlyPrefix')} {MAX_PDF_MB}{t('dashboard.courseEditor.mbSuffix')}</span>
                               </div>
                               <input
                                 type="file"
@@ -798,7 +806,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                                   e.target.value = '';
                                   if (!file || !courseId) return;
                                   if (file.size > MAX_PDF_MB * 1024 * 1024) {
-                                    setError(`PDF must be under ${MAX_PDF_MB}MB.`);
+                                    setError(`${t('dashboard.courseEditor.pdfUnderMbPrefix')} ${MAX_PDF_MB}${t('dashboard.courseEditor.mbSuffixPeriod')}`);
                                     return;
                                   }
                                   setError('');
@@ -806,7 +814,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                                   if (url) {
                                     updateLesson(index, 'pdf_notes_url', url);
                                   } else {
-                                    setError('Failed to upload PDF');
+                                    setError(t('dashboard.courseEditor.failedUploadPdf'));
                                   }
                                 }}
                               />
@@ -815,7 +823,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                         </div>
 
                         <p className="text-2xs text-gray-500 italic">
-                          At least one of text content, video, or PDF notes is required
+                          {t('dashboard.courseEditor.atLeastOneRequired')}
                         </p>
                       </div>
                     </div>
@@ -825,8 +833,8 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       value={lesson.video_url}
                       onChange={(e) => updateLesson(index, 'video_url', e.target.value)}
                       className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-                      placeholder="Embed URL (YouTube, Vimeo) - Optional"
-                      aria-label={`Lesson ${index + 1} embed URL`}
+                      placeholder={t('dashboard.courseEditor.embedUrlPlaceholder')}
+                      aria-label={`${t('dashboard.courseEditor.lessonLabel')} ${index + 1} ${t('dashboard.courseEditor.embedUrlWord')}`}
                     />
 
                     <input
@@ -834,14 +842,14 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       value={lesson.duration_minutes}
                       onChange={(e) => updateLesson(index, 'duration_minutes', parseInt(e.target.value) || 0)}
                       className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-                      placeholder="Duration (min)"
-                      aria-label={`Lesson ${index + 1} duration in minutes`}
+                      placeholder={t('dashboard.courseEditor.durationMinPlaceholder')}
+                      aria-label={`${t('dashboard.courseEditor.lessonLabel')} ${index + 1} ${t('dashboard.courseEditor.durationMinWord')}`}
                       min="0"
                     />
 
                     <QuizBuilder
-                      label="Completion quiz"
-                      description="Optional. If added, the student must pass it before this lesson can be marked complete."
+                      label={t('dashboard.courseEditor.completionQuizLabel')}
+                      description={t('dashboard.courseEditor.completionQuizDescription')}
                       quiz={lesson.quiz}
                       onChange={(quiz) => updateLesson(index, 'quiz', quiz)}
                     />
@@ -857,13 +865,13 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
               disabled={saving}
               className="flex-1 bg-primary-500 text-gray-900 h-12 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
             >
-              {saving ? 'Saving…' : 'Save course'}
+              {saving ? t('dashboard.courseEditor.savingEllipsis') : t('dashboard.courseEditor.saveCourse')}
             </button>
             <button
               onClick={onBack}
               className="px-6 h-12 bg-gray-100 text-gray-700 rounded-[10px] hover:bg-gray-200 transition font-medium"
             >
-              Cancel
+              {t('dashboard.courseEditor.cancel')}
             </button>
           </div>
         </div>

@@ -5,6 +5,16 @@ import * as authContext from '../contexts/AuthContext';
 import * as gamificationLib from '../lib/gamification';
 import MyProgress from '../components/Dashboard/MyProgress';
 import { supabase } from '../lib/supabase';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import type { ComponentProps } from 'react';
+
+function renderMyProgress(props: ComponentProps<typeof MyProgress>) {
+  return render(
+    <LocaleProvider>
+      <MyProgress {...props} />
+    </LocaleProvider>
+  );
+}
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn() },
@@ -78,7 +88,7 @@ describe('MyProgress', () => {
 
   it('shows an empty state when the student has no enrollments', async () => {
     mockTables({ enrollments: [] });
-    render(<MyProgress onBack={vi.fn()} onNavigate={vi.fn()} onCourseSelect={vi.fn()} />);
+    renderMyProgress({ onBack: vi.fn(), onNavigate: vi.fn(), onCourseSelect: vi.fn() });
     expect(await screen.findByText('No courses yet')).toBeInTheDocument();
   });
 
@@ -89,7 +99,7 @@ describe('MyProgress', () => {
       progressRows: [{ course_id: 'course-1', completed_lesson_count: 4 }],
       certificateRows: [],
     });
-    render(<MyProgress onBack={vi.fn()} onNavigate={vi.fn()} onCourseSelect={vi.fn()} />);
+    renderMyProgress({ onBack: vi.fn(), onNavigate: vi.fn(), onCourseSelect: vi.fn() });
 
     expect(await screen.findByText('Intro to Web Dev')).toBeInTheDocument();
     expect(screen.getByText('4 of 10 lessons · Instructor One')).toBeInTheDocument();
@@ -105,7 +115,7 @@ describe('MyProgress', () => {
       progressRows: [{ course_id: 'course-1', completed_lesson_count: 10 }],
       certificateRows: [{ course_id: 'course-1' }],
     });
-    render(<MyProgress onBack={vi.fn()} onNavigate={vi.fn()} onCourseSelect={vi.fn()} />);
+    renderMyProgress({ onBack: vi.fn(), onNavigate: vi.fn(), onCourseSelect: vi.fn() });
 
     expect(await screen.findByText('Certified')).toBeInTheDocument();
   });
@@ -114,7 +124,7 @@ describe('MyProgress', () => {
     mockTables({ enrollments: [ENROLLMENT], statsRows: [], progressRows: [], certificateRows: [] });
     const onCourseSelect = vi.fn();
     const user = userEvent.setup();
-    render(<MyProgress onBack={vi.fn()} onNavigate={vi.fn()} onCourseSelect={onCourseSelect} />);
+    renderMyProgress({ onBack: vi.fn(), onNavigate: vi.fn(), onCourseSelect });
 
     await user.click(await screen.findByText('Intro to Web Dev'));
     expect(onCourseSelect).toHaveBeenCalledWith('course-1');
@@ -127,9 +137,28 @@ describe('MyProgress', () => {
       progressRows: [{ course_id: 'course-1', completed_lesson_count: 4 }],
       certificateRows: [],
     });
-    render(<MyProgress onBack={vi.fn()} onNavigate={vi.fn()} onCourseSelect={vi.fn()} />);
+    renderMyProgress({ onBack: vi.fn(), onNavigate: vi.fn(), onCourseSelect: vi.fn() });
 
     await waitFor(() => expect(screen.getByText('Courses enrolled')).toBeInTheDocument());
     expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    mockTables({
+      enrollments: [ENROLLMENT],
+      statsRows: [{ course_id: 'course-1', lesson_count: 10 }],
+      progressRows: [{ course_id: 'course-1', completed_lesson_count: 4 }],
+      certificateRows: [],
+    });
+
+    renderMyProgress({ onBack: vi.fn(), onNavigate: vi.fn(), onCourseSelect: vi.fn() });
+
+    expect(await screen.findByRole('heading', { name: 'Mes progrès' })).toBeInTheDocument();
+    expect(screen.getByText('Cours suivis')).toBeInTheDocument();
+    expect(screen.getByText('4 sur 10 leçons · Instructor One')).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

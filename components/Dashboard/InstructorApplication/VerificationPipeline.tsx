@@ -4,8 +4,17 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { InstructorApplication, InstructorCredential, Interview } from '../../../lib/supabase';
 import { fetchCredentials, fetchMyInterview, getCalBookingLink } from '../../../lib/instructorApplications';
 import { trackEvent } from '../../../lib/analytics';
+import { useLocale } from '../../../contexts/LocaleContext';
+import type { TranslationKey } from '../../../lib/i18n';
 
 const STAGES = ['submitted', 'review', 'interview', 'approved'] as const;
+
+const STAGE_KEYS: Record<(typeof STAGES)[number], TranslationKey> = {
+  submitted: 'dashboard.instructorApplication.stageSubmitted',
+  review: 'dashboard.instructorApplication.stageReview',
+  interview: 'dashboard.instructorApplication.stageInterview',
+  approved: 'dashboard.reviewQueue.statusApproved',
+};
 
 type Props = {
   application: InstructorApplication;
@@ -13,6 +22,7 @@ type Props = {
 };
 
 export default function VerificationPipeline({ application, onEdit }: Props) {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [credentials, setCredentials] = useState<InstructorCredential[]>([]);
   const [interview, setInterview] = useState<Interview | null>(null);
@@ -45,25 +55,25 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex items-start justify-between gap-4 mb-1">
-        <h1 className="font-display text-3xl sm:text-4xl text-gray-900">Instructor verification</h1>
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900">{t('dashboard.instructorApplication.verificationTitle')}</h1>
         {application.status !== 'approved' && (
           <button
             onClick={onEdit}
             className="flex-shrink-0 text-sm font-medium text-primary-700 hover:text-primary-800 border border-primary-200 hover:bg-primary-50 transition rounded-[10px] h-9 px-3.5"
           >
-            Edit information
+            {t('dashboard.instructorApplication.editInformation')}
           </button>
         )}
       </div>
       <p className="text-gray-500 mb-8">
-        Track your application through review, the compulsory interview, and the final decision.
-        {application.status !== 'approved' && ' You can update your information or documents at any point before a final decision.'}
+        {t('dashboard.instructorApplication.trackSubtitle')}
+        {application.status !== 'approved' && t('dashboard.instructorApplication.updateAnytimeSuffix')}
       </p>
 
       {rejected ? (
         <div className="bg-red-50 border border-red-200 rounded-[10px] p-6 mb-8">
           <div className="flex items-center gap-2 text-red-700 font-semibold mb-2">
-            <XCircle size={20} /> Application not approved
+            <XCircle size={20} /> {t('dashboard.instructorApplication.notApproved')}
           </div>
           {application.decision_notes && (
             <p className="text-sm text-red-700">{application.decision_notes}</p>
@@ -77,7 +87,7 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
             return (
               <li
                 key={stage}
-                className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full capitalize ${
+                className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full ${
                   active
                     ? 'bg-primary-500 text-gray-900'
                     : done
@@ -86,7 +96,7 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
                 }`}
               >
                 {done ? <CheckCircle size={14} /> : active ? <Clock size={14} /> : <Circle size={14} />}
-                {stage}
+                {t(STAGE_KEYS[stage])}
               </li>
             );
           })}
@@ -95,35 +105,35 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
 
       {application.status === 'approved' && (
         <div className="bg-green-50 border border-green-200 rounded-[10px] p-6 mb-8 text-green-800">
-          <p className="font-semibold mb-1">You're verified!</p>
-          <p className="text-sm">Sign out and back in (or refresh) to unlock your instructor studio.</p>
+          <p className="font-semibold mb-1">{t('dashboard.instructorApplication.verifiedBanner')}</p>
+          <p className="text-sm">{t('dashboard.instructorApplication.verifiedBannerBody')}</p>
         </div>
       )}
 
       <div className="rounded-[14px] border border-canvas-150 divide-y divide-canvas-150">
-        <ChecklistRow label="Government ID verified" done={hasGovernmentId} />
-        <ChecklistRow label="Credentials verified" done={hasCredentialsVerified} />
+        <ChecklistRow label={t('dashboard.instructorApplication.governmentIdVerified')} done={hasGovernmentId} />
+        <ChecklistRow label={t('dashboard.instructorApplication.credentialsVerified')} done={hasCredentialsVerified} />
         <ChecklistRow
-          label="Background check"
+          label={t('dashboard.instructorApplication.backgroundCheck')}
           done={application.background_check_status === 'clear'}
           note={
             application.background_check_status === 'flagged'
-              ? 'Flagged — a reviewer will follow up'
+              ? t('dashboard.instructorApplication.backgroundCheckFlagged')
               : application.background_check_status === 'in_progress'
-              ? 'In progress'
+              ? t('dashboard.common.inProgress')
               : undefined
           }
         />
-        <ChecklistRow label="Sample lesson submitted" done={hasSampleLesson} />
+        <ChecklistRow label={t('dashboard.instructorApplication.sampleLessonSubmitted')} done={hasSampleLesson} />
         <ChecklistRow
-          label="Compulsory interview"
+          label={t('dashboard.instructorApplication.compulsoryInterview')}
           done={interview?.outcome === 'pass'}
           note={
             interview
               ? interview.scheduled_at
-                ? `Scheduled ${new Date(interview.scheduled_at).toLocaleString()} — ${interview.outcome}`
+                ? `${t('dashboard.reviewQueue.scheduledPrefix')} ${new Date(interview.scheduled_at).toLocaleString()} — ${interview.outcome}`
                 : interview.outcome
-              : 'Not scheduled yet'
+              : t('dashboard.reviewQueue.notScheduledYet')
           }
         />
       </div>
@@ -131,7 +141,7 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
       {interview?.meeting_url && interview.outcome === 'pending' && (
         <div className="mt-4 bg-primary-50 border border-primary-100 rounded-[10px] p-4 text-sm text-primary-800">
           <a href={interview.meeting_url} target="_blank" rel="noopener noreferrer" className="font-medium underline">
-            Join your interview
+            {t('dashboard.instructorApplication.joinInterview')}
           </a>
         </div>
       )}
@@ -147,7 +157,7 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center h-11 px-4 rounded-[10px] bg-primary-500 text-gray-900 hover:bg-primary-400 text-sm font-semibold"
               >
-                Schedule your interview on Cal.com
+                {t('dashboard.instructorApplication.scheduleInterviewCal')}
               </a>
             </div>
           ) : null;

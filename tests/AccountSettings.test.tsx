@@ -6,6 +6,7 @@ import * as gamificationLib from '../lib/gamification';
 import AccountSettings from '../components/Account/AccountSettings';
 import { supabase } from '../lib/supabase';
 import { ToastProvider } from '../contexts/ToastContext';
+import { LocaleProvider } from '../contexts/LocaleContext';
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn(), functions: { invoke: vi.fn() } },
@@ -38,9 +39,11 @@ function mockAuth(overrides: Parameters<typeof mockProfile>[0] = {}, extra: { re
 
 function renderAccountSettings(props: Partial<{ onBack: () => void; onNavigate: (page: string) => void }> = {}) {
   return render(
-    <ToastProvider>
-      <AccountSettings onBack={props.onBack ?? vi.fn()} onNavigate={props.onNavigate ?? vi.fn()} />
-    </ToastProvider>
+    <LocaleProvider>
+      <ToastProvider>
+        <AccountSettings onBack={props.onBack ?? vi.fn()} onNavigate={props.onNavigate ?? vi.fn()} />
+      </ToastProvider>
+    </LocaleProvider>
   );
 }
 

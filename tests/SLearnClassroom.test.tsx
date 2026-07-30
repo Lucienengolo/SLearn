@@ -7,6 +7,7 @@ import * as classworkLib from '../lib/classwork';
 import * as leagueLib from '../lib/league';
 import SLearnClassroom from '../components/Dashboard/SLearnClassroom';
 import { ToastProvider } from '../contexts/ToastContext';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import type { Course } from '../lib/supabase';
 import type { LearnerRow } from '../lib/instructorLearners';
 
@@ -15,9 +16,11 @@ vi.mock('../lib/league');
 
 function renderClassroom(onBack = vi.fn()) {
   return render(
-    <ToastProvider>
-      <SLearnClassroom onBack={onBack} />
-    </ToastProvider>
+    <LocaleProvider>
+      <ToastProvider>
+        <SLearnClassroom onBack={onBack} />
+      </ToastProvider>
+    </LocaleProvider>
   );
 }
 
@@ -158,5 +161,20 @@ describe('SLearnClassroom', () => {
 
     await user.click(screen.getByRole('button', { name: 'League' }));
     expect(screen.getByText(/all my courses/i)).toBeInTheDocument();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.spyOn(learnersLib, 'fetchInstructorLearners').mockResolvedValue({ courses: [COURSE_A], rows: [], totalQuizAttempts: 0 });
+
+    renderClassroom();
+
+    expect(await screen.findByText('S@Learn Classroom')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fil' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Travaux' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Participants' })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

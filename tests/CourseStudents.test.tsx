@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CourseStudents from '../components/Dashboard/CourseStudents';
 import { supabase } from '../lib/supabase';
+import { LocaleProvider } from '../contexts/LocaleContext';
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn() },
@@ -49,7 +50,11 @@ function mockTables(overrides: {
 
 function renderCourseStudents(overrides: Parameters<typeof mockTables>[0] = {}) {
   mockTables(overrides);
-  return render(<CourseStudents courseId="course-1" onBack={vi.fn()} onEditCourse={vi.fn()} />);
+  return render(
+    <LocaleProvider>
+      <CourseStudents courseId="course-1" onBack={vi.fn()} onEditCourse={vi.fn()} />
+    </LocaleProvider>
+  );
 }
 
 describe('CourseStudents', () => {
@@ -171,7 +176,11 @@ describe('CourseStudents', () => {
     const onBack = vi.fn();
     const onEditCourse = vi.fn();
     mockTables({});
-    render(<CourseStudents courseId="course-1" onBack={onBack} onEditCourse={onEditCourse} />);
+    render(
+      <LocaleProvider>
+        <CourseStudents courseId="course-1" onBack={onBack} onEditCourse={onEditCourse} />
+      </LocaleProvider>
+    );
 
     await screen.findByText('Python 202');
     expect(screen.getByRole('button', { name: 'Classroom' })).toHaveAttribute('aria-current', 'page');
@@ -181,5 +190,32 @@ describe('CourseStudents', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit course' }));
     expect(onEditCourse).toHaveBeenCalled();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    mockTables({
+      enrollments: [
+        {
+          id: 'enr-1',
+          student_id: 'student-1',
+          enrolled_at: daysAgo(3),
+          completed_at: null,
+          progress_percentage: 0,
+          student: { full_name: 'Jane Doe', email: 'jane@example.com', avatar_url: null },
+        },
+      ],
+    });
+    render(
+      <LocaleProvider>
+        <CourseStudents courseId="course-1" onBack={vi.fn()} onEditCourse={vi.fn()} />
+      </LocaleProvider>
+    );
+
+    expect(await screen.findByText(/étudiants inscrits|étudiant inscrit/i)).toBeInTheDocument();
+    expect(screen.getByText(/n'a pas encore commencé/i)).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

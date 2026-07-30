@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AddStudentModal from '../components/Dashboard/AddStudentModal';
 import * as enrollmentLib from '../lib/instructorEnrollment';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import type { ComponentProps } from 'react';
 
 const ONE_COURSE = [{ id: 'course-1', title: 'Course A' }];
 const TWO_COURSES = [
@@ -10,13 +12,21 @@ const TWO_COURSES = [
   { id: 'course-2', title: 'Course B' },
 ];
 
+function renderModal(props: ComponentProps<typeof AddStudentModal>) {
+  return render(
+    <LocaleProvider>
+      <AddStudentModal {...props} />
+    </LocaleProvider>
+  );
+}
+
 describe('AddStudentModal', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   it('renders nothing when closed', () => {
-    render(<AddStudentModal isOpen={false} courses={ONE_COURSE} onClose={vi.fn()} onEnrolled={vi.fn()} />);
+    renderModal({ isOpen: false, courses: ONE_COURSE, onClose: vi.fn(), onEnrolled: vi.fn() });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
@@ -26,7 +36,7 @@ describe('AddStudentModal', () => {
     const onEnrolled = vi.fn();
     const onClose = vi.fn();
 
-    render(<AddStudentModal isOpen={true} courses={ONE_COURSE} onClose={onClose} onEnrolled={onEnrolled} />);
+    renderModal({ isOpen: true, courses: ONE_COURSE, onClose: onClose, onEnrolled: onEnrolled });
 
     expect(screen.queryByLabelText(/^course$/i)).not.toBeInTheDocument();
 
@@ -42,7 +52,7 @@ describe('AddStudentModal', () => {
     const user = userEvent.setup();
     const enrollSpy = vi.spyOn(enrollmentLib, 'enrollStudentByEmail').mockResolvedValue(undefined);
 
-    render(<AddStudentModal isOpen={true} courses={TWO_COURSES} onClose={vi.fn()} onEnrolled={vi.fn()} />);
+    renderModal({ isOpen: true, courses: TWO_COURSES, onClose: vi.fn(), onEnrolled: vi.fn() });
 
     const select = screen.getByLabelText(/^course$/i);
     expect(select).toHaveValue('course-1');
@@ -59,12 +69,28 @@ describe('AddStudentModal', () => {
     vi.spyOn(enrollmentLib, 'enrollStudentByEmail').mockRejectedValue(new Error('No account found with that email address.'));
     const onClose = vi.fn();
 
-    render(<AddStudentModal isOpen={true} courses={ONE_COURSE} onClose={onClose} onEnrolled={vi.fn()} />);
+    renderModal({ isOpen: true, courses: ONE_COURSE, onClose: onClose, onEnrolled: vi.fn() });
 
     await user.type(screen.getByLabelText(/student email/i), 'nobody@example.com');
     await user.click(screen.getByRole('button', { name: /add student/i }));
 
     expect(await screen.findByText(/no account found with that email address/i)).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('renders in French when the locale is French', () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+
+    render(
+      <LocaleProvider>
+        <AddStudentModal isOpen={true} courses={ONE_COURSE} onClose={vi.fn()} onEnrolled={vi.fn()} />
+      </LocaleProvider>
+    );
+
+    expect(screen.getByRole('heading', { name: 'Ajouter un étudiant' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/e-mail de l'étudiant/i)).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

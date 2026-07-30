@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import StreakXPCard from '../components/Dashboard/StreakXPCard';
 import type { StudentProgress } from '../lib/gamification';
 import { totemByName } from '../lib/totems';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import type { ComponentProps } from 'react';
 
 function makeProgress(overrides: Partial<StudentProgress> = {}): StudentProgress {
   return {
@@ -17,11 +19,17 @@ function makeProgress(overrides: Partial<StudentProgress> = {}): StudentProgress
   };
 }
 
+function renderCard(props: ComponentProps<typeof StreakXPCard>) {
+  return render(
+    <LocaleProvider>
+      <StreakXPCard {...props} />
+    </LocaleProvider>
+  );
+}
+
 describe('StreakXPCard', () => {
   it('renders the streak week-strip, credits, and tier progress bar (Product Register, DESIGN.md 2026-07-24)', () => {
-    const { container } = render(
-      <StreakXPCard progress={makeProgress()} totem={null} onEditTotem={vi.fn()} />
-    );
+    const { container } = renderCard({ progress: makeProgress(), totem: null, onEditTotem: vi.fn() });
 
     expect(screen.getByText('2 days')).toBeInTheDocument();
     expect(screen.getByText('20 credits earned')).toBeInTheDocument();
@@ -32,24 +40,28 @@ describe('StreakXPCard', () => {
   });
 
   it('shows "Top tier reached" instead of a next-tier target at Gold', () => {
-    render(
-      <StreakXPCard
-        progress={makeProgress({ tier: 'Gold', xp: 400, xpToNextTier: null, tierProgressPct: 100 })}
-        totem={null}
-        onEditTotem={vi.fn()}
-      />
-    );
+    renderCard({
+      progress: makeProgress({ tier: 'Gold', xp: 400, xpToNextTier: null, tierProgressPct: 100 }),
+      totem: null,
+      onEditTotem: vi.fn(),
+    });
     expect(screen.getByText('Top tier reached')).toBeInTheDocument();
     expect(screen.queryByText(/credits to/i)).not.toBeInTheDocument();
   });
 
   it('renders the totem badge when one is set, and a placeholder + "Pick a totem" CTA when not', () => {
-    const { rerender } = render(<StreakXPCard progress={makeProgress()} totem={null} onEditTotem={vi.fn()} />);
+    const { rerender } = render(
+      <LocaleProvider>
+        <StreakXPCard progress={makeProgress()} totem={null} onEditTotem={vi.fn()} />
+      </LocaleProvider>
+    );
     expect(screen.getByText('No totem picked yet')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /pick a totem/i })).toBeInTheDocument();
 
     rerender(
-      <StreakXPCard progress={makeProgress()} totem={totemByName('Indomitable Lions')} onEditTotem={vi.fn()} />
+      <LocaleProvider>
+        <StreakXPCard progress={makeProgress()} totem={totemByName('Indomitable Lions')} onEditTotem={vi.fn()} />
+      </LocaleProvider>
     );
     expect(screen.getByText('Indomitable Lions')).toBeInTheDocument();
     expect(screen.getByText('🦁')).toBeInTheDocument();
@@ -59,9 +71,23 @@ describe('StreakXPCard', () => {
   it('calls onEditTotem when the totem card action is clicked', async () => {
     const user = userEvent.setup();
     const onEditTotem = vi.fn();
-    render(<StreakXPCard progress={makeProgress()} totem={null} onEditTotem={onEditTotem} />);
+    renderCard({ progress: makeProgress(), totem: null, onEditTotem });
 
     await user.click(screen.getByRole('button', { name: /pick a totem/i }));
     expect(onEditTotem).toHaveBeenCalled();
+  });
+
+  it('renders in French when the locale is French', () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+
+    renderCard({ progress: makeProgress(), totem: null, onEditTotem: vi.fn() });
+
+    expect(screen.getByText('2 jours')).toBeInTheDocument();
+    expect(screen.getByText('20 crédits gagnés')).toBeInTheDocument();
+    expect(screen.getByText('Ligue Bronze')).toBeInTheDocument();
+    expect(screen.getByText(/80 crédits avant Argent/)).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

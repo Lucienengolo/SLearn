@@ -3,6 +3,8 @@ import { Megaphone, FileText, ClipboardList } from 'lucide-react';
 import { ClassworkPostType } from '../../lib/supabase';
 import { createClassworkPost } from '../../lib/classwork';
 import { useToast } from '../../contexts/ToastContext';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
 
 type ClassworkComposerProps = {
   instructorId: string;
@@ -11,10 +13,10 @@ type ClassworkComposerProps = {
   onPosted: () => void;
 };
 
-const TYPE_OPTIONS: { type: ClassworkPostType; label: string; Icon: typeof Megaphone }[] = [
-  { type: 'announcement', label: 'Announcement', Icon: Megaphone },
-  { type: 'material', label: 'Material', Icon: FileText },
-  { type: 'assignment', label: 'Assignment', Icon: ClipboardList },
+const TYPE_OPTIONS: { type: ClassworkPostType; labelKey: TranslationKey; Icon: typeof Megaphone }[] = [
+  { type: 'announcement', labelKey: 'dashboard.classroom.postType.announcement', Icon: Megaphone },
+  { type: 'material', labelKey: 'dashboard.classroom.postType.material', Icon: FileText },
+  { type: 'assignment', labelKey: 'dashboard.classroom.postType.assignment', Icon: ClipboardList },
 ];
 
 // The instructor's "post something" composer -- the Google Classroom Stream
@@ -22,6 +24,7 @@ const TYPE_OPTIONS: { type: ClassworkPostType; label: string; Icon: typeof Megap
 // entry point. Attachment is a plain link, not a file upload (see
 // 0039_classwork.sql for why).
 export default function ClassworkComposer({ instructorId, courses, defaultCourseId, onPosted }: ClassworkComposerProps) {
+  const { t } = useLocale();
   const { showToast } = useToast();
   const [type, setType] = useState<ClassworkPostType>('announcement');
   const [courseId, setCourseId] = useState(defaultCourseId ?? courses[0]?.id ?? '');
@@ -35,7 +38,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseId) {
-      showToast('Choose a course first.', 'error');
+      showToast(t('dashboard.classworkComposer.chooseCourseFirst'), 'error');
       return;
     }
     setPosting(true);
@@ -54,10 +57,10 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
       setBody('');
       setAttachmentUrl('');
       setDueAt('');
-      showToast('Posted to the classroom.', 'success');
+      showToast(t('dashboard.classworkComposer.postedToClassroom'), 'success');
       onPosted();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to post.', 'error');
+      showToast(err instanceof Error ? err.message : t('dashboard.classworkComposer.failedToPost'), 'error');
     } finally {
       setPosting(false);
     }
@@ -66,17 +69,17 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
   return (
     <form onSubmit={handleSubmit} className="rounded-[14px] border border-canvas-150 p-5 shadow-sm mb-6">
       <div className="flex items-center gap-1 mb-4 rounded-[10px] bg-gray-100 p-1 w-fit">
-        {TYPE_OPTIONS.map(({ type: t, label, Icon }) => (
+        {TYPE_OPTIONS.map(({ type: optionType, labelKey, Icon }) => (
           <button
-            key={t}
+            key={optionType}
             type="button"
-            onClick={() => setType(t)}
+            onClick={() => setType(optionType)}
             className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-[8px] transition font-medium ${
-              type === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+              type === optionType ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
             }`}
           >
             <Icon size={15} />
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
@@ -85,7 +88,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
+          placeholder={t('dashboard.classworkComposer.titlePlaceholder')}
           required
           className="h-11 px-3.5 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 sm:col-span-1"
         />
@@ -107,7 +110,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder={type === 'announcement' ? "What's happening in class?" : 'Instructions or details'}
+        placeholder={type === 'announcement' ? t('dashboard.classworkComposer.bodyPlaceholderAnnouncement') : t('dashboard.classworkComposer.bodyPlaceholderOther')}
         rows={3}
         className="w-full px-3.5 py-2.5 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 mb-3 resize-none"
       />
@@ -116,7 +119,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
         <input
           value={attachmentUrl}
           onChange={(e) => setAttachmentUrl(e.target.value)}
-          placeholder="Link (optional)"
+          placeholder={t('dashboard.classworkComposer.linkPlaceholder')}
           type="url"
           className="h-11 px-3.5 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300"
         />
@@ -133,7 +136,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
               onChange={(e) => setMaxPoints(e.target.value)}
               type="number"
               min={1}
-              placeholder="Points"
+              placeholder={t('dashboard.classworkComposer.pointsPlaceholder')}
               className="h-11 px-3.5 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300"
             />
           </>
@@ -145,7 +148,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
         disabled={posting || !courseId}
         className="bg-primary-500 text-gray-900 h-10 px-5 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
       >
-        {posting ? 'Posting…' : 'Post'}
+        {posting ? t('dashboard.classworkComposer.postingEllipsis') : t('dashboard.classworkComposer.post')}
       </button>
     </form>
   );

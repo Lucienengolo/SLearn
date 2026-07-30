@@ -14,6 +14,14 @@ import {
 import { supabase, Course } from '../../lib/supabase';
 import { ICON_BADGE_GRADIENTS } from '../../lib/iconBadgeTones';
 import AddStudentModal from './AddStudentModal';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
+
+const LEVEL_KEYS: Record<string, TranslationKey> = {
+  beginner: 'courses.level.beginner',
+  intermediate: 'courses.level.intermediate',
+  advanced: 'courses.level.advanced',
+};
 
 type CourseStudentsProps = {
   courseId: string;
@@ -49,6 +57,7 @@ const statusOf = (row: StudentRow): StatusFilter =>
 // is the app's own existing primary-gold/green/gray token system, nothing
 // borrowed from W3Schools' branding. See DESIGN.md's Product Register.
 export default function CourseStudents({ courseId, onBack, onEditCourse }: CourseStudentsProps) {
+  const { t } = useLocale();
   const [course, setCourse] = useState<Course | null>(null);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +138,7 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
         return {
           enrollmentId: e.id,
           studentId: e.student_id,
-          fullName: e.student?.full_name || e.student?.email || 'Unknown student',
+          fullName: e.student?.full_name || e.student?.email || t('dashboard.courseStudents.unknownStudent'),
           email: e.student?.email || '',
           avatarUrl: e.student?.avatar_url ?? null,
           enrolledAt: e.enrolled_at,
@@ -165,36 +174,36 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
   // fixed category order, each bar directly labeled so identity never rests
   // on color alone (dataviz skill non-negotiable).
   const progressChartBuckets = [
-    { label: 'Not started', count: notStartedCount, barClass: 'bg-gray-300' },
-    { label: 'In progress', count: inProgressCount, barClass: 'bg-primary-500' },
-    { label: 'Completed', count: completedCount, barClass: 'bg-green-500' },
+    { label: t('dashboard.classroom.status.notStarted'), count: notStartedCount, barClass: 'bg-gray-300' },
+    { label: t('dashboard.classroom.status.inProgress'), count: inProgressCount, barClass: 'bg-primary-500' },
+    { label: t('dashboard.classroom.status.completed'), count: completedCount, barClass: 'bg-green-500' },
   ];
   const progressChartMax = Math.max(1, ...progressChartBuckets.map((b) => b.count));
 
   // Real numbers only, no fabricated "spent hours"/"solved challenges"
   // metrics -- each tile maps to data this app actually tracks.
   const statTiles = [
-    { Icon: Clock, value: `${course?.duration_hours ?? 0}h`, label: 'course length' },
-    { Icon: BookOpen, value: completedCount, label: 'students completed' },
-    { Icon: ListChecks, value: totalQuizAttempts, label: 'quiz attempts' },
-    { Icon: Award, value: certifiedCount, label: 'certificates earned' },
+    { Icon: Clock, value: `${course?.duration_hours ?? 0}h`, label: t('dashboard.courseStudents.statLength') },
+    { Icon: BookOpen, value: completedCount, label: t('dashboard.courseStudents.statCompleted') },
+    { Icon: ListChecks, value: totalQuizAttempts, label: t('dashboard.classroom.quizAttempts') },
+    { Icon: Award, value: certifiedCount, label: t('dashboard.classroom.certificatesEarnedLower') },
   ];
 
   const statusBadge = (row: StudentRow) => {
     const status = statusOf(row);
     if (status === 'completed') {
-      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">Completed</span>;
+      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700">{t('dashboard.classroom.status.completed')}</span>;
     }
     if (status === 'in_progress') {
-      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">In progress</span>;
+      return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700">{t('dashboard.classroom.status.inProgress')}</span>;
     }
-    return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">Not started</span>;
+    return <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-500">{t('dashboard.classroom.status.notStarted')}</span>;
   };
 
   const railItems = [
-    { Icon: Building2, label: 'Dashboard', onClick: onBack, active: false },
-    { Icon: Monitor, label: 'Classroom', onClick: () => {}, active: true },
-    { Icon: GraduationCap, label: 'Edit course', onClick: onEditCourse, active: false },
+    { Icon: Building2, label: t('nav.dashboard'), onClick: onBack, active: false },
+    { Icon: Monitor, label: t('dashboard.courseStudents.railClassroom'), onClick: () => {}, active: true },
+    { Icon: GraduationCap, label: t('dashboard.courseStudents.railEditCourse'), onClick: onEditCourse, active: false },
   ];
 
   return (
@@ -203,7 +212,7 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
           real navigation, not decorative: Dashboard goes back, Classroom is
           "you are here", Edit course jumps into CourseEditor. */}
       <nav
-        aria-label="Classroom"
+        aria-label={t('dashboard.courseStudents.railClassroom')}
         className="hidden sm:flex flex-col gap-2 bg-white border border-canvas-150 rounded-[14px] p-2 h-fit shadow-sm sticky top-24"
       >
         {railItems.map(({ Icon, label, onClick, active }) => (
@@ -224,10 +233,10 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
 
       <div className="flex-1 min-w-0">
         <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4 sm:hidden">
-          ← Back to dashboard
+          ← {t('dashboard.backToDashboard')}
         </button>
 
-        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-6">{course?.title || 'Loading course…'}</h1>
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-6">{course?.title || t('dashboard.courseStudents.loadingCourse')}</h1>
 
         {loading ? (
           <div className="text-center py-12">
@@ -236,14 +245,14 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
         ) : rows.length === 0 ? (
           <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
             <Users size={40} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">No students yet</h3>
-            <p className="text-gray-500 text-sm mb-6">Once students enroll in this course, they'll show up here.</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">{t('dashboard.courseStudents.noStudentsTitle')}</h3>
+            <p className="text-gray-500 text-sm mb-6">{t('dashboard.courseStudents.noStudentsBody')}</p>
             <button
               onClick={() => setAddStudentOpen(true)}
               className="inline-flex items-center gap-1.5 bg-primary-500 text-gray-900 h-10 px-4 rounded-[10px] hover:bg-primary-400 transition font-medium"
             >
               <UserPlus size={16} />
-              Add a student
+              {t('dashboard.courseStudents.addStudentCta')}
             </button>
           </div>
         ) : (
@@ -253,37 +262,42 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
                   reference's stacked info boxes */}
               <div className="space-y-4">
                 <div className="rounded-[10px] border border-canvas-150 bg-canvas-25 p-4 shadow-sm">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Information</p>
-                  <p className="text-sm text-gray-700 capitalize">{course?.level} course</p>
-                  <p className="text-sm text-gray-700">{rows.length} registered student{rows.length === 1 ? '' : 's'}</p>
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{t('dashboard.classroom.information')}</p>
+                  <p className="text-sm text-gray-700">
+                    {course?.level ? t(LEVEL_KEYS[course.level] ?? 'courses.level.beginner') : ''} {t('dashboard.courseStudents.courseSuffix')}
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {rows.length} {t(rows.length === 1 ? 'dashboard.courseStudents.registeredStudentSingular' : 'dashboard.courseStudents.registeredStudentPlural')}
+                  </p>
                   {course?.created_at && (
                     <p className="text-2xs text-gray-500 mt-1.5">
-                      Published {new Date(course.created_at).toLocaleDateString()}
+                      {t('dashboard.courseStudents.publishedPrefix')} {new Date(course.created_at).toLocaleDateString()}
                     </p>
                   )}
                 </div>
 
                 {(notStartedCount > 0 || staleCount > 0) ? (
                   <div className="rounded-[10px] border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                    <p className="text-2xs font-semibold uppercase tracking-wide text-amber-900 mb-2">Attention</p>
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-amber-900 mb-2">{t('dashboard.classroom.attention')}</p>
                     <ul className="text-sm text-amber-800 space-y-0.5">
                       {notStartedCount > 0 && (
                         <li>
-                          {notStartedCount} student{notStartedCount === 1 ? '' : 's'}{' '}
-                          {notStartedCount === 1 ? "hasn't" : "haven't"} started yet
+                          {notStartedCount} {t(notStartedCount === 1 ? 'dashboard.courseStudents.studentSingular' : 'dashboard.courseStudents.studentPlural')}{' '}
+                          {t(notStartedCount === 1 ? 'dashboard.classroom.hasntStartedYet' : 'dashboard.classroom.haventStartedYet')}
                         </li>
                       )}
                       {staleCount > 0 && (
                         <li>
-                          {staleCount} student{staleCount === 1 ? '' : 's'} inactive for {STALE_THRESHOLD_DAYS}+ days
+                          {staleCount} {t(staleCount === 1 ? 'dashboard.courseStudents.studentSingular' : 'dashboard.courseStudents.studentPlural')}{' '}
+                          {t('dashboard.classroom.inactiveSince')} {STALE_THRESHOLD_DAYS}+ {t('dashboard.streak.days')}
                         </li>
                       )}
                     </ul>
                   </div>
                 ) : (
                   <div className="rounded-[10px] border border-canvas-150 bg-canvas-25 p-4 shadow-sm">
-                    <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">Attention</p>
-                    <p className="text-sm text-gray-500">Nothing needs your attention right now.</p>
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">{t('dashboard.classroom.attention')}</p>
+                    <p className="text-sm text-gray-500">{t('dashboard.classroom.nothingNeedsAttention')}</p>
                   </div>
                 )}
               </div>
@@ -295,7 +309,7 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Looking for a specific student?"
+                    placeholder={t('dashboard.courseStudents.searchPlaceholder')}
                     className="w-full pl-10 pr-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                   />
                 </div>
@@ -315,7 +329,7 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
 
               {/* Class Overall Progress chart -- right column */}
               <div className="rounded-[10px] border border-canvas-150 p-4 shadow-sm hover:shadow-md transition-shadow">
-                <p className="text-2xs font-semibold text-gray-500 mb-3">Class overall progress</p>
+                <p className="text-2xs font-semibold text-gray-500 mb-3">{t('dashboard.classroom.classOverallProgress')}</p>
                 <div className="flex items-end justify-between gap-3 h-24">
                   {progressChartBuckets.map((bucket) => (
                     <div key={bucket.label} className="flex-1 flex flex-col items-center justify-end h-full">
@@ -341,7 +355,7 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
 
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h2 className="font-semibold text-gray-900">
-                Students ({rows.length})
+                {t('dashboard.courseStudents.studentsHeading')} ({rows.length})
               </h2>
               <div className="flex items-center gap-2">
                 <button
@@ -349,25 +363,25 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
                   className="inline-flex items-center gap-1.5 bg-primary-500 text-gray-900 h-9 px-3.5 rounded-full text-sm font-medium shadow-sm hover:shadow-md hover:bg-primary-400 transition-[box-shadow,background-color]"
                 >
                   <UserPlus size={15} />
-                  Add student
+                  {t('dashboard.classroom.addStudent')}
                 </button>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                  title="Filter by status"
+                  title={t('dashboard.classroom.filterByStatusTitle')}
                   className="h-9 px-3 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                 >
-                  <option value="all">All students</option>
-                  <option value="completed">Completed</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="not_started">Not started</option>
+                  <option value="all">{t('dashboard.courseStudents.allStudents')}</option>
+                  <option value="completed">{t('dashboard.classroom.status.completed')}</option>
+                  <option value="in_progress">{t('dashboard.classroom.status.inProgress')}</option>
+                  <option value="not_started">{t('dashboard.classroom.status.notStarted')}</option>
                 </select>
               </div>
             </div>
 
             <div className="rounded-[14px] border border-canvas-150 divide-y divide-canvas-150 shadow-sm">
               {filteredRows.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-10">No students match your search.</p>
+                <p className="text-sm text-gray-500 text-center py-10">{t('dashboard.courseStudents.noStudentsMatch')}</p>
               ) : (
                 filteredRows.map((row) => (
                   <div key={row.enrollmentId} className="flex items-center gap-3.5 p-4 hover:bg-gray-50 transition-colors">
@@ -388,12 +402,12 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
                         {row.hasCertificate && (
                           <span className="flex items-center gap-1 text-2xs font-semibold px-2 py-1 rounded-full bg-gold-50 text-gold-700">
                             <Award size={12} />
-                            Certified
+                            {t('dashboard.myProgress.certifiedBadge')}
                           </span>
                         )}
                         {row.isStale && (
                           <span className="text-2xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-800">
-                            Needs attention
+                            {t('dashboard.classroom.needsAttention')}
                           </span>
                         )}
                       </div>
@@ -409,7 +423,7 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
                       <p className="text-2xs text-gray-500 text-right">{row.progressPercentage}%</p>
                     </div>
                     <p className="text-2xs text-gray-400 flex-shrink-0 hidden md:block w-28 text-right">
-                      Last active {new Date(row.lastActivityAt).toLocaleDateString()}
+                      {t('dashboard.classroom.lastActive')} {new Date(row.lastActivityAt).toLocaleDateString()}
                     </p>
                   </div>
                 ))

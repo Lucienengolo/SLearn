@@ -1,4 +1,11 @@
 import { Plus, Trash2 } from 'lucide-react';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
+
+const TRUE_FALSE_KEYS: Record<string, TranslationKey> = {
+  True: 'dashboard.quizBuilder.true',
+  False: 'dashboard.quizBuilder.false',
+};
 
 export type QuestionDraft = {
   key: string;
@@ -40,6 +47,7 @@ type QuizBuilderProps = {
 };
 
 export default function QuizBuilder({ label, description, quiz, onChange }: QuizBuilderProps) {
+  const { t } = useLocale();
   const updateQuestion = (key: string, patch: Partial<QuestionDraft>) => {
     onChange({
       ...quiz,
@@ -64,7 +72,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
           className="flex items-center gap-1.5 px-3 h-9 rounded-[10px] border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition flex-shrink-0 whitespace-nowrap"
         >
           <Plus size={14} />
-          Add quiz
+          {t('dashboard.quizBuilder.addQuiz')}
         </button>
       </div>
     );
@@ -79,7 +87,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
           onClick={() => onChange({ ...quiz, enabled: false })}
           className="text-2xs text-red-600 hover:underline"
         >
-          Remove quiz
+          {t('dashboard.quizBuilder.removeQuiz')}
         </button>
       </div>
 
@@ -87,7 +95,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
         <input
           value={quiz.title}
           onChange={(e) => onChange({ ...quiz, title: e.target.value })}
-          placeholder="Quiz title"
+          placeholder={t('dashboard.quizBuilder.quizTitlePlaceholder')}
           className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
         />
         <div className="flex items-center gap-2">
@@ -98,9 +106,9 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
             value={quiz.passing_score}
             onChange={(e) => onChange({ ...quiz, passing_score: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
             className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-            title="Passing score (%)"
+            title={t('dashboard.quizBuilder.passingScoreTitle')}
           />
-          <span className="text-2xs text-gray-500 whitespace-nowrap">% to pass</span>
+          <span className="text-2xs text-gray-500 whitespace-nowrap">{t('dashboard.quizBuilder.percentToPass')}</span>
         </div>
       </div>
 
@@ -111,14 +119,14 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
               <input
                 value={q.question_text}
                 onChange={(e) => updateQuestion(q.key, { question_text: e.target.value })}
-                placeholder={`Question ${index + 1}`}
+                placeholder={`${t('dashboard.quizBuilder.question')} ${index + 1}`}
                 className="flex-1 px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               />
               <button
                 type="button"
                 onClick={() => removeQuestion(q.key)}
-                aria-label={`Delete question ${index + 1}`}
-                title={`Delete question ${index + 1}`}
+                aria-label={`${t('dashboard.quizBuilder.deleteQuestion')} ${index + 1}`}
+                title={`${t('dashboard.quizBuilder.deleteQuestion')} ${index + 1}`}
                 className="text-red-500 hover:text-red-700 p-2 flex-shrink-0"
               >
                 <Trash2 size={16} />
@@ -128,7 +136,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
             <div className="flex items-center gap-2 flex-wrap">
               <select
                 value={q.question_type}
-                title="Question type"
+                title={t('dashboard.quizBuilder.questionTypeTitle')}
                 onChange={(e) => {
                   const question_type = e.target.value as 'multiple_choice' | 'true_false';
                   updateQuestion(q.key, {
@@ -139,11 +147,11 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
                 }}
                 className="px-3 py-1.5 border border-gray-200 rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
               >
-                <option value="multiple_choice">Multiple choice</option>
-                <option value="true_false">True / False</option>
+                <option value="multiple_choice">{t('dashboard.quizBuilder.multipleChoice')}</option>
+                <option value="true_false">{t('dashboard.quizBuilder.trueFalse')}</option>
               </select>
               <label className="flex items-center gap-1.5 text-sm text-gray-600">
-                Points
+                {t('dashboard.quizBuilder.points')}
                 <input
                   type="number"
                   min={1}
@@ -164,8 +172,8 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
                       checked={q.correct_answer !== '' && q.correct_answer === opt}
                       onChange={() => updateQuestion(q.key, { correct_answer: opt })}
                       disabled={!opt.trim()}
-                      aria-label={`Option ${i + 1} is correct`}
-                      title="Mark as correct answer"
+                      aria-label={`${t('dashboard.quizBuilder.option')} ${i + 1} ${t('dashboard.quizBuilder.optionCorrectAria')}`}
+                      title={t('dashboard.quizBuilder.markCorrectTitle')}
                     />
                     <input
                       value={opt}
@@ -175,7 +183,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
                         options[i] = e.target.value;
                         updateQuestion(q.key, { options, correct_answer: wasCorrect ? e.target.value : q.correct_answer });
                       }}
-                      placeholder={`Option ${i + 1}`}
+                      placeholder={`${t('dashboard.quizBuilder.option')} ${i + 1}`}
                       className="flex-1 px-3 py-1.5 border border-gray-200 rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                     />
                   </div>
@@ -191,7 +199,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
                       checked={q.correct_answer === opt}
                       onChange={() => updateQuestion(q.key, { correct_answer: opt })}
                     />
-                    {opt}
+                    {t(TRUE_FALSE_KEYS[opt])}
                   </label>
                 ))}
               </div>
@@ -205,7 +213,7 @@ export default function QuizBuilder({ label, description, quiz, onChange }: Quiz
           className="flex items-center gap-1.5 text-sm text-primary-700 hover:underline"
         >
           <Plus size={14} />
-          Add question
+          {t('dashboard.quizBuilder.addQuestion')}
         </button>
       </div>
     </div>

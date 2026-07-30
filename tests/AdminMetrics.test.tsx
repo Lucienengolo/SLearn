@@ -3,10 +3,19 @@ import { render, screen } from '@testing-library/react';
 import AdminMetrics from '../components/Dashboard/AdminMetrics';
 import * as adminMetricsLib from '../lib/adminMetrics';
 import { supabase } from '../lib/supabase';
+import { LocaleProvider } from '../contexts/LocaleContext';
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn() },
 }));
+
+function renderAdminMetrics() {
+  return render(
+    <LocaleProvider>
+      <AdminMetrics />
+    </LocaleProvider>
+  );
+}
 
 describe('AdminMetrics', () => {
   beforeEach(() => {
@@ -19,9 +28,9 @@ describe('AdminMetrics', () => {
       select: vi.fn(() => Promise.resolve({ data: [] })),
     } as unknown as ReturnType<typeof supabase.from>);
 
-    render(<AdminMetrics />);
+    renderAdminMetrics();
 
-    expect(await screen.findByText(/aucune demande enregistrée/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no requests recorded yet/i)).toBeInTheDocument();
   });
 
   it('renders rows with resolved category names, sorted by unmatched rate', async () => {
@@ -56,7 +65,7 @@ describe('AdminMetrics', () => {
       ),
     } as unknown as ReturnType<typeof supabase.from>);
 
-    render(<AdminMetrics />);
+    renderAdminMetrics();
 
     expect(await screen.findByText('Anglais')).toBeInTheDocument();
     expect(screen.getByText('Maths')).toBeInTheDocument();
@@ -72,8 +81,24 @@ describe('AdminMetrics', () => {
       select: vi.fn(() => Promise.resolve({ data: [] })),
     } as unknown as ReturnType<typeof supabase.from>);
 
-    render(<AdminMetrics />);
+    renderAdminMetrics();
 
-    expect(await screen.findByText(/impossible de charger/i)).toBeInTheDocument();
+    expect(await screen.findByText(/could not load the statistics/i)).toBeInTheDocument();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.spyOn(adminMetricsLib, 'fetchTutorRequestMatchStats').mockResolvedValue([]);
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn(() => Promise.resolve({ data: [] })),
+    } as unknown as ReturnType<typeof supabase.from>);
+
+    renderAdminMetrics();
+
+    expect(await screen.findByText('Demandes non satisfaites')).toBeInTheDocument();
+    expect(screen.getByText(/aucune demande enregistrée/i)).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

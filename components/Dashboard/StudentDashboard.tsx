@@ -8,6 +8,7 @@ import StreakXPCard from './StreakXPCard';
 import DashboardSidebar from './DashboardSidebar';
 import StatTile from '../UI/StatTile';
 import { totemByName } from '../../lib/totems';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type StudentDashboardProps = {
   onNavigate: (page: string) => void;
@@ -35,6 +36,7 @@ export default function StudentDashboard({
   onCertificateView,
   onBecomeInstructor,
 }: StudentDashboardProps) {
+  const { t } = useLocale();
   const { user, profile } = useAuth();
   const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([]);
   const [certificates, setCertificates] = useState<CertificateWithCourse[]>([]);
@@ -150,10 +152,10 @@ export default function StudentDashboard({
   });
 
   const statTiles = [
-    { icon: BookOpen, value: stats.totalCourses, label: 'Courses enrolled', tone: 'gold' as const },
-    { icon: CheckCircle, value: stats.completedCourses, label: 'Completed', tone: 'green' as const },
-    { icon: Clock, value: `${stats.totalHours}h`, label: 'Hours of content', tone: 'gray' as const },
-    { icon: Zap, value: stats.inProgressCourses, label: 'In progress', tone: 'blue' as const },
+    { icon: BookOpen, value: stats.totalCourses, label: t('dashboard.myProgress.coursesEnrolled'), tone: 'gold' as const },
+    { icon: CheckCircle, value: stats.completedCourses, label: t('dashboard.common.completedPlural'), tone: 'green' as const },
+    { icon: Clock, value: `${stats.totalHours}h`, label: t('dashboard.student.hoursOfContent'), tone: 'gray' as const },
+    { icon: Zap, value: stats.inProgressCourses, label: t('dashboard.common.inProgress'), tone: 'blue' as const },
   ];
 
   return (
@@ -170,22 +172,22 @@ export default function StudentDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mb-7 items-stretch">
         <div>
           <div className="flex items-center justify-between gap-4 mb-1">
-            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">Welcome back</span>
+            <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">{t('dashboard.student.welcomeBack')}</span>
             <button
               onClick={onBecomeInstructor}
               className="flex items-center gap-2 bg-white border border-primary-200 text-primary-700 px-4 py-2 rounded-[10px] hover:bg-primary-50 transition font-medium text-sm whitespace-nowrap"
             >
               <GraduationCap size={16} />
-              Apply to teach
+              {t('dashboard.student.applyToTeach')}
             </button>
           </div>
           <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mt-1 mb-2">
-            Good to see you{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
+            {t('dashboard.student.greeting')}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
           </h1>
           <p className="text-gray-600">
             {resumeCourse
-              ? 'Pick up where you left off and keep the momentum going.'
-              : 'Browse the catalog to start your first course.'}
+              ? t('dashboard.student.resumeSubtitle')
+              : t('dashboard.student.browseSubtitle')}
           </p>
         </div>
 
@@ -196,10 +198,10 @@ export default function StudentDashboard({
             onClick={() => onCourseSelect(resumeCourse.course_id)}
           >
             <div>
-              <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-white/55">Continue learning</span>
+              <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-white/55">{t('courseDetail.continueLearning')}</span>
               <p className="font-semibold mt-1.5 mb-1 line-clamp-1">{resumeCourse.course.title}</p>
               <p className="text-sm text-white/65">
-                {resumeCourse.completedLessons} of {resumeCourse.totalLessons} lessons done
+                {resumeCourse.completedLessons} {t('dashboard.common.of')} {resumeCourse.totalLessons} {t('courses.lessons')} {t('dashboard.student.done')}
               </p>
             </div>
             <div className="mt-4">
@@ -210,7 +212,7 @@ export default function StudentDashboard({
                 />
               </div>
               <button className="w-full bg-primary-500 text-gray-900 hover:bg-primary-400 transition font-semibold h-10 rounded-[10px]">
-                Resume — {resumeCourse.progress_percentage}%
+                {t('dashboard.student.resumePrefix')} {resumeCourse.progress_percentage}%
               </button>
             </div>
           </div>
@@ -242,21 +244,23 @@ export default function StudentDashboard({
             <Award size={22} className="text-white" />
           </span>
           <div className="flex-1">
-            <p className="font-bold text-primary-700">{certificates.length} certificate{certificates.length > 1 ? 's' : ''} earned</p>
-            <p className="text-sm text-gray-600">Share them on your profile or download the PDFs</p>
+            <p className="font-bold text-primary-700">
+              {certificates.length} {t(certificates.length === 1 ? 'dashboard.student.certificatesEarnedSingular' : 'dashboard.student.certificatesEarnedPlural')}
+            </p>
+            <p className="text-sm text-gray-600">{t('dashboard.student.shareCertsBody')}</p>
           </div>
           <button
             onClick={onCertificateView}
             className="bg-white border border-primary-200 text-primary-700 px-4 py-2 rounded-[10px] hover:bg-primary-50 transition font-medium text-sm whitespace-nowrap"
           >
-            View certificates
+            {t('dashboard.student.viewCertificates')}
           </button>
         </div>
       )}
 
       {/* My courses */}
       <div className="flex items-baseline justify-between mb-4">
-        <h2 className="font-display text-2xl text-gray-900">My courses</h2>
+        <h2 className="font-display text-2xl text-gray-900">{t('dashboard.student.myCourses')}</h2>
         <div className="flex gap-1">
           {(['in_progress', 'completed', 'all'] as const).map((f) => (
             <button
@@ -266,7 +270,7 @@ export default function StudentDashboard({
                 filter === f ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-800'
               }`}
             >
-              {f === 'in_progress' ? 'In progress' : f === 'completed' ? 'Completed' : 'All'}
+              {f === 'in_progress' ? t('dashboard.common.inProgress') : f === 'completed' ? t('dashboard.common.completedPlural') : t('dashboard.student.filterAll')}
             </button>
           ))}
         </div>
@@ -276,10 +280,10 @@ export default function StudentDashboard({
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
           <BookOpen size={40} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-800 mb-1">
-            {enrollments.length === 0 ? 'No courses yet' : 'Nothing here yet'}
+            {enrollments.length === 0 ? t('dashboard.common.noCoursesYet') : t('dashboard.student.nothingHereYet')}
           </h3>
           <p className="text-gray-500 text-sm">
-            {enrollments.length === 0 ? 'Start learning by enrolling in a course' : 'Try a different filter'}
+            {enrollments.length === 0 ? t('dashboard.student.startLearning') : t('dashboard.student.tryDifferentFilter')}
           </p>
         </div>
       ) : (
@@ -316,7 +320,7 @@ export default function StudentDashboard({
                     {enrollment.completed_at && (
                       <span className="inline-flex items-center gap-1 text-2xs font-semibold text-green-700">
                         <CheckCircle size={12} />
-                        Completed
+                        {t('dashboard.common.completedBadge')}
                       </span>
                     )}
                   </div>

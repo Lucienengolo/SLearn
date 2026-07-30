@@ -6,6 +6,15 @@ import * as authContext from '../contexts/AuthContext';
 import * as instructorApplicationsLib from '../lib/instructorApplications';
 import { supabase } from '../lib/supabase';
 import type { InstructorApplication } from '../lib/supabase';
+import { LocaleProvider } from '../contexts/LocaleContext';
+
+function renderWizard(props: { initialApplication: InstructorApplication | null; onSubmitted: () => void }) {
+  return render(
+    <LocaleProvider>
+      <ApplicationWizard {...props} />
+    </LocaleProvider>
+  );
+}
 
 vi.mock('../lib/supabase', async () => {
   const actual = await vi.importActual<typeof import('../lib/supabase')>('../lib/supabase');
@@ -96,7 +105,7 @@ describe('ApplicationWizard tutoring section', () => {
 
   it('hides tutoring fields until the opt-in checkbox is checked', async () => {
     const user = userEvent.setup();
-    render(<ApplicationWizard initialApplication={null} onSubmitted={vi.fn()} />);
+    renderWizard({ initialApplication: null, onSubmitted: vi.fn() });
 
     await goToTutoringStep(user);
 
@@ -111,7 +120,7 @@ describe('ApplicationWizard tutoring section', () => {
 
   it('toggles subject chips and language chips independently by accessible name', async () => {
     const user = userEvent.setup();
-    render(<ApplicationWizard initialApplication={null} onSubmitted={vi.fn()} />);
+    renderWizard({ initialApplication: null, onSubmitted: vi.fn() });
 
     await goToTutoringStep(user);
     await user.click(screen.getByRole('checkbox', { name: /1-on-1 tutoring/i }));
@@ -138,12 +147,25 @@ describe('ApplicationWizard tutoring section', () => {
       tutoring_rate_per_session: 5000,
     });
 
-    render(<ApplicationWizard initialApplication={existing} onSubmitted={vi.fn()} />);
+    renderWizard({ initialApplication: existing, onSubmitted: vi.fn() });
     await goToTutoringStep(user);
 
     expect(screen.getByRole('checkbox', { name: /1-on-1 tutoring/i })).toBeChecked();
     expect(screen.getByDisplayValue('Akwa')).toBeInTheDocument();
     expect(screen.getByDisplayValue('5000')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Maths' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+
+    renderWizard({ initialApplication: null, onSubmitted: vi.fn() });
+
+    expect(await screen.findByText('Postuler pour enseigner')).toBeInTheDocument();
+    expect(screen.getByText('1. Profil et qualifications')).toBeInTheDocument();
+    expect(screen.getByText('Nom complet')).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

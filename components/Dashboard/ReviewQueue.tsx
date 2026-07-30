@@ -14,6 +14,14 @@ import { CourseWithInstructor, decideCourse, fetchDecidedCourses, fetchPendingCo
 import { Interview } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
 import { renderRichText } from '../../lib/richText';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
+
+const STATUS_KEYS: Record<string, TranslationKey> = {
+  pending: 'dashboard.reviewQueue.statusPending',
+  approved: 'dashboard.reviewQueue.statusApproved',
+  rejected: 'dashboard.reviewQueue.statusRejected',
+};
 
 type Section = 'applications' | 'courses';
 type Tab = 'pending' | 'decided';
@@ -24,6 +32,7 @@ type Tab = 'pending' | 'decided';
 // is_reviewer check, and courses_guard_moderation for course decisions),
 // matching every other privileged action in this app.
 export default function ReviewQueue() {
+  const { t } = useLocale();
   const [section, setSection] = useState<Section>('applications');
   const [tab, setTab] = useState<Tab>('pending');
   const [pending, setPending] = useState<ApplicationWithApplicant[]>([]);
@@ -59,10 +68,10 @@ export default function ReviewQueue() {
   return (
     <div className="max-w-[1000px] mx-auto px-6 py-10">
       <div className="flex items-baseline justify-between mb-1">
-        <h1 className="font-display text-3xl sm:text-4xl text-gray-900">Review queue</h1>
-        <span className="text-sm text-gray-500">{pendingCount} awaiting a decision</span>
+        <h1 className="font-display text-3xl sm:text-4xl text-gray-900">{t('nav.reviewQueue')}</h1>
+        <span className="text-sm text-gray-500">{pendingCount} {t('dashboard.reviewQueue.awaitingDecision')}</span>
       </div>
-      <p className="text-gray-500 mb-6">Approve or reject instructor applications and new courses.</p>
+      <p className="text-gray-500 mb-6">{t('dashboard.reviewQueue.subtitle')}</p>
 
       <div className="flex gap-2 mb-4">
         {(['applications', 'courses'] as const).map((s) => (
@@ -81,12 +90,12 @@ export default function ReviewQueue() {
             {s === 'applications' ? (
               <>
                 <Users size={15} />
-                Instructor applications ({pending.length})
+                {t('dashboard.reviewQueue.instructorApplications')} ({pending.length})
               </>
             ) : (
               <>
                 <BookOpen size={15} />
-                Courses ({pendingCourses.length})
+                {t('nav.courses')} ({pendingCourses.length})
               </>
             )}
           </button>
@@ -94,15 +103,15 @@ export default function ReviewQueue() {
       </div>
 
       <div className="flex gap-1 mb-6">
-        {(['pending', 'decided'] as const).map((t) => (
+        {(['pending', 'decided'] as const).map((tabOption) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabOption}
+            onClick={() => setTab(tabOption)}
             className={`text-sm px-3.5 py-2 rounded-[10px] font-medium transition ${
-              tab === t ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-800'
+              tab === tabOption ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            {t === 'pending' ? `Pending (${pendingCount})` : 'Recently decided'}
+            {tabOption === 'pending' ? `${t('dashboard.reviewQueue.pending')} (${pendingCount})` : t('dashboard.reviewQueue.recentlyDecided')}
           </button>
         ))}
       </div>
@@ -115,7 +124,7 @@ export default function ReviewQueue() {
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
           <Users size={36} className="mx-auto text-gray-300 mb-3" />
           <p className="text-gray-500 text-sm">
-            {tab === 'pending' ? `No ${isApplications ? 'applications' : 'courses'} waiting on a decision` : 'Nothing decided yet'}
+            {tab === 'pending' ? (isApplications ? t('dashboard.reviewQueue.noApplicationsWaiting') : t('dashboard.reviewQueue.noCoursesWaiting')) : t('dashboard.reviewQueue.nothingDecidedYet')}
           </p>
         </div>
       ) : isApplications ? (
@@ -158,6 +167,7 @@ function CourseReviewCard({
   onToggle: () => void;
   onDecided: () => void;
 }) {
+  const { t } = useLocale();
   const [notes, setNotes] = useState(course.moderation_notes ?? '');
   const [deciding, setDeciding] = useState<'approved' | 'rejected' | null>(null);
   const [decideError, setDecideError] = useState('');
@@ -171,7 +181,7 @@ function CourseReviewCard({
       await decideCourse(course.id, decision, notes.trim() || undefined);
       onDecided();
     } catch (err) {
-      setDecideError(err instanceof Error ? err.message : 'Could not record decision');
+      setDecideError(err instanceof Error ? err.message : t('dashboard.reviewQueue.couldNotRecordDecision'));
     } finally {
       setDeciding(null);
     }
@@ -194,12 +204,12 @@ function CourseReviewCard({
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
               <p className="font-semibold text-gray-900 truncate">{course.title}</p>
-              <span className={`text-2xs font-semibold px-2 py-0.5 rounded-full capitalize flex-shrink-0 ${statusTint}`}>
-                {course.moderation_status}
+              <span className={`text-2xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${statusTint}`}>
+                {t(STATUS_KEYS[course.moderation_status] ?? 'dashboard.reviewQueue.statusPending')}
               </span>
             </div>
             <p className="text-sm text-gray-500 truncate">
-              by {course.instructor?.full_name ?? 'Unknown'} · {course.price > 0 ? `$${course.price}` : 'Free'}
+              {t('dashboard.reviewQueue.byPrefix')} {course.instructor?.full_name ?? t('dashboard.reviewQueue.unknown')} · {course.price > 0 ? `$${course.price}` : t('common.free')}
             </p>
           </div>
         </div>
@@ -210,16 +220,16 @@ function CourseReviewCard({
         <div className="border-t border-canvas-150 p-4 space-y-4">
           <div className="text-sm text-gray-700">{renderRichText(course.description)}</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-            <Field label="Level" value={course.level} />
-            <Field label="Duration" value={`${course.duration_hours}h`} />
-            <Field label="Price" value={course.price > 0 ? `$${course.price}` : 'Free'} />
-            <Field label="Instructor email" value={course.instructor?.email} />
+            <Field label={t('dashboard.reviewQueue.levelFieldLabel')} value={course.level} />
+            <Field label={t('dashboard.reviewQueue.durationFieldLabel')} value={`${course.duration_hours}h`} />
+            <Field label={t('dashboard.instructor.priceStatLabel')} value={course.price > 0 ? `$${course.price}` : t('common.free')} />
+            <Field label={t('dashboard.reviewQueue.instructorEmailFieldLabel')} value={course.instructor?.email} />
           </div>
 
           {course.moderation_status === 'pending' && (
             <div className="pt-3 border-t border-canvas-150">
               <label htmlFor={`course-notes-${course.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                Notes (shown to the instructor if rejected)
+                {t('dashboard.reviewQueue.courseNotesLabel')}
               </label>
               <textarea
                 id={`course-notes-${course.id}`}
@@ -236,7 +246,7 @@ function CourseReviewCard({
                   className="flex items-center gap-1.5 bg-green-600 text-white h-10 px-4 rounded-[10px] hover:bg-green-700 transition font-medium disabled:opacity-50"
                 >
                   <CheckCircle size={16} />
-                  {deciding === 'approved' ? 'Approving…' : 'Approve'}
+                  {deciding === 'approved' ? t('dashboard.reviewQueue.approvingEllipsis') : t('dashboard.reviewQueue.approve')}
                 </button>
                 <button
                   onClick={() => handleDecision('rejected')}
@@ -244,7 +254,7 @@ function CourseReviewCard({
                   className="flex items-center gap-1.5 bg-red-50 text-red-600 h-10 px-4 rounded-[10px] hover:bg-red-100 transition font-medium disabled:opacity-50"
                 >
                   <XCircle size={16} />
-                  {deciding === 'rejected' ? 'Rejecting…' : 'Reject'}
+                  {deciding === 'rejected' ? t('dashboard.reviewQueue.rejectingEllipsis') : t('dashboard.reviewQueue.reject')}
                 </button>
               </div>
             </div>
@@ -252,7 +262,7 @@ function CourseReviewCard({
 
           {course.moderation_notes && course.moderation_status !== 'pending' && (
             <div className="pt-3 border-t border-canvas-150">
-              <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">Notes</p>
+              <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">{t('dashboard.reviewQueue.notesLabel')}</p>
               <p className="text-sm text-gray-700">{course.moderation_notes}</p>
             </div>
           )}
@@ -273,6 +283,7 @@ function ApplicationCard({
   onToggle: () => void;
   onDecided: () => void;
 }) {
+  const { t } = useLocale();
   const [credentials, setCredentials] = useState<InstructorCredential[]>([]);
   const [interview, setInterview] = useState<Interview | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -298,7 +309,7 @@ function ApplicationCard({
       await decideApplication(application.id, decision, notes.trim() || undefined);
       onDecided();
     } catch (err) {
-      setDecideError(err instanceof Error ? err.message : 'Could not record decision');
+      setDecideError(err instanceof Error ? err.message : t('dashboard.reviewQueue.couldNotRecordDecision'));
     } finally {
       setDeciding(null);
     }
@@ -316,13 +327,13 @@ function ApplicationCard({
       <button onClick={onToggle} className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-gray-50 transition">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <p className="font-semibold text-gray-900 truncate">{application.full_name || application.applicant?.full_name || 'Unnamed applicant'}</p>
-            <span className={`text-2xs font-semibold px-2 py-0.5 rounded-full capitalize flex-shrink-0 ${statusTint}`}>
-              {application.status}
+            <p className="font-semibold text-gray-900 truncate">{application.full_name || application.applicant?.full_name || t('dashboard.reviewQueue.unnamedApplicant')}</p>
+            <span className={`text-2xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${statusTint}`}>
+              {t(STATUS_KEYS[application.status] ?? 'dashboard.reviewQueue.statusPending')}
             </span>
           </div>
           <p className="text-sm text-gray-500 truncate">
-            {application.applicant?.email} · proposes "{application.proposed_course_title || 'Untitled course'}"
+            {application.applicant?.email} · {t('dashboard.reviewQueue.proposesPrefix')} "{application.proposed_course_title || t('dashboard.reviewQueue.untitledCourse')}"
           </p>
         </div>
         <span className="text-2xs text-gray-400 flex-shrink-0">
@@ -339,28 +350,28 @@ function ApplicationCard({
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <Field label="Headline" value={application.headline} />
-                <Field label="Years of experience" value={application.years_experience?.toString()} />
-                <Field label="Address" value={application.address} />
-                <Field label="Areas of expertise" value={application.areas_of_expertise?.join(', ')} />
+                <Field label={t('dashboard.reviewQueue.headlineFieldLabel')} value={application.headline} />
+                <Field label={t('dashboard.reviewQueue.yearsExperienceFieldLabel')} value={application.years_experience?.toString()} />
+                <Field label={t('dashboard.reviewQueue.addressFieldLabel')} value={application.address} />
+                <Field label={t('dashboard.reviewQueue.areasExpertiseFieldLabel')} value={application.areas_of_expertise?.join(', ')} />
               </div>
               {application.bio && (
                 <div>
-                  <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">Bio</p>
+                  <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">{t('dashboard.reviewQueue.bioLabel')}</p>
                   <div className="text-sm text-gray-700">{renderRichText(application.bio)}</div>
                 </div>
               )}
               {application.qualifications && (
                 <div>
-                  <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">Qualifications</p>
+                  <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">{t('dashboard.reviewQueue.qualificationsLabel')}</p>
                   <p className="text-sm text-gray-700">{application.qualifications}</p>
                 </div>
               )}
 
               <div>
-                <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-2">Uploaded documents</p>
+                <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-2">{t('dashboard.reviewQueue.uploadedDocumentsLabel')}</p>
                 {credentials.length === 0 ? (
-                  <p className="text-sm text-gray-400">None uploaded yet</p>
+                  <p className="text-sm text-gray-400">{t('dashboard.reviewQueue.noneUploadedYet')}</p>
                 ) : (
                   <div className="space-y-1.5">
                     {credentials.map((c) => (
@@ -371,21 +382,21 @@ function ApplicationCard({
               </div>
 
               <div>
-                <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">Interview</p>
+                <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">{t('dashboard.reviewQueue.interviewLabel')}</p>
                 <p className="text-sm text-gray-700 flex items-center gap-1.5">
                   <Clock size={14} className="text-gray-400" />
                   {interview
                     ? interview.scheduled_at
-                      ? `Scheduled ${new Date(interview.scheduled_at).toLocaleString()} — outcome: ${interview.outcome}`
-                      : `Outcome: ${interview.outcome}`
-                    : 'Not scheduled yet'}
+                      ? `${t('dashboard.reviewQueue.scheduledPrefix')} ${new Date(interview.scheduled_at).toLocaleString()} — ${t('dashboard.reviewQueue.outcomeWord')}: ${interview.outcome}`
+                      : `${t('dashboard.reviewQueue.outcomeLabel')}: ${interview.outcome}`
+                    : t('dashboard.reviewQueue.notScheduledYet')}
                 </p>
               </div>
 
               {application.status !== 'approved' && application.status !== 'rejected' && (
                 <div className="pt-3 border-t border-canvas-150">
                   <label htmlFor={`notes-${application.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                    Decision notes (shown to the applicant if rejected)
+                    {t('dashboard.reviewQueue.decisionNotesLabel')}
                   </label>
                   <textarea
                     id={`notes-${application.id}`}
@@ -402,7 +413,7 @@ function ApplicationCard({
                       className="flex items-center gap-1.5 bg-green-600 text-white h-10 px-4 rounded-[10px] hover:bg-green-700 transition font-medium disabled:opacity-50"
                     >
                       <CheckCircle size={16} />
-                      {deciding === 'approved' ? 'Approving…' : 'Approve'}
+                      {deciding === 'approved' ? t('dashboard.reviewQueue.approvingEllipsis') : t('dashboard.reviewQueue.approve')}
                     </button>
                     <button
                       onClick={() => handleDecision('rejected')}
@@ -410,7 +421,7 @@ function ApplicationCard({
                       className="flex items-center gap-1.5 bg-red-50 text-red-600 h-10 px-4 rounded-[10px] hover:bg-red-100 transition font-medium disabled:opacity-50"
                     >
                       <XCircle size={16} />
-                      {deciding === 'rejected' ? 'Rejecting…' : 'Reject'}
+                      {deciding === 'rejected' ? t('dashboard.reviewQueue.rejectingEllipsis') : t('dashboard.reviewQueue.reject')}
                     </button>
                   </div>
                 </div>
@@ -418,7 +429,7 @@ function ApplicationCard({
 
               {application.decision_notes && (
                 <div className="pt-3 border-t border-canvas-150">
-                  <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">Decision notes</p>
+                  <p className="text-2xs font-semibold tracking-[0.06em] uppercase text-gray-500 mb-1">{t('dashboard.reviewQueue.decisionNotesHeaderLabel')}</p>
                   <p className="text-sm text-gray-700">{application.decision_notes}</p>
                 </div>
               )}
@@ -440,6 +451,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
 }
 
 function CredentialRow({ credential }: { credential: InstructorCredential }) {
+  const { t } = useLocale();
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -468,7 +480,7 @@ function CredentialRow({ credential }: { credential: InstructorCredential }) {
             credential.verification_name_match ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
           }`}
         >
-          name {credential.verification_name_match ? 'match' : 'mismatch'}
+          {t('dashboard.reviewQueue.namePrefix')} {credential.verification_name_match ? t('dashboard.reviewQueue.nameMatchWord') : t('dashboard.reviewQueue.nameMismatchWord')}
         </span>
       )}
       <button
@@ -477,7 +489,7 @@ function CredentialRow({ credential }: { credential: InstructorCredential }) {
         className="flex items-center gap-1 text-sm text-primary-700 hover:text-primary-800 font-medium flex-shrink-0 disabled:opacity-50"
       >
         <ExternalLink size={14} />
-        {loading ? 'Loading…' : 'View'}
+        {loading ? t('common.loadingEllipsis') : t('dashboard.reviewQueue.view')}
       </button>
     </div>
   );
