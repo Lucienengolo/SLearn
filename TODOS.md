@@ -1,5 +1,9 @@
 # TODOS
 
+## PaymentStatus mobile layout: deposit/balance rows no longer wrap mid-phrase (2026-07-30)
+
+Founder screenshot of the matched-request view (Chat + PaymentStatus) on mobile showed the deposit/balance summary rows wrapping awkwardly mid-phrase (e.g. "en" / "attente" splitting across lines). Root cause: `flex justify-between` forces label and value onto one row, and at phone widths a long label ("Solde (à régler sur place)") next to a long value ("4 000 FCFA — en attente") don't both fit, so the value itself wraps. Changed both rows in `PaymentStatus.tsx` to `flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5` -- stacked (each gets a full-width line) below 640px, back to side-by-side at `sm:` and above. Verified: existing 12 PaymentStatus tests unaffected (className-only change), typecheck clean.
+
 ## Tutor-marketplace bug-fix batch: matching deployed, hard-delete, custom subjects, icons, broken-image fallback (2026-07-30)
 
 Founder sent 7 screenshots reporting: (1) location never actually shares even with device location on, (2) no way to request a subject outside the fixed list, (3) tutor matching never happens, (4) "delete request" doesn't really delete anything, (5) some icons aren't representative of what they label, (6) mobile responsiveness issues, (7) the course-detail title looked doubled/badly spaced.

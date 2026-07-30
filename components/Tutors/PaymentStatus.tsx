@@ -124,13 +124,20 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
         })}
       </div>
 
-      <div className="flex justify-between text-sm mb-1.5">
+      {/* flex-col on mobile, not flex-row justify-between: a long label
+          ("Solde (à régler sur place)") next to a long value ("4 000 FCFA —
+          en attente") don't both fit on one line at phone widths, and
+          forcing them side by side made each wrap mid-phrase instead
+          ("en" / "attente" splitting apart). Stacking gives each its own
+          full-width line; sm:flex-row restores the side-by-side layout
+          once there's room. */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 text-sm mb-1.5">
         <span>{t('tutorMarketplace.paymentStatus.depositLabel')}</span>
         <span className="font-plex-mono">
           {FCFA.format(depositAmount)} FCFA — {payment?.deposit_status === 'paid' ? t('tutorMarketplace.paymentStatus.paidWord') : t('tutorMarketplace.paymentStatus.pendingWord')}
         </span>
       </div>
-      <div className="flex justify-between text-sm mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 text-sm mb-4">
         <span>{t('tutorMarketplace.paymentStatus.balanceLabel')}</span>
         <span className="font-plex-mono">
           {FCFA.format(balanceAmount)} FCFA — {payment?.balance_status === 'confirmed' ? t('tutorMarketplace.paymentStatus.receivedWord') : t('tutorMarketplace.paymentStatus.pendingWord')}
