@@ -29,6 +29,15 @@ vi.mock('../lib/supabase', () => ({
           })
         ),
       })),
+      // .insert().select().single() -- mirrors CourseEditor's own inline
+      // category creation, returning the newly created row.
+      insert: vi.fn((payload: { name: string }) => ({
+        select: vi.fn(() => ({
+          single: vi.fn(() =>
+            Promise.resolve({ data: { id: 'cat-new', name: payload.name, description: null, created_at: '' }, error: null })
+          ),
+        })),
+      })),
     })),
   },
 }));
@@ -262,5 +271,32 @@ describe('RequestForm', () => {
     expect(screen.getByLabelText(/quartier/i)).toBeInTheDocument();
 
     vi.unstubAllGlobals();
+  });
+
+  it('adds a custom subject via the "+" chip and selects it for that child', async () => {
+    const user = userEvent.setup();
+    renderRequestForm({ onSubmitted: vi.fn() });
+    await waitFor(() => expect(screen.getByLabelText(/level/i)).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Other' }));
+    await user.type(screen.getByPlaceholderText(/subject name/i), 'Philosophie');
+    await user.click(screen.getByRole('button', { name: /^add$/i }));
+
+    const newChip = await screen.findByRole('button', { name: 'Philosophie' });
+    expect(newChip).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('reuses an existing category instead of creating a duplicate when the name already matches', async () => {
+    const user = userEvent.setup();
+    renderRequestForm({ onSubmitted: vi.fn() });
+    await waitFor(() => expect(screen.getByLabelText(/level/i)).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Other' }));
+    await user.type(screen.getByPlaceholderText(/subject name/i), 'anglais');
+    await user.click(screen.getByRole('button', { name: /^add$/i }));
+
+    const englishChip = await screen.findByRole('button', { name: /^Anglais$/ });
+    expect(englishChip).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: /^Anglais$/ })).toHaveLength(1);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import CourseCard from '../components/Courses/CourseCard';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import type { Course } from '../lib/supabase';
@@ -69,5 +69,20 @@ describe('CourseCard', () => {
     expect(screen.getByText('Gratuit')).toBeInTheDocument();
 
     vi.unstubAllGlobals();
+  });
+
+  // Regression: a broken/unreachable thumbnail_url previously left the
+  // browser's alt-text fallback rendering in place instead of falling back
+  // to the gradient+icon placeholder used when there's no thumbnail at all.
+  it('falls back to the gradient+icon placeholder when the thumbnail fails to load', () => {
+    const { container } = renderCard({ course: { ...BASE_COURSE, thumbnail_url: 'https://example.com/broken.jpg' } });
+
+    const img = container.querySelector('img') as HTMLImageElement;
+    expect(img).toBeInTheDocument();
+
+    fireEvent.error(img);
+
+    expect(container.querySelector('img')).not.toBeInTheDocument();
+    expect(container.querySelector('svg')).toBeInTheDocument();
   });
 });

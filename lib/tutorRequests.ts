@@ -101,8 +101,17 @@ export async function updateTutorRequest(requestId: string, input: UpdateTutorRe
   if (error) throw error;
 }
 
+// Founder feedback (2026-07-30): "when a request is deleted that means it
+// should completely deleted from the DB and remove on the UI" -- previously
+// this only soft-cancelled (status = 'cancelled'), which then kept showing
+// up in "My Requests" instead of disappearing. Now a real DELETE, gated by
+// the "parents delete their own still-searching request" RLS policy
+// (0042_tutor_request_hard_delete.sql) -- a matched request can't reach
+// this function at all (the UI only offers delete on the "still searching"
+// screen), so there's no risk of this cascading away real match/payment
+// history.
 export async function cancelTutorRequest(requestId: string): Promise<void> {
-  const { error } = await supabase.from('tutor_requests').update({ status: 'cancelled' }).eq('id', requestId);
+  const { error } = await supabase.from('tutor_requests').delete().eq('id', requestId);
   if (error) throw error;
 }
 

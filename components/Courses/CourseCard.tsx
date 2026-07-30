@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Clock, Users, Star, Bookmark, CheckCircle } from 'lucide-react';
 import { Course } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
@@ -27,6 +28,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
   const cover = getCourseCover(course.category?.name);
   const CoverIcon = cover.icon;
   const levelKey = LEVEL_KEYS[course.level];
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   return (
     <div
@@ -34,11 +36,17 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
       className="relative rounded-[14px] border border-canvas-150 overflow-hidden shadow-sm hover:border-gray-300 hover:shadow-lg hover:-translate-y-1 transition-[box-shadow,transform,border-color] cursor-pointer bg-white"
     >
       <div className="h-44 flex items-center justify-center" style={{ background: cover.gradient }}>
-        {course.thumbnail_url ? (
+        {course.thumbnail_url && !thumbnailFailed ? (
           <img
             src={course.thumbnail_url}
             alt={course.title}
             loading="lazy"
+            // A broken/unreachable thumbnail URL previously left the
+            // browser's alt-text fallback rendering in place, sometimes
+            // overlapping the title below it. Falling back to the same
+            // gradient+icon placeholder used when there's no thumbnail at
+            // all is strictly better than a broken image or stray text.
+            onError={() => setThumbnailFailed(true)}
             className="w-full h-full object-cover"
           />
         ) : (

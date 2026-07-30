@@ -125,12 +125,23 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
         />
         {type === 'assignment' && (
           <>
-            <input
-              value={dueAt}
-              onChange={(e) => setDueAt(e.target.value)}
-              type="date"
-              className="h-11 px-3.5 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300"
-            />
+            <div>
+              {/* type="date" inputs ignore the placeholder attribute
+                  entirely (unlike the url/number fields either side of it),
+                  so this field previously rendered as a blank, unlabeled
+                  box -- especially confusing on mobile where it's the only
+                  field in the row with no visible hint at all. */}
+              <label htmlFor="classwork-due-date" className="block text-2xs text-gray-500 mb-1">
+                {t('dashboard.classworkComposer.dueDateLabel')}
+              </label>
+              <input
+                id="classwork-due-date"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+                type="date"
+                className="w-full h-11 px-3.5 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300"
+              />
+            </div>
             <input
               value={maxPoints}
               onChange={(e) => setMaxPoints(e.target.value)}

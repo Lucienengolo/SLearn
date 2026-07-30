@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, BookOpen, Users, Award, Wifi, ArrowRight, CheckCircle } from 'lucide-react';
+import { Search, BookOpen, Users, Award, Wifi, ArrowRight, Clock, GraduationCap } from 'lucide-react';
 import { supabase, Course, CourseStats, Category } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../contexts/LocaleContext';
@@ -283,15 +283,15 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
           <h2 className="font-display text-3xl text-gray-900 mb-8 text-center">{t('home.whyChoose.title')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { title: t('home.whyChoose.pace.title'), body: t('home.whyChoose.pace.body'), tone: 'blue' as const },
-              { title: t('home.whyChoose.certificates.title'), body: t('home.whyChoose.certificates.body'), tone: 'gold' as const },
-              { title: t('home.whyChoose.experts.title'), body: t('home.whyChoose.experts.body'), tone: 'green' as const },
+              { title: t('home.whyChoose.pace.title'), body: t('home.whyChoose.pace.body'), tone: 'blue' as const, icon: Clock },
+              { title: t('home.whyChoose.certificates.title'), body: t('home.whyChoose.certificates.body'), tone: 'gold' as const, icon: Award },
+              { title: t('home.whyChoose.experts.title'), body: t('home.whyChoose.experts.body'), tone: 'green' as const, icon: GraduationCap },
             ].map((item) => (
               <div
                 key={item.title}
                 className="bg-white rounded-[14px] border border-canvas-150 p-6 flex items-start gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform]"
               >
-                <IconBadge icon={CheckCircle} tone={item.tone} size={40} iconSize={20} />
+                <IconBadge icon={item.icon} tone={item.tone} size={40} iconSize={20} />
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
                   <p className="text-sm text-gray-600">{item.body}</p>

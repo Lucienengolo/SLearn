@@ -88,13 +88,13 @@ describe('updateTutorRequest', () => {
 describe('cancelTutorRequest', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('sets status to cancelled', async () => {
-    const builder = { update: vi.fn(() => builder), eq: vi.fn(() => Promise.resolve({ error: null })) };
+  it('hard-deletes the request row', async () => {
+    const builder = { delete: vi.fn(() => builder), eq: vi.fn(() => Promise.resolve({ error: null })) };
     vi.mocked(supabase.from).mockReturnValue(builder as unknown as ReturnType<typeof supabase.from>);
 
     await cancelTutorRequest('req-1');
 
-    expect(builder.update).toHaveBeenCalledWith({ status: 'cancelled' });
+    expect(builder.delete).toHaveBeenCalled();
     expect(builder.eq).toHaveBeenCalledWith('id', 'req-1');
   });
 });

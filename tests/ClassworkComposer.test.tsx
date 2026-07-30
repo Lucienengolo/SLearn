@@ -47,6 +47,18 @@ describe('ClassworkComposer', () => {
     expect(screen.getByPlaceholderText('Points')).toBeInTheDocument();
   });
 
+  // Regression: type="date" inputs ignore the placeholder attribute
+  // entirely, so the due-date field previously rendered blank with no
+  // indication of its purpose (especially confusing on mobile, where it's
+  // the only field in the row with nothing visible at all).
+  it('gives the due-date field a real label instead of relying on a placeholder', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.click(screen.getByRole('button', { name: 'Assignment' }));
+    expect(screen.getByLabelText('Due date')).toBeInTheDocument();
+  });
+
   it('shows a course picker when there are multiple courses', () => {
     renderComposer({ courses: COURSES });
     expect(screen.getByRole('option', { name: 'Course A' })).toBeInTheDocument();

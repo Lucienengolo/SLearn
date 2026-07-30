@@ -51,6 +51,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   const [finalExam, setFinalExam] = useState<Quiz | null>(null);
   const [finalExamPassed, setFinalExamPassed] = useState(false);
   const [showFinalExam, setShowFinalExam] = useState(false);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   useEffect(() => {
     fetchCourseData();
@@ -297,11 +298,19 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               className="relative rounded-[14px] overflow-hidden h-[220px] sm:h-[260px] flex items-end p-6 shadow-md"
               style={{ background: cover.gradient }}
             >
-              {course.thumbnail_url ? (
+              {course.thumbnail_url && !thumbnailFailed ? (
                 <img
                   src={course.thumbnail_url}
                   alt={course.title}
                   fetchPriority="high"
+                  // A broken/unreachable thumbnail URL previously left the
+                  // browser's own alt-text fallback rendering in place,
+                  // overlapping the title below it (absolute inset-0 gives
+                  // it no predictable box once the image itself fails to
+                  // paint). Falling back to the same gradient+icon
+                  // placeholder used when there's no thumbnail at all is
+                  // strictly better than a broken image or stray text.
+                  onError={() => setThumbnailFailed(true)}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (

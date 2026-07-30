@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Plus } from 'lucide-react';
 import { supabase, Category, TutorRequest } from '../../lib/supabase';
 import { createTutorRequest, matchTutorRequest, isValidWhatsappContact } from '../../lib/tutorRequests';
 import { getCurrentLocation } from '../../lib/geolocation';
@@ -55,6 +55,9 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const [sharedErrors, setSharedErrors] = useState<SharedErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [addingSubjectForChild, setAddingSubjectForChild] = useState<string | null>(null);
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [creatingSubject, setCreatingSubject] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +94,38 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
 
   function addChild() {
     setChildren((prev) => [...prev, emptyChild()]);
+  }
+
+  // Founder feedback (2026-07-30): the subject picker had no way to add a
+  // subject that isn't already in the fixed list. Mirrors CourseEditor's own
+  // "+ New category" inline-creation flow (0028/0041_*.sql widened the
+  // categories INSERT policy from verified-instructors-only to any
+  // authenticated user for exactly this) -- a new category becomes a real,
+  // immediately-matchable subject, not a dead-end free-text field.
+  async function handleCreateSubject(childKey: string) {
+    const name = newSubjectName.trim();
+    if (!name) return;
+
+    const existing = categories.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      const child = children.find((c) => c.key === childKey);
+      if (child && !child.categoryIds.includes(existing.id)) toggleSubject(childKey, existing.id);
+      setAddingSubjectForChild(null);
+      setNewSubjectName('');
+      return;
+    }
+
+    setCreatingSubject(true);
+    try {
+      const { data, error } = await supabase.from('categories').insert({ name }).select().single();
+      if (error) throw error;
+      setCategories((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      toggleSubject(childKey, data.id);
+      setAddingSubjectForChild(null);
+      setNewSubjectName('');
+    } finally {
+      setCreatingSubject(false);
+    }
   }
 
   function removeChild(key: string) {
@@ -274,7 +309,54 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => {
+                  setAddingSubjectForChild(child.key);
+                  setNewSubjectName('');
+                }}
+                className="px-3 py-1.5 rounded-full border border-dashed border-ink-border text-[13px] font-medium text-ink hover:border-ink transition-colors flex items-center gap-1"
+              >
+                <Plus size={13} />
+                {t('tutorMarketplace.requestForm.addCustomSubject')}
+              </button>
             </div>
+            {addingSubjectForChild === child.key && (
+              <div className="flex items-center gap-1.5 mt-2">
+                <input
+                  type="text"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCreateSubject(child.key);
+                    }
+                  }}
+                  placeholder={t('tutorMarketplace.requestForm.newSubjectPlaceholder')}
+                  autoFocus
+                  className="flex-1 min-w-0 px-3 py-1.5 border border-ink-border rounded-full text-[13px] focus:outline-none focus:border-ink"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCreateSubject(child.key)}
+                  disabled={creatingSubject || !newSubjectName.trim()}
+                  className="text-[12px] font-medium text-ink underline underline-offset-2 disabled:opacity-50 flex-shrink-0"
+                >
+                  {creatingSubject ? t('tutorMarketplace.requestForm.addingSubjectEllipsis') : t('tutorMarketplace.requestForm.addSubject')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingSubjectForChild(null);
+                    setNewSubjectName('');
+                  }}
+                  className="text-[12px] text-warm-gray flex-shrink-0"
+                >
+                  {t('dashboard.courseEditor.cancel')}
+                </button>
+              </div>
+            )}
             {childErrors[child.key]?.categoryIds && (
               <p className="text-[12px] text-oxblood font-medium mt-1">{childErrors[child.key]?.categoryIds}</p>
             )}
