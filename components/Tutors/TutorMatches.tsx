@@ -3,23 +3,25 @@ import { fetchMyTutorProfile } from '../../lib/tutorProfile';
 import { fetchMyMatchesAsTutor, TutorMatchListItem } from '../../lib/matches';
 import { TutorProfileFields } from '../../lib/supabase';
 import TutorProfileForm from './TutorProfileForm';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
 
 type TutorMatchesProps = {
   tutorId: string;
   onSelectMatch: (matchId: string) => void;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  matched: 'En attente de votre réponse',
-  messaging: 'En discussion',
-  deposit_paid: 'Acompte payé',
-  in_progress: 'Séance en cours',
-  completed: 'Terminé',
-  cancelled_refunded: 'Annulé',
-  dispute_review: 'En litige',
-  stalled: 'Suivi en cours',
-  expired: 'Expiré',
-  declined: 'Décliné',
+const STATUS_KEYS: Record<string, TranslationKey> = {
+  matched: 'tutorMarketplace.tutorMatches.statusMatched',
+  messaging: 'tutorMarketplace.tutorMatches.statusMessaging',
+  deposit_paid: 'tutorMarketplace.tutorMatches.statusDepositPaid',
+  in_progress: 'tutorMarketplace.tutorMatches.statusInProgress',
+  completed: 'tutorMarketplace.tutorMatches.statusCompleted',
+  cancelled_refunded: 'tutorMarketplace.tutorMatches.statusCancelledRefunded',
+  dispute_review: 'tutorMarketplace.tutorMatches.statusDisputeReview',
+  stalled: 'tutorMarketplace.tutorMatches.statusStalled',
+  expired: 'tutorMarketplace.tutorMatches.statusExpired',
+  declined: 'tutorMarketplace.tutorMatches.statusDeclined',
 };
 
 // Design Review D1: new tab on the existing instructor dashboard. Also the
@@ -28,6 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
 // to ever become a matching-engine candidate, so the empty state here isn't
 // just warmth, it's the only path to the feature actually working at all.
 export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesProps) {
+  const { t } = useLocale();
   const [profile, setProfile] = useState<TutorProfileFields | null>(null);
   const [matches, setMatches] = useState<TutorMatchListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,17 +48,17 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
       setProfile(profileData);
       setMatches(matchesData);
     } catch {
-      setError('Impossible de charger vos informations de tuteur.');
+      setError(t('tutorMarketplace.tutorMatches.errorLoad'));
     } finally {
       setLoading(false);
     }
-  }, [tutorId]);
+  }, [tutorId, t]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  if (loading) return <p className="text-sm text-warm-gray">Chargement…</p>;
+  if (loading) return <p className="text-sm text-warm-gray">{t('common.loadingEllipsis')}</p>;
   if (error) return <p className="text-sm text-oxblood font-medium">{error}</p>;
 
   if (!profile || editingProfile) {
@@ -76,27 +79,31 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
       <div className="bg-paper border border-ink-border rounded-xl p-5 mb-5 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">
-            {profile.neighborhood} · {profile.rate_per_session.toLocaleString('fr-FR')} FCFA/séance
+            {profile.neighborhood} · {profile.rate_per_session.toLocaleString('fr-FR')} {t('tutorMarketplace.tutorMatches.ratePerSessionSuffix')}
           </p>
           <p className="text-[12px] text-warm-gray">
-            {profile.teaching_mode === 'both' ? 'En ligne et en personne' : profile.teaching_mode === 'online' ? 'En ligne' : 'En personne'}
+            {profile.teaching_mode === 'both'
+              ? t('dashboard.instructorApplication.onlineInPerson')
+              : profile.teaching_mode === 'online'
+              ? t('tutorMarketplace.tutorMatches.onlineShort')
+              : t('tutorMarketplace.tutorMatches.inPersonShort')}
           </p>
         </div>
         <button
           onClick={() => setEditingProfile(true)}
           className="min-h-9 px-3.5 text-sm font-medium border border-ink-border rounded-lg hover:border-warm-gray transition-colors"
         >
-          Modifier
+          {t('dashboard.instructor.edit')}
         </button>
       </div>
 
-      <h2 className="font-fraunces text-[20px] font-medium mb-4">Mes mises en relation</h2>
+      <h2 className="font-fraunces text-[20px] font-medium mb-4">{t('tutorMarketplace.tutorMatches.myMatchesHeading')}</h2>
 
       {matches.length === 0 ? (
         <div className="border border-dashed border-ink-border rounded-lg p-8 text-center">
-          <p className="text-sm font-semibold mb-1">Vous apparaîtrez ici dès qu&apos;un parent vous sera mis en relation.</p>
+          <p className="text-sm font-semibold mb-1">{t('tutorMarketplace.tutorMatches.emptyTitle')}</p>
           <p className="text-[13px] text-warm-gray">
-            Assurez-vous que votre profil est à jour pour recevoir plus de demandes.
+            {t('tutorMarketplace.tutorMatches.emptyBody')}
           </p>
         </div>
       ) : (
@@ -109,9 +116,9 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-semibold">
-                  {m.tutor_requests?.categories?.name ?? 'Matière'} · {m.tutor_requests?.grade}
+                  {m.tutor_requests?.categories?.name ?? t('tutorMarketplace.subjectFallback')} · {m.tutor_requests?.grade}
                 </span>
-                <span className="text-[12px] font-plex-mono text-warm-gray">{STATUS_LABELS[m.status] ?? m.status}</span>
+                <span className="text-[12px] font-plex-mono text-warm-gray">{t(STATUS_KEYS[m.status] ?? 'tutorMarketplace.tutorMatches.statusMatched')}</span>
               </div>
               <p className="text-[13px] text-warm-gray">{m.tutor_requests?.neighborhood}</p>
             </button>

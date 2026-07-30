@@ -4,7 +4,17 @@ import userEvent from '@testing-library/user-event';
 import RequestForm from '../components/Tutors/RequestForm';
 import * as tutorRequestsLib from '../lib/tutorRequests';
 import * as geolocationLib from '../lib/geolocation';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import type { TutorRequest } from '../lib/supabase';
+import type { ComponentProps } from 'react';
+
+function renderRequestForm(props: ComponentProps<typeof RequestForm>) {
+  return render(
+    <LocaleProvider>
+      <RequestForm {...props} />
+    </LocaleProvider>
+  );
+}
 
 vi.mock('../lib/supabase', () => ({
   supabase: {
@@ -44,13 +54,13 @@ function makeRequest(overrides: Partial<TutorRequest> = {}): TutorRequest {
 }
 
 async function fillSharedFields(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText(/quartier/i), 'Bonamoussadi');
+  await user.type(screen.getByLabelText(/neighborhood/i), 'Bonamoussadi');
   await user.type(screen.getByLabelText(/whatsapp/i), '+237 650 123 456');
 }
 
 async function fillChild(user: ReturnType<typeof userEvent.setup>, subjectName: RegExp) {
-  await waitFor(() => expect(screen.getByLabelText(/niveau/i)).toBeInTheDocument());
-  await user.type(screen.getByLabelText(/niveau/i), '3ème');
+  await waitFor(() => expect(screen.getByLabelText(/level/i)).toBeInTheDocument());
+  await user.type(screen.getByLabelText(/level/i), '3ème');
   await user.click(screen.getByRole('button', { name: subjectName }));
 }
 
@@ -62,29 +72,29 @@ describe('RequestForm', () => {
     const createSpy = vi.spyOn(tutorRequestsLib, 'createTutorRequest');
     const onSubmitted = vi.fn();
 
-    render(<RequestForm onSubmitted={onSubmitted} />);
+    renderRequestForm({ onSubmitted });
 
-    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
 
-    expect(await screen.findByText('Choisissez au moins une matière')).toBeInTheDocument();
-    expect(screen.getByText('Indiquez le niveau')).toBeInTheDocument();
-    expect(screen.getByText('Indiquez le quartier')).toBeInTheDocument();
-    expect(screen.getByText('Numéro WhatsApp requis')).toBeInTheDocument();
+    expect(await screen.findByText('Choose at least one subject')).toBeInTheDocument();
+    expect(screen.getByText('Enter the level')).toBeInTheDocument();
+    expect(screen.getByText('Enter the neighborhood')).toBeInTheDocument();
+    expect(screen.getByText('WhatsApp number required')).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed WhatsApp number without calling createTutorRequest', async () => {
     const user = userEvent.setup();
     const createSpy = vi.spyOn(tutorRequestsLib, 'createTutorRequest');
-    render(<RequestForm onSubmitted={vi.fn()} />);
+    renderRequestForm({ onSubmitted: vi.fn() });
 
     await fillChild(user, /^Mathématiques$/);
-    await user.type(screen.getByLabelText(/quartier/i), 'Bonamoussadi');
+    await user.type(screen.getByLabelText(/neighborhood/i), 'Bonamoussadi');
     await user.type(screen.getByLabelText(/whatsapp/i), '0650123456');
 
-    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
 
-    expect(await screen.findByText(/format attendu/i)).toBeInTheDocument();
+    expect(await screen.findByText(/expected format/i)).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
@@ -97,12 +107,12 @@ describe('RequestForm', () => {
     const matchSpy = vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
     const onSubmitted = vi.fn();
 
-    render(<RequestForm onSubmitted={onSubmitted} />);
+    renderRequestForm({ onSubmitted });
 
     await fillChild(user, /^Mathématiques$/);
     await fillSharedFields(user);
 
-    const submitButton = screen.getByRole('button', { name: /trouver un tuteur/i });
+    const submitButton = screen.getByRole('button', { name: /find a tutor/i });
 
     // Fire two rapid clicks the way a real double-click/double-tap would --
     // the button becomes disabled ("Recherche en cours…") after the first
@@ -133,14 +143,14 @@ describe('RequestForm', () => {
     vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockRejectedValue(new Error('match-tutor-request unavailable'));
     const onSubmitted = vi.fn();
 
-    render(<RequestForm onSubmitted={onSubmitted} />);
+    renderRequestForm({ onSubmitted });
 
     await fillChild(user, /^Mathématiques$/);
     await fillSharedFields(user);
-    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
 
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledWith([request]));
-    expect(screen.queryByText(/la demande a échoué/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/the request failed/i)).not.toBeInTheDocument();
   });
 
   it('adds a second child block and creates one request per child', async () => {
@@ -151,21 +161,21 @@ describe('RequestForm', () => {
     vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
     const onSubmitted = vi.fn();
 
-    render(<RequestForm onSubmitted={onSubmitted} />);
-    await waitFor(() => expect(screen.getByLabelText(/niveau/i)).toBeInTheDocument());
+    renderRequestForm({ onSubmitted });
+    await waitFor(() => expect(screen.getByLabelText(/level/i)).toBeInTheDocument());
 
-    await user.type(screen.getByLabelText(/niveau/i), '3ème');
+    await user.type(screen.getByLabelText(/level/i), '3ème');
     await user.click(screen.getByRole('button', { name: /^Mathématiques$/ }));
 
-    await user.click(screen.getByRole('button', { name: /ajouter un autre enfant/i }));
-    const gradeInputs = screen.getAllByLabelText(/niveau/i);
+    await user.click(screen.getByRole('button', { name: /add another child/i }));
+    const gradeInputs = screen.getAllByLabelText(/level/i);
     expect(gradeInputs).toHaveLength(2);
     await user.type(gradeInputs[1], '6ème');
     const subjectGroups = screen.getAllByRole('group');
     await user.click(within(subjectGroups[1]).getByRole('button', { name: /^Anglais$/ }));
 
     await fillSharedFields(user);
-    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(2));
     expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ grade: '3ème', categoryId: 'cat-1' }));
@@ -182,15 +192,15 @@ describe('RequestForm', () => {
     vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
     const onSubmitted = vi.fn();
 
-    render(<RequestForm onSubmitted={onSubmitted} />);
-    await waitFor(() => expect(screen.getByLabelText(/niveau/i)).toBeInTheDocument());
+    renderRequestForm({ onSubmitted });
+    await waitFor(() => expect(screen.getByLabelText(/level/i)).toBeInTheDocument());
 
-    await user.type(screen.getByLabelText(/niveau/i), '3ème');
+    await user.type(screen.getByLabelText(/level/i), '3ème');
     await user.click(screen.getByRole('button', { name: /^Mathématiques$/ }));
     await user.click(screen.getByRole('button', { name: /^Anglais$/ }));
     await fillSharedFields(user);
 
-    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
@@ -199,16 +209,16 @@ describe('RequestForm', () => {
 
   it('removes a child block via "Retirer" once there is more than one', async () => {
     const user = userEvent.setup();
-    render(<RequestForm onSubmitted={vi.fn()} />);
-    await waitFor(() => expect(screen.getByLabelText(/niveau/i)).toBeInTheDocument());
+    renderRequestForm({ onSubmitted: vi.fn() });
+    await waitFor(() => expect(screen.getByLabelText(/level/i)).toBeInTheDocument());
 
-    await user.click(screen.getByRole('button', { name: /ajouter un autre enfant/i }));
-    expect(screen.getAllByLabelText(/niveau/i)).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: /add another child/i }));
+    expect(screen.getAllByLabelText(/level/i)).toHaveLength(2);
 
-    await user.click(screen.getAllByRole('button', { name: /retirer/i })[0]);
-    expect(screen.getAllByLabelText(/niveau/i)).toHaveLength(1);
+    await user.click(screen.getAllByRole('button', { name: /remove/i })[0]);
+    expect(screen.getAllByLabelText(/level/i)).toHaveLength(1);
     // The last remaining child block has no "Retirer" button.
-    expect(screen.queryByRole('button', { name: /retirer/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
   });
 
   it('shares a successfully-fetched location across every request created in the submission', async () => {
@@ -217,14 +227,14 @@ describe('RequestForm', () => {
     const createSpy = vi.spyOn(tutorRequestsLib, 'createTutorRequest').mockResolvedValue(makeRequest());
     vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
 
-    render(<RequestForm onSubmitted={vi.fn()} />);
+    renderRequestForm({ onSubmitted: vi.fn() });
     await fillChild(user, /^Mathématiques$/);
     await fillSharedFields(user);
 
-    await user.click(screen.getByRole('button', { name: /partager ma position/i }));
-    expect(await screen.findByText(/position partagée/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /share my location/i }));
+    expect(await screen.findByText(/location shared/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /trouver un tuteur/i }));
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
 
     await waitFor(() =>
       expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ locationLat: 4.05, locationLng: 9.7 }))
@@ -235,9 +245,22 @@ describe('RequestForm', () => {
     const user = userEvent.setup();
     vi.spyOn(geolocationLib, 'getCurrentLocation').mockRejectedValue(new Error('Permission refusée'));
 
-    render(<RequestForm onSubmitted={vi.fn()} />);
-    await user.click(screen.getByRole('button', { name: /partager ma position/i }));
+    renderRequestForm({ onSubmitted: vi.fn() });
+    await user.click(screen.getByRole('button', { name: /share my location/i }));
 
     expect(await screen.findByText('Permission refusée')).toBeInTheDocument();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+
+    renderRequestForm({ onSubmitted: vi.fn() });
+
+    expect(await screen.findByText('Décrivez ce dont votre enfant a besoin')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /trouver un tuteur/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/quartier/i)).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

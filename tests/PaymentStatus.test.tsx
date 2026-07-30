@@ -4,8 +4,18 @@ import userEvent from '@testing-library/user-event';
 import PaymentStatus from '../components/Tutors/PaymentStatus';
 import * as matchesLib from '../lib/matches';
 import * as paymentsLib from '../lib/tutorPayments';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import type { Match, TutorRequest, Profile, TutorProfileFields, TutorSessionPayment } from '../lib/supabase';
 import type { MatchContext } from '../lib/matches';
+import type { ComponentProps } from 'react';
+
+function renderPaymentStatus(props: ComponentProps<typeof PaymentStatus>) {
+  return render(
+    <LocaleProvider>
+      <PaymentStatus {...props} />
+    </LocaleProvider>
+  );
+}
 
 const REQUEST: TutorRequest = {
   id: 'req-1',
@@ -106,9 +116,9 @@ describe('PaymentStatus', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext('messaging'));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
 
-    expect(await screen.findByRole('button', { name: /payer l'acompte/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /pay the deposit/i })).toBeInTheDocument();
     expect(screen.getByText(/1[\s ]600 FCFA/)).toBeInTheDocument();
   });
 
@@ -116,10 +126,10 @@ describe('PaymentStatus', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext('messaging'));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
 
-    render(<PaymentStatus matchId="match-1" viewerRole="tutor" />);
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "tutor" });
 
-    expect(await screen.findByText(/en attente du paiement de l'acompte/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /payer l'acompte/i })).not.toBeInTheDocument();
+    expect(await screen.findByText(/waiting for the parent's deposit/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /pay the deposit/i })).not.toBeInTheDocument();
   });
 
   it('redirects to the Stripe checkout URL when the parent pays the deposit', async () => {
@@ -138,8 +148,8 @@ describe('PaymentStatus', () => {
       value: { ...originalLocation, href: '' },
     });
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
-    await user.click(await screen.findByRole('button', { name: /payer l'acompte/i }));
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
+    await user.click(await screen.findByRole('button', { name: /pay the deposit/i }));
 
     await waitFor(() => expect(checkoutSpy).toHaveBeenCalledWith('match-1', originalOrigin));
     await waitFor(() => expect(window.location.href).toBe('https://checkout.stripe.com/session-1'));
@@ -159,10 +169,10 @@ describe('PaymentStatus', () => {
     const originalLocation = window.location;
     Object.defineProperty(window, 'location', { configurable: true, value: { ...originalLocation, href: '' } });
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
-    await user.click(await screen.findByRole('button', { name: /payer l'acompte/i }));
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
+    await user.click(await screen.findByRole('button', { name: /pay the deposit/i }));
 
-    const retryButton = await screen.findByRole('button', { name: /le paiement a échoué — réessayer/i });
+    const retryButton = await screen.findByRole('button', { name: /payment failed — retry/i });
     expect(screen.getByText('Stripe unreachable')).toBeInTheDocument();
 
     await user.click(retryButton);
@@ -177,20 +187,20 @@ describe('PaymentStatus', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext('deposit_paid'));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(makePayment({ deposit_status: 'paid' }));
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
 
-    expect(await screen.findByRole('button', { name: /annuler la réservation/i })).toBeInTheDocument();
-    expect(screen.getByText(/remboursement automatique et complet/i)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /cancel the booking/i })).toBeInTheDocument();
+    expect(screen.getByText(/automatic full refund/i)).toBeInTheDocument();
   });
 
   it('does not show a cancel action once the booking is in_progress', async () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext('in_progress'));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(makePayment({ deposit_status: 'paid' }));
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
 
-    await screen.findByText(/vous n'avez rien à faire ici/i);
-    expect(screen.queryByRole('button', { name: /annuler la réservation/i })).not.toBeInTheDocument();
+    await screen.findByText(/there's nothing for you to do here/i);
+    expect(screen.queryByRole('button', { name: /cancel the booking/i })).not.toBeInTheDocument();
   });
 
   it('calls cancelBooking when the parent cancels', async () => {
@@ -199,8 +209,8 @@ describe('PaymentStatus', () => {
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(makePayment({ deposit_status: 'paid' }));
     const cancelSpy = vi.spyOn(paymentsLib, 'cancelBooking').mockResolvedValue({ path: 'cancelled_refunded' });
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
-    await user.click(await screen.findByRole('button', { name: /annuler la réservation/i }));
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
+    await user.click(await screen.findByRole('button', { name: /cancel the booking/i }));
 
     expect(cancelSpy).toHaveBeenCalledWith('match-1');
   });
@@ -211,8 +221,8 @@ describe('PaymentStatus', () => {
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(makePayment({ deposit_status: 'paid' }));
     const confirmSpy = vi.spyOn(paymentsLib, 'confirmBalanceReceived').mockResolvedValue(undefined);
 
-    render(<PaymentStatus matchId="match-1" viewerRole="tutor" />);
-    await user.click(await screen.findByRole('button', { name: /confirmer la réception du solde/i }));
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "tutor" });
+    await user.click(await screen.findByRole('button', { name: /confirm balance receipt/i }));
 
     expect(confirmSpy).toHaveBeenCalledWith('match-1');
   });
@@ -223,8 +233,8 @@ describe('PaymentStatus', () => {
       makePayment({ deposit_status: 'paid', balance_status: 'confirmed' })
     );
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
-    expect(await screen.findByText(/réservation réglée/i)).toBeInTheDocument();
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
+    expect(await screen.findByText(/booking settled/i)).toBeInTheDocument();
   });
 
   it('shows a refund-confirmed banner when cancelled_refunded', async () => {
@@ -233,8 +243,8 @@ describe('PaymentStatus', () => {
       makePayment({ cancellation_status: 'cancelled_refunded', refund_status: 'succeeded' })
     );
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
-    expect(await screen.findByText(/remboursement confirmé/i)).toBeInTheDocument();
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
+    expect(await screen.findByText(/refund confirmed/i)).toBeInTheDocument();
   });
 
   it('shows an under-review banner when dispute_review', async () => {
@@ -243,7 +253,21 @@ describe('PaymentStatus', () => {
       makePayment({ cancellation_status: 'dispute_review' })
     );
 
-    render(<PaymentStatus matchId="match-1" viewerRole="parent" />);
-    expect(await screen.findByText(/transmise à notre équipe pour examen/i)).toBeInTheDocument();
+    renderPaymentStatus({ matchId: "match-1", viewerRole: "parent" });
+    expect(await screen.findByText(/forwarded to our team for review/i)).toBeInTheDocument();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext('messaging'));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    expect(await screen.findByText('Statut de votre réservation')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /payer l'acompte/i })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

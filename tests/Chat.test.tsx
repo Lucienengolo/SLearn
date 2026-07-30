@@ -3,8 +3,18 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Chat from '../components/Tutors/Chat';
 import * as matchesLib from '../lib/matches';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import type { Match, ChatMessage, TutorRequest, Profile, TutorProfileFields } from '../lib/supabase';
 import type { MatchContext } from '../lib/matches';
+import type { ComponentProps } from 'react';
+
+function renderChat(props: ComponentProps<typeof Chat>) {
+  return render(
+    <LocaleProvider>
+      <Chat {...props} />
+    </LocaleProvider>
+  );
+}
 
 const REQUEST: TutorRequest = {
   id: 'req-1',
@@ -85,12 +95,12 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch({ status: 'matched' })));
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
 
-    render(<Chat matchId="match-1" currentUserId="tutor-1" viewerRole="tutor" />);
+    renderChat({ matchId: "match-1", currentUserId: "tutor-1", viewerRole: "tutor" });
 
-    expect(await screen.findByRole('button', { name: /^accepter$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^décliner$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Trop loin' })).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/écrire un message/i)).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^accept$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^decline$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Too far' })).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/write a message/i)).not.toBeInTheDocument();
   });
 
   it('calls acceptMatch when the tutor accepts', async () => {
@@ -99,9 +109,9 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
     const acceptSpy = vi.spyOn(matchesLib, 'acceptMatch').mockResolvedValue(undefined);
 
-    render(<Chat matchId="match-1" currentUserId="tutor-1" viewerRole="tutor" />);
+    renderChat({ matchId: "match-1", currentUserId: "tutor-1", viewerRole: "tutor" });
 
-    await user.click(await screen.findByRole('button', { name: /^accepter$/i }));
+    await user.click(await screen.findByRole('button', { name: /^accept$/i }));
     expect(acceptSpy).toHaveBeenCalledWith('match-1');
   });
 
@@ -111,9 +121,9 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
     const declineSpy = vi.spyOn(matchesLib, 'declineMatch').mockResolvedValue(undefined);
 
-    render(<Chat matchId="match-1" currentUserId="tutor-1" viewerRole="tutor" />);
+    renderChat({ matchId: "match-1", currentUserId: "tutor-1", viewerRole: "tutor" });
 
-    await user.click(await screen.findByRole('button', { name: "Conflit d'horaire" }));
+    await user.click(await screen.findByRole('button', { name: 'Schedule conflict' }));
     expect(declineSpy).toHaveBeenCalledWith('match-1', "Conflit d'horaire");
   });
 
@@ -123,9 +133,9 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
     const declineSpy = vi.spyOn(matchesLib, 'declineMatch').mockResolvedValue(undefined);
 
-    render(<Chat matchId="match-1" currentUserId="tutor-1" viewerRole="tutor" />);
+    renderChat({ matchId: "match-1", currentUserId: "tutor-1", viewerRole: "tutor" });
 
-    await user.click(await screen.findByRole('button', { name: /^décliner$/i }));
+    await user.click(await screen.findByRole('button', { name: /^decline$/i }));
     expect(declineSpy).toHaveBeenCalledWith('match-1', undefined);
   });
 
@@ -133,9 +143,9 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
 
-    render(<Chat matchId="match-1" currentUserId="parent-1" viewerRole="parent" />);
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
 
-    expect(await screen.findByText(/envoyez le premier message/i)).toBeInTheDocument();
+    expect(await screen.findByText(/send the first message/i)).toBeInTheDocument();
   });
 
   it('renders messages aligned by sender', async () => {
@@ -146,7 +156,7 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue(messages);
 
-    render(<Chat matchId="match-1" currentUserId="parent-1" viewerRole="parent" />);
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
 
     expect(await screen.findByText('Bonjour')).toBeInTheDocument();
     expect(screen.getByText('Bonjour aussi')).toBeInTheDocument();
@@ -161,18 +171,18 @@ describe('Chat', () => {
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValueOnce({ id: 'm1', match_id: 'match-1', sender_id: 'parent-1', body: 'Salut', created_at: '' });
 
-    render(<Chat matchId="match-1" currentUserId="parent-1" viewerRole="parent" />);
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
 
-    const input = await screen.findByPlaceholderText(/écrire un message/i);
+    const input = await screen.findByPlaceholderText(/write a message/i);
     await user.type(input, 'Salut');
-    await user.click(screen.getByRole('button', { name: /^envoyer$/i }));
+    await user.click(screen.getByRole('button', { name: /^send$/i }));
 
-    expect(await screen.findByText(/échec de l'envoi/i)).toBeInTheDocument();
+    expect(await screen.findByText(/failed to send/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /réessayer/i }));
+    await user.click(screen.getByRole('button', { name: /retry/i }));
 
     await waitFor(() => expect(sendSpy).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.queryByText(/échec de l'envoi/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/failed to send/i)).not.toBeInTheDocument());
   });
 
   it('shows the session-date confirmation form while messaging with no confirmed date, and submits it', async () => {
@@ -181,13 +191,13 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
     const confirmSpy = vi.spyOn(matchesLib, 'confirmSessionDate').mockResolvedValue(undefined);
 
-    render(<Chat matchId="match-1" currentUserId="parent-1" viewerRole="parent" />);
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
 
-    expect(await screen.findByText('Confirmer la date de séance')).toBeInTheDocument();
+    expect(await screen.findByText('Confirm the session date')).toBeInTheDocument();
 
     const dateInput = document.querySelector('input[type="datetime-local"]') as HTMLInputElement;
     await user.type(dateInput, '2026-08-01T16:00');
-    await user.click(screen.getByRole('button', { name: /^confirmer$/i }));
+    await user.click(screen.getByRole('button', { name: /^confirm$/i }));
 
     await waitFor(() => expect(confirmSpy).toHaveBeenCalledWith('match-1', new Date('2026-08-01T16:00')));
   });
@@ -198,20 +208,20 @@ describe('Chat', () => {
     );
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
 
-    render(<Chat matchId="match-1" currentUserId="parent-1" viewerRole="parent" />);
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
 
-    await screen.findByPlaceholderText(/écrire un message/i);
-    expect(screen.queryByText('Confirmer la date de séance')).not.toBeInTheDocument();
-    expect(screen.getByText(/séance confirmée/i)).toBeInTheDocument();
+    await screen.findByPlaceholderText(/write a message/i);
+    expect(screen.queryByText('Confirm the session date')).not.toBeInTheDocument();
+    expect(screen.getByText(/session confirmed/i)).toBeInTheDocument();
   });
 
   it("links to the tutor's WhatsApp number when the viewer is the parent", async () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
 
-    render(<Chat matchId="match-1" currentUserId="parent-1" viewerRole="parent" />);
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
 
-    const link = await screen.findByRole('link', { name: /continuer sur whatsapp/i });
+    const link = await screen.findByRole('link', { name: /continue on whatsapp/i });
     expect(link).toHaveAttribute('href', 'https://wa.me/237611111111');
   });
 
@@ -219,9 +229,23 @@ describe('Chat', () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
     vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
 
-    render(<Chat matchId="match-1" currentUserId="tutor-1" viewerRole="tutor" />);
+    renderChat({ matchId: "match-1", currentUserId: "tutor-1", viewerRole: "tutor" });
 
-    const link = await screen.findByRole('link', { name: /continuer sur whatsapp/i });
+    const link = await screen.findByRole('link', { name: /continue on whatsapp/i });
     expect(link).toHaveAttribute('href', 'https://wa.me/237600000000');
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
+    vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
+
+    renderChat({ matchId: 'match-1', currentUserId: 'parent-1', viewerRole: 'parent' });
+
+    expect(await screen.findByText(/envoyez le premier message/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /continuer sur whatsapp/i })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

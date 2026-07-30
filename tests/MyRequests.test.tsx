@@ -4,6 +4,16 @@ import userEvent from '@testing-library/user-event';
 import MyRequests from '../components/Tutors/MyRequests';
 import * as tutorRequestsLib from '../lib/tutorRequests';
 import type { TutorRequestListItem } from '../lib/tutorRequests';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import type { ComponentProps } from 'react';
+
+function renderMyRequests(props: ComponentProps<typeof MyRequests>) {
+  return render(
+    <LocaleProvider>
+      <MyRequests {...props} />
+    </LocaleProvider>
+  );
+}
 
 function makeRequest(overrides: Partial<TutorRequestListItem> = {}): TutorRequestListItem {
   return {
@@ -35,11 +45,11 @@ describe('MyRequests', () => {
     vi.spyOn(tutorRequestsLib, 'fetchMyTutorRequests').mockResolvedValue([]);
     const onNewRequest = vi.fn();
 
-    render(<MyRequests parentId="parent-1" onSelectRequest={vi.fn()} onNewRequest={onNewRequest} />);
+    renderMyRequests({ parentId: 'parent-1', onSelectRequest: vi.fn(), onNewRequest });
 
-    expect(await screen.findByText(/vous n'avez pas encore fait de demande/i)).toBeInTheDocument();
+    expect(await screen.findByText(/you haven't made a request yet/i)).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: /faire ma première demande/i }));
+    await user.click(screen.getByRole('button', { name: /make my first request/i }));
     expect(onNewRequest).toHaveBeenCalled();
   });
 
@@ -49,12 +59,12 @@ describe('MyRequests', () => {
       makeRequest({ id: 'req-2', child_identifier: null, status: 'matched' }),
     ]);
 
-    render(<MyRequests parentId="parent-1" onSelectRequest={vi.fn()} onNewRequest={vi.fn()} />);
+    renderMyRequests({ parentId: 'parent-1', onSelectRequest: vi.fn(), onNewRequest: vi.fn() });
 
     expect(await screen.findByText('Junior')).toBeInTheDocument();
-    expect(screen.getByText('Enfant non précisé')).toBeInTheDocument();
-    expect(screen.getByText('Recherche en cours')).toBeInTheDocument();
-    expect(screen.getByText('Tuteur trouvé')).toBeInTheDocument();
+    expect(screen.getByText('Child not specified')).toBeInTheDocument();
+    expect(screen.getByText('Search in progress')).toBeInTheDocument();
+    expect(screen.getByText('Tutor found')).toBeInTheDocument();
     expect(screen.getAllByText(/maths · 3ème · bonamoussadi/i)).toHaveLength(2);
   });
 
@@ -63,7 +73,7 @@ describe('MyRequests', () => {
     vi.spyOn(tutorRequestsLib, 'fetchMyTutorRequests').mockResolvedValue([makeRequest({ id: 'req-42' })]);
     const onSelectRequest = vi.fn();
 
-    render(<MyRequests parentId="parent-1" onSelectRequest={onSelectRequest} onNewRequest={vi.fn()} />);
+    renderMyRequests({ parentId: 'parent-1', onSelectRequest, onNewRequest: vi.fn() });
 
     await user.click(await screen.findByText('Junior'));
     expect(onSelectRequest).toHaveBeenCalledWith('req-42');
@@ -74,15 +84,31 @@ describe('MyRequests', () => {
     vi.spyOn(tutorRequestsLib, 'fetchMyTutorRequests').mockResolvedValue([makeRequest()]);
     const onNewRequest = vi.fn();
 
-    render(<MyRequests parentId="parent-1" onSelectRequest={vi.fn()} onNewRequest={onNewRequest} />);
+    renderMyRequests({ parentId: 'parent-1', onSelectRequest: vi.fn(), onNewRequest });
 
-    await user.click(await screen.findByRole('button', { name: /nouvelle demande/i }));
+    await user.click(await screen.findByRole('button', { name: /new request/i }));
     expect(onNewRequest).toHaveBeenCalled();
   });
 
   it('shows a load error message if fetching requests fails', async () => {
     vi.spyOn(tutorRequestsLib, 'fetchMyTutorRequests').mockRejectedValue(new Error('network'));
-    render(<MyRequests parentId="parent-1" onSelectRequest={vi.fn()} onNewRequest={vi.fn()} />);
-    expect(await screen.findByText(/impossible de charger vos demandes/i)).toBeInTheDocument();
+    renderMyRequests({ parentId: 'parent-1', onSelectRequest: vi.fn(), onNewRequest: vi.fn() });
+    expect(await screen.findByText(/could not load your requests/i)).toBeInTheDocument();
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.spyOn(tutorRequestsLib, 'fetchMyTutorRequests').mockResolvedValue([
+      makeRequest({ id: 'req-1', child_identifier: 'Junior', status: 'searching' }),
+    ]);
+
+    renderMyRequests({ parentId: 'parent-1', onSelectRequest: vi.fn(), onNewRequest: vi.fn() });
+
+    expect(await screen.findByText('Mes demandes')).toBeInTheDocument();
+    expect(screen.getByText('Recherche en cours')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nouvelle demande' })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

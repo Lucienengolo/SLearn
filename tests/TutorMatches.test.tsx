@@ -6,6 +6,16 @@ import * as tutorProfileLib from '../lib/tutorProfile';
 import * as matchesLib from '../lib/matches';
 import type { TutorProfileFields } from '../lib/supabase';
 import type { TutorMatchListItem } from '../lib/matches';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import type { ComponentProps } from 'react';
+
+function renderTutorMatches(props: ComponentProps<typeof TutorMatches>) {
+  return render(
+    <LocaleProvider>
+      <TutorMatches {...props} />
+    </LocaleProvider>
+  );
+}
 
 vi.mock('../components/Tutors/TutorProfileForm', () => ({
   default: ({ onSaved }: { onSaved: () => void }) => (
@@ -37,7 +47,7 @@ describe('TutorMatches', () => {
     vi.spyOn(tutorProfileLib, 'fetchMyTutorProfile').mockResolvedValue(null);
     vi.spyOn(matchesLib, 'fetchMyMatchesAsTutor').mockResolvedValue([]);
 
-    render(<TutorMatches tutorId="tutor-1" onSelectMatch={vi.fn()} />);
+    renderTutorMatches({ tutorId: 'tutor-1', onSelectMatch: vi.fn() });
 
     expect(await screen.findByText('PROFILE FORM MOCK')).toBeInTheDocument();
   });
@@ -46,9 +56,9 @@ describe('TutorMatches', () => {
     vi.spyOn(tutorProfileLib, 'fetchMyTutorProfile').mockResolvedValue(PROFILE);
     vi.spyOn(matchesLib, 'fetchMyMatchesAsTutor').mockResolvedValue([]);
 
-    render(<TutorMatches tutorId="tutor-1" onSelectMatch={vi.fn()} />);
+    renderTutorMatches({ tutorId: 'tutor-1', onSelectMatch: vi.fn() });
 
-    expect(await screen.findByText(/vous apparaîtrez ici/i)).toBeInTheDocument();
+    expect(await screen.findByText(/you'll appear here/i)).toBeInTheDocument();
     expect(screen.getByText(/Bonamoussadi/)).toBeInTheDocument();
   });
 
@@ -94,10 +104,10 @@ describe('TutorMatches', () => {
     vi.spyOn(matchesLib, 'fetchMyMatchesAsTutor').mockResolvedValue([match]);
     const onSelectMatch = vi.fn();
 
-    render(<TutorMatches tutorId="tutor-1" onSelectMatch={onSelectMatch} />);
+    renderTutorMatches({ tutorId: 'tutor-1', onSelectMatch });
 
     expect(await screen.findByText(/maths · 3ème/i)).toBeInTheDocument();
-    expect(screen.getByText('En discussion')).toBeInTheDocument();
+    expect(screen.getByText('In discussion')).toBeInTheDocument();
     await user.click(screen.getByText(/maths · 3ème/i));
     expect(onSelectMatch).toHaveBeenCalledWith('match-1');
   });
@@ -107,12 +117,26 @@ describe('TutorMatches', () => {
     const fetchProfileSpy = vi.spyOn(tutorProfileLib, 'fetchMyTutorProfile').mockResolvedValue(PROFILE);
     vi.spyOn(matchesLib, 'fetchMyMatchesAsTutor').mockResolvedValue([]);
 
-    render(<TutorMatches tutorId="tutor-1" onSelectMatch={vi.fn()} />);
+    renderTutorMatches({ tutorId: 'tutor-1', onSelectMatch: vi.fn() });
 
-    await user.click(await screen.findByRole('button', { name: /modifier/i }));
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }));
     expect(screen.getByText('PROFILE FORM MOCK')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /save/i }));
     expect(fetchProfileSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders in French when the locale is French', async () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    vi.spyOn(tutorProfileLib, 'fetchMyTutorProfile').mockResolvedValue(PROFILE);
+    vi.spyOn(matchesLib, 'fetchMyMatchesAsTutor').mockResolvedValue([]);
+
+    renderTutorMatches({ tutorId: 'tutor-1', onSelectMatch: vi.fn() });
+
+    expect(await screen.findByText('Mes mises en relation')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Modifier' })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

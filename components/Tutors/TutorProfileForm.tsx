@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Category, TutorProfileFields } from '../../lib/supabase';
 import { fetchAllCategories, fetchMySubjectIds, saveTutorProfile } from '../../lib/tutorProfile';
+import { useLocale } from '../../contexts/LocaleContext';
+import type { TranslationKey } from '../../lib/i18n';
 
 type TutorProfileFormProps = {
   tutorId: string;
@@ -8,10 +10,10 @@ type TutorProfileFormProps = {
   onSaved: () => void;
 };
 
-const RESPONSE_TIME_OPTIONS = [
-  { label: "Moins d'1 heure", value: 60 },
-  { label: '1 à 4 heures', value: 240 },
-  { label: 'Plus de 4 heures', value: 1440 },
+const RESPONSE_TIME_KEYS: { labelKey: TranslationKey; value: number }[] = [
+  { labelKey: 'tutorMarketplace.profileForm.underOneHour', value: 60 },
+  { labelKey: 'dashboard.instructorApplication.oneToFourHours', value: 240 },
+  { labelKey: 'dashboard.instructorApplication.moreThanFourHours', value: 1440 },
 ];
 
 // Setup form for tutor_profile_fields/tutor_subjects (0030_tutor_marketplace.sql)
@@ -19,6 +21,7 @@ const RESPONSE_TIME_OPTIONS = [
 // matching-engine candidate. Reused for both first-time setup and later
 // edits (existingProfile is null for the former).
 export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: TutorProfileFormProps) {
+  const { t } = useLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
   const [teachingMode, setTeachingMode] = useState<'online' | 'in_person' | 'both'>(existingProfile?.teaching_mode ?? 'both');
@@ -79,7 +82,7 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Impossible de sauvegarder votre profil.');
+      setError(err instanceof Error ? err.message : t('tutorMarketplace.profileForm.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -91,12 +94,12 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
       className="bg-paper border border-ink-border rounded-xl p-6 max-w-[520px] font-general-sans text-ink"
     >
       <h1 className="font-fraunces text-[24px] font-medium mb-1">
-        {existingProfile ? 'Modifier votre profil de tuteur' : 'Devenir tuteur'}
+        {existingProfile ? t('tutorMarketplace.profileForm.editTitle') : t('tutorMarketplace.profileForm.createTitle')}
       </h1>
-      <p className="text-sm text-warm-gray mb-6">Ces informations déterminent avec quels parents vous serez mis en relation.</p>
+      <p className="text-sm text-warm-gray mb-6">{t('tutorMarketplace.profileForm.subtitle')}</p>
 
       <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5">Matières enseignées</label>
+        <label className="block text-[13px] font-medium mb-1.5">{t('tutorMarketplace.profileForm.subjectsLabel')}</label>
         <div className="flex flex-wrap gap-1.5">
           {categories.map((c) => (
             <button
@@ -115,35 +118,35 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5">Mode d&apos;enseignement</label>
+        <label className="block text-[13px] font-medium mb-1.5">{t('dashboard.instructorApplication.teachingModeLabel')}</label>
         <select
           value={teachingMode}
           onChange={(e) => setTeachingMode(e.target.value as 'online' | 'in_person' | 'both')}
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm bg-white focus:outline-none focus:border-ink"
         >
-          <option value="both">En ligne et en personne</option>
-          <option value="online">En ligne uniquement</option>
-          <option value="in_person">En personne uniquement</option>
+          <option value="both">{t('dashboard.instructorApplication.onlineInPerson')}</option>
+          <option value="online">{t('dashboard.instructorApplication.onlineOnly')}</option>
+          <option value="in_person">{t('dashboard.instructorApplication.inPersonOnly')}</option>
         </select>
       </div>
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-profile-neighborhood">
-          Quartier
+          {t('tutorMarketplace.profileForm.neighborhoodLabel')}
         </label>
         <input
           id="tutor-profile-neighborhood"
           type="text"
           value={neighborhood}
           onChange={(e) => setNeighborhood(e.target.value)}
-          placeholder="ex. Bonamoussadi"
+          placeholder={t('dashboard.instructorApplication.neighborhoodPlaceholder')}
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
         />
       </div>
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" id="tutor-profile-languages-label">
-          Langues
+          {t('tutorMarketplace.profileForm.languagesLabel')}
         </label>
         {/* aria-label disambiguates from a same-named subject chip above
             (e.g. a category literally called "Anglais") -- without it,
@@ -156,12 +159,12 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
               type="button"
               onClick={() => toggleLanguage(lang)}
               aria-pressed={languages.has(lang)}
-              aria-label={`Langue : ${lang === 'fr' ? 'Français' : 'Anglais'}`}
+              aria-label={`${t('dashboard.instructorApplication.languageAriaPrefix')} ${lang === 'fr' ? t('dashboard.instructorApplication.french') : t('dashboard.instructorApplication.english')}`}
               className={`text-[13px] px-3 py-1.5 rounded-full border transition ${
                 languages.has(lang) ? 'bg-ink text-paper border-ink' : 'border-ink-border hover:border-warm-gray'
               }`}
             >
-              {lang === 'fr' ? 'Français' : 'Anglais'}
+              {lang === 'fr' ? t('dashboard.instructorApplication.french') : t('dashboard.instructorApplication.english')}
             </button>
           ))}
         </div>
@@ -169,7 +172,7 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-profile-rate">
-          Tarif par séance (FCFA)
+          {t('tutorMarketplace.profileForm.rateLabel')}
         </label>
         <input
           id="tutor-profile-rate"
@@ -184,16 +187,16 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5">Temps de réponse habituel</label>
+        <label className="block text-[13px] font-medium mb-1.5">{t('dashboard.instructorApplication.responseTimeLabel')}</label>
         <select
           value={responseTimeMinutes}
           onChange={(e) => setResponseTimeMinutes(e.target.value)}
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm bg-white focus:outline-none focus:border-ink"
         >
-          <option value="">Non précisé</option>
-          {RESPONSE_TIME_OPTIONS.map((opt) => (
+          <option value="">{t('dashboard.instructorApplication.notSpecified')}</option>
+          {RESPONSE_TIME_KEYS.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label}
+              {t(opt.labelKey)}
             </option>
           ))}
         </select>
@@ -201,7 +204,7 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
 
       <div className="mb-5">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-profile-whatsapp">
-          WhatsApp
+          {t('tutorMarketplace.profileForm.whatsappLabel')}
         </label>
         <input
           id="tutor-profile-whatsapp"
@@ -220,7 +223,7 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
         disabled={saving}
         className="w-full min-h-11 bg-oxblood hover:bg-oxblood-hover disabled:bg-warm-gray-light disabled:text-warm-gray text-white font-semibold text-sm rounded-lg transition-colors"
       >
-        {saving ? 'Enregistrement…' : 'Enregistrer mon profil'}
+        {saving ? t('tutorMarketplace.profileForm.savingEllipsis') : t('tutorMarketplace.profileForm.saveProfileButton')}
       </button>
     </form>
   );

@@ -3,6 +3,7 @@ import { MapPin } from 'lucide-react';
 import { supabase, Category, TutorRequest } from '../../lib/supabase';
 import { createTutorRequest, matchTutorRequest, isValidWhatsappContact } from '../../lib/tutorRequests';
 import { getCurrentLocation } from '../../lib/geolocation';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type RequestFormProps = {
   onSubmitted: (requests: TutorRequest[]) => void;
@@ -40,6 +41,7 @@ type SharedErrors = Partial<{
 // matching model unchanged; the form just lets a parent submit several in
 // one sitting instead of repeating the whole form.
 export default function RequestForm({ onSubmitted }: RequestFormProps) {
+  const { t } = useLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [children, setChildren] = useState<ChildEntry[]>([emptyChild()]);
   const [neighborhood, setNeighborhood] = useState('');
@@ -103,7 +105,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
       setLocationStatus('granted');
     } catch (err) {
       setLocationStatus('error');
-      setLocationError(err instanceof Error ? err.message : "Impossible d'obtenir votre position.");
+      setLocationError(err instanceof Error ? err.message : t('tutorMarketplace.requestForm.errorLocationFailed'));
     }
   }
 
@@ -111,22 +113,22 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
     const nextChildErrors: Record<string, ChildErrors> = {};
     for (const child of children) {
       const errs: ChildErrors = {};
-      if (!child.grade.trim()) errs.grade = 'Indiquez le niveau';
-      if (child.categoryIds.length === 0) errs.categoryIds = 'Choisissez au moins une matière';
+      if (!child.grade.trim()) errs.grade = t('tutorMarketplace.requestForm.errorGradeRequired');
+      if (child.categoryIds.length === 0) errs.categoryIds = t('tutorMarketplace.requestForm.errorSubjectRequired');
       if (Object.keys(errs).length > 0) nextChildErrors[child.key] = errs;
     }
 
     const nextSharedErrors: SharedErrors = {};
-    if (!neighborhood.trim()) nextSharedErrors.neighborhood = 'Indiquez le quartier';
+    if (!neighborhood.trim()) nextSharedErrors.neighborhood = t('tutorMarketplace.requestForm.errorNeighborhoodRequired');
     if (!whatsappContact.trim()) {
-      nextSharedErrors.whatsappContact = 'Numéro WhatsApp requis';
+      nextSharedErrors.whatsappContact = t('tutorMarketplace.requestForm.errorWhatsappRequired');
     } else if (!isValidWhatsappContact(whatsappContact)) {
-      nextSharedErrors.whatsappContact = 'Format attendu : +237 6XX XXX XXX';
+      nextSharedErrors.whatsappContact = t('tutorMarketplace.common.whatsappFormatError');
     }
     const min = budgetMin ? Number(budgetMin) : null;
     const max = budgetMax ? Number(budgetMax) : null;
     if (min !== null && max !== null && min > max) {
-      nextSharedErrors.budget = 'Le minimum doit être inférieur au maximum';
+      nextSharedErrors.budget = t('tutorMarketplace.requestForm.errorBudgetRange');
     }
 
     return { children: nextChildErrors, shared: nextSharedErrors };
@@ -192,7 +194,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
 
       onSubmitted(created);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'La demande a échoué. Réessayez.');
+      setSubmitError(err instanceof Error ? err.message : t('tutorMarketplace.requestForm.errorSubmitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -203,13 +205,13 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
       onSubmit={handleSubmit}
       className="bg-paper border border-ink-border rounded-xl p-6 max-w-[560px] font-general-sans text-ink"
     >
-      <h1 className="font-fraunces text-[28px] font-medium mb-6">Décrivez ce dont votre enfant a besoin</h1>
+      <h1 className="font-fraunces text-[28px] font-medium mb-6">{t('tutorMarketplace.requestForm.title')}</h1>
 
       {children.map((child, index) => (
         <div key={child.key} className="border border-ink-border rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[13px] font-semibold uppercase tracking-wide text-warm-gray">
-              Enfant {index + 1}
+              {t('tutorMarketplace.requestForm.childNumberLabel')} {index + 1}
             </p>
             {children.length > 1 && (
               <button
@@ -217,35 +219,35 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
                 onClick={() => removeChild(child.key)}
                 className="text-[12px] font-medium text-oxblood hover:text-oxblood-hover"
               >
-                Retirer
+                {t('tutorMarketplace.requestForm.removeChild')}
               </button>
             )}
           </div>
 
           <div className="mb-3">
             <label className="block text-[13px] font-medium mb-1.5" htmlFor={`child-identifier-${child.key}`}>
-              Pour quel enfant ? <span className="text-warm-gray font-normal">(optionnel)</span>
+              {t('tutorMarketplace.common.childLabel')} <span className="text-warm-gray font-normal">{t('tutorMarketplace.common.optional')}</span>
             </label>
             <input
               id={`child-identifier-${child.key}`}
               type="text"
               value={child.identifier}
               onChange={(e) => updateChild(child.key, { identifier: e.target.value })}
-              placeholder='ex. "Junior" ou "ma fille cadette"'
+              placeholder={t('tutorMarketplace.requestForm.childIdentifierPlaceholder')}
               className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
             />
           </div>
 
           <div className="mb-3">
             <label className="block text-[13px] font-medium mb-1.5" htmlFor={`child-grade-${child.key}`}>
-              Niveau
+              {t('tutorMarketplace.common.gradeLabel')}
             </label>
             <input
               id={`child-grade-${child.key}`}
               type="text"
               value={child.grade}
               onChange={(e) => updateChild(child.key, { grade: e.target.value })}
-              placeholder="ex. 3ème"
+              placeholder={t('tutorMarketplace.requestForm.gradePlaceholder')}
               className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
             />
             {childErrors[child.key]?.grade && (
@@ -254,8 +256,8 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
           </div>
 
           <div>
-            <label className="block text-[13px] font-medium mb-1.5">Matière(s)</label>
-            <div className="flex flex-wrap gap-2" role="group" aria-label={`Matières pour l'enfant ${index + 1}`}>
+            <label className="block text-[13px] font-medium mb-1.5">{t('tutorMarketplace.requestForm.subjectsLabel')}</label>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={`${t('tutorMarketplace.requestForm.subjectsForChildAria')} ${index + 1}`}>
               {categories.map((category) => {
                 const active = child.categoryIds.includes(category.id);
                 return (
@@ -285,19 +287,19 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
         onClick={addChild}
         className="text-[13px] font-medium text-ink underline underline-offset-2 mb-5"
       >
-        + Ajouter un autre enfant
+        {t('tutorMarketplace.requestForm.addAnotherChild')}
       </button>
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-neighborhood">
-          Quartier
+          {t('tutorMarketplace.profileForm.neighborhoodLabel')}
         </label>
         <input
           id="tutor-request-neighborhood"
           type="text"
           value={neighborhood}
           onChange={(e) => setNeighborhood(e.target.value)}
-          placeholder="ex. Bonamoussadi"
+          placeholder={t('dashboard.instructorApplication.neighborhoodPlaceholder')}
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
         />
         {sharedErrors.neighborhood && <p className="text-[12px] text-oxblood font-medium mt-1">{sharedErrors.neighborhood}</p>}
@@ -305,7 +307,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5">
-          Localisation précise <span className="text-warm-gray font-normal">(optionnel)</span>
+          {t('tutorMarketplace.common.locationPreciseLabel')} <span className="text-warm-gray font-normal">{t('tutorMarketplace.common.optional')}</span>
         </label>
         <button
           type="button"
@@ -315,19 +317,19 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
         >
           <MapPin size={16} />
           {locationStatus === 'granted'
-            ? 'Position partagée ✓'
+            ? t('tutorMarketplace.common.locationShared')
             : locationStatus === 'loading'
-              ? 'Localisation en cours…'
-              : 'Partager ma position sur Google Maps'}
+              ? t('tutorMarketplace.common.locationLoading')
+              : t('tutorMarketplace.requestForm.shareLocationCta')}
         </button>
         <p className="text-[12px] text-warm-gray mt-1">
-          Le tuteur retenu pourra suivre l&apos;itinéraire jusqu&apos;à votre domicile.
+          {t('tutorMarketplace.requestForm.locationHint')}
         </p>
         {locationError && <p className="text-[12px] text-oxblood font-medium mt-1">{locationError}</p>}
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5">Budget par séance (FCFA)</label>
+        <label className="block text-[13px] font-medium mb-1.5">{t('tutorMarketplace.common.budgetLabel')}</label>
         {/* min-w-0 on both inputs: number inputs have a browser-default
             intrinsic minimum width that flexbox respects unless overridden,
             so two w-full inputs side by side would refuse to shrink below
@@ -359,7 +361,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
 
       <div className="mb-5">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-whatsapp">
-          WhatsApp
+          {t('tutorMarketplace.profileForm.whatsappLabel')}
         </label>
         <input
           id="tutor-request-whatsapp"
@@ -381,10 +383,10 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
         disabled={submitting}
         className="w-full min-h-11 flex items-center justify-center bg-oxblood hover:bg-oxblood-hover disabled:bg-warm-gray-light disabled:text-warm-gray text-white font-semibold text-sm rounded-lg transition-colors"
       >
-        {submitting ? 'Recherche en cours…' : 'Trouver un tuteur'}
+        {submitting ? t('tutorMarketplace.common.searchingEllipsis') : t('tutorMarketplace.requestForm.findTutorButton')}
       </button>
       <p className="text-[12px] text-warm-gray text-center mt-2.5">
-        Vous serez notifié dès qu&apos;un tuteur correspond.
+        {t('tutorMarketplace.requestForm.notifiedHint')}
       </p>
     </form>
   );

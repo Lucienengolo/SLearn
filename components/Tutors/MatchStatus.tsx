@@ -7,6 +7,7 @@ import { supabase, Category } from '../../lib/supabase';
 import ConfirmDialog from '../UI/ConfirmDialog';
 import Chat from './Chat';
 import PaymentStatus from './PaymentStatus';
+import { useLocale } from '../../contexts/LocaleContext';
 
 type MatchStatusProps = {
   requestId: string;
@@ -20,6 +21,7 @@ type MatchStatusProps = {
 // Lucienengolo-SLearn/designs/tutor-mvp-screens-20260721/wireframe.html
 // (Screen 3), including the D5 "previous match didn't work out" variant.
 export default function MatchStatus({ requestId, currentUserId, onCancelled }: MatchStatusProps) {
+  const { t } = useLocale();
   const [state, setState] = useState<RequestMatchState | null>(null);
   const [loadError, setLoadError] = useState('');
   const [retrying, setRetrying] = useState(false);
@@ -32,9 +34,9 @@ export default function MatchStatus({ requestId, currentUserId, onCancelled }: M
       setState(await fetchRequestMatchState(requestId));
       setLoadError('');
     } catch {
-      setLoadError('Impossible de charger le statut de votre demande.');
+      setLoadError(t('tutorMarketplace.matchStatus.errorLoad'));
     }
-  }, [requestId]);
+  }, [requestId, t]);
 
   useEffect(() => {
     load();
@@ -68,7 +70,7 @@ export default function MatchStatus({ requestId, currentUserId, onCancelled }: M
     return <p className="text-sm text-oxblood font-medium">{loadError}</p>;
   }
   if (!state) {
-    return <p className="text-sm text-warm-gray">Chargement…</p>;
+    return <p className="text-sm text-warm-gray">{t('common.loadingEllipsis')}</p>;
   }
 
   if (state.activeMatch) {
@@ -95,27 +97,26 @@ export default function MatchStatus({ requestId, currentUserId, onCancelled }: M
 
   return (
     <div className="bg-paper border border-ink-border rounded-xl p-6 max-w-[600px] font-general-sans text-ink">
-      <h1 className="font-fraunces text-[24px] font-medium mb-4">On cherche toujours votre tuteur</h1>
+      <h1 className="font-fraunces text-[24px] font-medium mb-4">{t('tutorMarketplace.matchStatus.stillSearchingTitle')}</h1>
 
       <div className="bg-[#EAF1EE] border border-forest/30 rounded-lg p-3.5 mb-4 flex gap-2.5 items-start">
         <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-forest" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
           <path d="M20 6L9 17l-5-5" />
         </svg>
         <p className="text-[13px] text-[#14342C]">
-          Votre demande est bien reçue. Notre équipe a été alertée et cherche activement un tuteur en {state.request.grade}
-          {' '}à {state.request.neighborhood}.
+          {t('tutorMarketplace.matchStatus.receivedPrefix')} {state.request.grade}
+          {' '}{t('tutorMarketplace.matchStatus.receivedSuffix')} {state.request.neighborhood}.
         </p>
       </div>
 
       {state.hadPriorMatch && (
         <div className="bg-[#F2EEE2] border border-ink-border rounded-lg p-3.5 mb-4">
-          <p className="text-sm">Votre précédent match n&apos;a pas abouti — nous cherchons un autre tuteur pour vous.</p>
+          <p className="text-sm">{t('tutorMarketplace.matchStatus.priorMatchNote')}</p>
         </div>
       )}
 
       <p className="text-sm mb-4">
-        Aucun tuteur disponible pour l&apos;instant — c&apos;est fréquent au lancement, le nombre de tuteurs vérifiés
-        grandit chaque semaine.
+        {t('tutorMarketplace.matchStatus.noTutorAvailableNote')}
       </p>
 
       <div className="flex flex-wrap gap-2.5">
@@ -124,27 +125,27 @@ export default function MatchStatus({ requestId, currentUserId, onCancelled }: M
           disabled={retrying}
           className="min-h-11 px-4 bg-oxblood hover:bg-oxblood-hover disabled:bg-warm-gray-light disabled:text-warm-gray text-white font-semibold text-sm rounded-lg transition-colors"
         >
-          {retrying ? 'Recherche en cours…' : 'Réessayer la recherche'}
+          {retrying ? t('tutorMarketplace.common.searchingEllipsis') : t('tutorMarketplace.matchStatus.retrySearch')}
         </button>
         <button
           onClick={() => setEditing(true)}
           className="min-h-11 px-4 border border-ink-border hover:border-ink text-sm font-medium rounded-lg transition-colors"
         >
-          Modifier la demande
+          {t('tutorMarketplace.matchStatus.editRequest')}
         </button>
         <button
           onClick={() => setCancelDialogOpen(true)}
           className="min-h-11 px-4 text-oxblood hover:bg-oxblood/5 text-sm font-medium rounded-lg transition-colors"
         >
-          Supprimer la demande
+          {t('tutorMarketplace.matchStatus.deleteRequest')}
         </button>
       </div>
 
       <ConfirmDialog
         isOpen={cancelDialogOpen}
-        title="Supprimer cette demande ?"
-        message="Nous arrêterons de chercher un tuteur pour cette demande. Vous pourrez toujours en créer une nouvelle."
-        confirmLabel={cancelling ? 'Suppression…' : 'Supprimer la demande'}
+        title={t('tutorMarketplace.matchStatus.deleteConfirmTitle')}
+        message={t('tutorMarketplace.matchStatus.deleteConfirmMessage')}
+        confirmLabel={cancelling ? t('tutorMarketplace.matchStatus.deletingEllipsis') : t('tutorMarketplace.matchStatus.deleteRequest')}
         destructive
         onConfirm={handleConfirmCancel}
         onCancel={() => setCancelDialogOpen(false)}
@@ -165,6 +166,7 @@ type EditRequestPanelProps = {
 // same boundary the 0040_tutor_request_location_edit.sql RLS policy
 // enforces server-side.
 function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps) {
+  const { t } = useLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState(request.category_id);
   const [grade, setGrade] = useState(request.grade);
@@ -212,7 +214,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
     e.preventDefault();
     if (saving) return;
     if (!isValidWhatsappContact(whatsappContact)) {
-      setError('Format attendu : +237 6XX XXX XXX');
+      setError(t('tutorMarketplace.common.whatsappFormatError'));
       return;
     }
     setSaving(true);
@@ -231,7 +233,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'La modification a échoué. Réessayez.');
+      setError(err instanceof Error ? err.message : t('tutorMarketplace.matchStatus.errorEditFailed'));
     } finally {
       setSaving(false);
     }
@@ -242,11 +244,11 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
       onSubmit={handleSave}
       className="bg-paper border border-ink-border rounded-xl p-6 max-w-[560px] font-general-sans text-ink"
     >
-      <h1 className="font-fraunces text-[24px] font-medium mb-5">Modifier la demande</h1>
+      <h1 className="font-fraunces text-[24px] font-medium mb-5">{t('tutorMarketplace.matchStatus.editRequest')}</h1>
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="edit-request-subject">
-          Matière
+          {t('tutorMarketplace.matchStatus.subjectLabel')}
         </label>
         <select
           id="edit-request-subject"
@@ -264,7 +266,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="edit-request-grade">
-          Niveau
+          {t('tutorMarketplace.common.gradeLabel')}
         </label>
         <input
           id="edit-request-grade"
@@ -277,7 +279,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="edit-request-child">
-          Pour quel enfant ? <span className="text-warm-gray font-normal">(optionnel)</span>
+          {t('tutorMarketplace.common.childLabel')} <span className="text-warm-gray font-normal">{t('tutorMarketplace.common.optional')}</span>
         </label>
         <input
           id="edit-request-child"
@@ -290,7 +292,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
 
       <div className="mb-4">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="edit-request-neighborhood">
-          Quartier
+          {t('tutorMarketplace.profileForm.neighborhoodLabel')}
         </label>
         <input
           id="edit-request-neighborhood"
@@ -302,7 +304,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5">Localisation précise</label>
+        <label className="block text-[13px] font-medium mb-1.5">{t('tutorMarketplace.common.locationPreciseLabel')}</label>
         <button
           type="button"
           onClick={handleShareLocation}
@@ -310,12 +312,12 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
           className="flex items-center gap-2 px-3 py-2.5 border border-ink-border rounded-lg text-sm hover:border-ink transition-colors disabled:opacity-60"
         >
           <MapPin size={16} />
-          {locationStatus === 'granted' ? 'Position partagée ✓' : locationStatus === 'loading' ? 'Localisation en cours…' : 'Partager ma position'}
+          {locationStatus === 'granted' ? t('tutorMarketplace.common.locationShared') : locationStatus === 'loading' ? t('tutorMarketplace.common.locationLoading') : t('tutorMarketplace.matchStatus.shareLocationShort')}
         </button>
       </div>
 
       <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5">Budget par séance (FCFA)</label>
+        <label className="block text-[13px] font-medium mb-1.5">{t('tutorMarketplace.common.budgetLabel')}</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -339,7 +341,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
 
       <div className="mb-5">
         <label className="block text-[13px] font-medium mb-1.5" htmlFor="edit-request-whatsapp">
-          WhatsApp
+          {t('tutorMarketplace.profileForm.whatsappLabel')}
         </label>
         <input
           id="edit-request-whatsapp"
@@ -358,14 +360,14 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
           disabled={saving}
           className="min-h-11 px-4 flex-1 flex items-center justify-center bg-oxblood hover:bg-oxblood-hover disabled:bg-warm-gray-light disabled:text-warm-gray text-white font-semibold text-sm rounded-lg transition-colors"
         >
-          {saving ? 'Enregistrement…' : 'Enregistrer'}
+          {saving ? t('tutorMarketplace.profileForm.savingEllipsis') : t('tutorMarketplace.common.save')}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="min-h-11 px-4 border border-ink-border hover:border-ink text-sm font-medium rounded-lg transition-colors"
         >
-          Annuler
+          {t('dashboard.courseEditor.cancel')}
         </button>
       </div>
     </form>

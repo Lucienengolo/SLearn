@@ -1,5 +1,36 @@
 # TODOS
 
+## i18n Phase 3: tutor-marketplace flow now follows the FR/EN toggle (2026-07-29)
+
+Final phase of the platform-wide i18n sweep: all 7 `components/Tutors/*` files
+(`MyRequests`, `TutorMatches`, `TutorProfileForm`, `PaymentStatus`, `RequestForm`,
+`MatchStatus`, `Chat`) -- ~1,700 lines, previously 100% hardcoded **French** (the inverse of
+the rest of the app, which defaulted to English). Shipped as 2 batches:
+
+- **Batch A** -- `MyRequests`, `TutorMatches`, `TutorProfileForm`, `PaymentStatus`.
+- **Batch B** -- `RequestForm`, `MatchStatus`, `Chat` (the booking-negotiation core).
+
+Heavy key reuse against the dashboards-phase dictionary where wording genuinely matched
+(teaching-mode options, neighborhood placeholder, response-time options, language toggle
+labels) instead of duplicating translations a third time. `Chat.tsx`'s decline-reason chips
+(`DECLINE_REASONS` in `lib/matches.ts`: "Trop loin"/"Conflit d'horaire"/"Pas ma matière"/
+"Autre") needed the same "translate the label, not the underlying value" treatment as
+`course.level` and QuizBuilder's True/False options -- the raw French string is still what
+gets passed to `declineMatch()` and stored, since that's app data, not just UI chrome; only
+the button's displayed text depends on locale.
+
+This phase inverted the usual test-update problem from Phases 1-2: because this flow was
+always French regardless of locale before, every existing test asserted French text
+unconditionally. With the toggle now wired, jsdom's default English locale meant every one of
+those assertions had to move to English, with a new explicit French-locale test added per
+file to keep the original assertion coverage. All 7 test files needed this rewrite (not just
+wrapping in `LocaleProvider` as in earlier phases) -- the largest test-only diff of the three
+i18n phases.
+
+Verified: full suite passing (322/322 across 57 files, up from 315 -- the 7 added tests are
+the new French-locale regression case per file), typecheck/lint/build all clean. Lint's
+warning count held at 16 (the dashboards-phase baseline), no new warnings introduced.
+
 ## i18n Phase 2: dashboards (student, instructor, reviewer) now follow the FR/EN toggle (2026-07-29)
 
 Continuation of the platform-wide i18n sweep (see Phase 1 below) into the largest remaining
