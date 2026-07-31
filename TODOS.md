@@ -1,5 +1,11 @@
 # TODOS
 
+## ClassworkComposer's Assignment type pill overflowed the mobile screen (2026-07-31)
+
+Founder: selecting "Assignment" in the Stream tab's post-type selector didn't fit on a mobile screen. Root cause: the 3-pill selector (`Announcement`/`Material`/`Assignment`, each icon + label) used a shrink-to-fit `flex w-fit` row with no wrap -- its natural content width (~360px for all 3 labels + icons + padding) exceeded the space a narrow phone's card actually has available (~310px, after page + card padding), so the row overflowed past the right edge of the screen with nothing to catch it. "Assignment," being the rightmost and one of the longer labels, was the one that visibly ran off.
+
+Fixed in `ClassworkComposer.tsx`: the selector is now a `grid grid-cols-3` below the `sm:` breakpoint -- a grid can never exceed its container's width by construction, whatever the label length, with `truncate` as a graceful (rarely-needed) fallback if a column still runs out of room on an especially narrow device. `sm:flex sm:w-fit` restores the original shrink-to-fit desktop appearance unchanged. Verified: new regression test asserts the selector renders as a 3-column grid; full suite (333/333, up 1), typecheck clean.
+
 ## S@Learn Classroom "Stream" tab, mobile: section tabs clipped with no scroll cue (2026-07-31)
 
 Founder screenshot of the Stream tab on mobile showed the workspace section tabs (Stream/Classwork/People/League/Tutor Matches) cut off mid-word ("Tutor Matches" → "Tut") with nothing indicating the row scrolls -- `overflow-x-auto` was already there and functionally correct, but with zero visual affordance it reads as a broken/truncated layout rather than an intentional scroll area.

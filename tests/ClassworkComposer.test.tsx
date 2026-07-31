@@ -47,6 +47,18 @@ describe('ClassworkComposer', () => {
     expect(screen.getByPlaceholderText('Points')).toBeInTheDocument();
   });
 
+  // Regression: the 3-pill type selector used a shrink-to-fit flex row
+  // (w-fit) with no wrap -- on a narrow phone, "Announcement"/"Assignment"
+  // plus icons needed more width than the card had, so "Assignment" (the
+  // rightmost pill) overflowed past the screen edge. A 3-column grid can
+  // never exceed its container's width, whatever the label length.
+  it('lays the type selector out as a 3-column grid so it can never overflow the card width', () => {
+    renderComposer();
+
+    const assignmentButton = screen.getByRole('button', { name: 'Assignment' });
+    expect(assignmentButton.parentElement).toHaveClass('grid', 'grid-cols-3');
+  });
+
   // Regression: type="date" inputs ignore the placeholder attribute
   // entirely, so the due-date field previously rendered blank with no
   // indication of its purpose (especially confusing on mobile, where it's

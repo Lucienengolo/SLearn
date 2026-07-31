@@ -68,18 +68,26 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
 
   return (
     <form onSubmit={handleSubmit} className="rounded-[14px] border border-canvas-150 p-4 sm:p-5 shadow-sm mb-6">
-      <div className="flex items-center gap-1 mb-4 rounded-[10px] bg-gray-100 p-1 w-fit">
+      {/* grid grid-cols-3 (not flex w-fit) below sm: -- 3 pills at their
+          natural content width ("Announcement"/"Assignment" + icon each)
+          need ~360px, more than a narrow phone's card leaves available
+          (~310px), so the row overflowed past the screen edge with nothing
+          to catch it. A 3-column grid can never exceed the container's own
+          width; truncate is the (rare, graceful) fallback if a column still
+          runs out of room. sm:flex sm:w-fit restores the original
+          shrink-to-fit desktop look untouched. */}
+      <div className="grid grid-cols-3 sm:flex sm:w-fit gap-1 mb-4 rounded-[10px] bg-gray-100 p-1">
         {TYPE_OPTIONS.map(({ type: optionType, labelKey, Icon }) => (
           <button
             key={optionType}
             type="button"
             onClick={() => setType(optionType)}
-            className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-[8px] transition font-medium ${
+            className={`flex items-center justify-center gap-1.5 text-sm px-2 sm:px-3 py-1.5 rounded-[8px] transition font-medium min-w-0 ${
               type === optionType ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            <Icon size={15} />
-            {t(labelKey)}
+            <Icon size={15} className="flex-shrink-0" />
+            <span className="truncate">{t(labelKey)}</span>
           </button>
         ))}
       </div>
