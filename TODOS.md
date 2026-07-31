@@ -1,5 +1,11 @@
 # TODOS
 
+## S@Learn Classroom "Stream" tab, mobile: section tabs clipped with no scroll cue (2026-07-31)
+
+Founder screenshot of the Stream tab on mobile showed the workspace section tabs (Stream/Classwork/People/League/Tutor Matches) cut off mid-word ("Tutor Matches" → "Tut") with nothing indicating the row scrolls -- `overflow-x-auto` was already there and functionally correct, but with zero visual affordance it reads as a broken/truncated layout rather than an intentional scroll area.
+
+Fixed in `SLearnClassroom.tsx`: the tab row now tracks its own scroll position and container/content width via a ref + scroll/resize listeners, and renders a fading gradient overlay on whichever edge(s) still have hidden tabs -- never a static always-on fade, since that would falsely suggest more content on a wide screen where every tab already fits. Also tightened `ClassworkComposer.tsx`'s form card padding for mobile (`p-5` → `p-4 sm:p-5`), matching the same responsive-padding pattern applied to the rest of the app earlier today. Verified: new regression test confirms the fade only appears when the tab row actually overflows (jsdom's default zero-width layout correctly shows no fade); full suite (332/332, up 1), typecheck clean.
+
 ## Mobile: nested-padding "wasted width" pattern fixed across the app (2026-07-31)
 
 Founder screenshot of the lesson-creation section (`CourseEditor.tsx`, mobile) showed a big chunk of the phone's width going unused around the upload dropzones/preview box. Root cause, found by reading the JSX rather than guessing: 2-3 levels of bordered "card" boxes nested directly inside each other, each with its own fixed `p-4`/`p-6` and no mobile-scaled variant -- e.g. the page wrapper's padding + the lesson-card's padding + the lesson-content box's padding all stacked, eating ~96px (roughly a quarter of a 375px phone screen) from both sides combined before any real content rendered.

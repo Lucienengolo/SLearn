@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Award, Search, Users, UserPlus, Megaphone, FileText, ClipboardList, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -65,6 +65,34 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [addStudentOpen, setAddStudentOpen] = useState(false);
+
+  // Founder screenshot (mobile, Stream tab): the section tabs overflow the
+  // viewport ("Tutor Matches" clipped mid-word) with nothing telling the
+  // user there's more to scroll to -- overflow-x-auto alone works, but looks
+  // like a rendering bug rather than an intentional scroll area. Track
+  // whether there's more content in either direction so a fade can only
+  // show up when it's actually true (a fade that's always on would lie on
+  // wide screens where every tab already fits).
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [tabOverflow, setTabOverflow] = useState({ left: false, right: false });
+
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const updateOverflow = () => {
+      setTabOverflow({
+        left: el.scrollLeft > 0,
+        right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+      });
+    };
+    updateOverflow();
+    el.addEventListener('scroll', updateOverflow);
+    window.addEventListener('resize', updateOverflow);
+    return () => {
+      el.removeEventListener('scroll', updateOverflow);
+      window.removeEventListener('resize', updateOverflow);
+    };
+  }, []);
 
   const [posts, setPosts] = useState<ClassworkPostWithCourse[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -166,20 +194,28 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
       <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">{t('dashboard.classroom.title')}</h1>
       <p className="text-gray-500 mb-6">{t('dashboard.classroom.subtitle')}</p>
 
-      <div className="flex items-center gap-1 mb-6 border-b border-canvas-150 overflow-x-auto">
-        {(Object.keys(SECTION_LABEL_KEYS) as Section[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            className={`text-md px-3 py-2.5 transition whitespace-nowrap ${
-              section === s
-                ? 'font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px'
-                : 'font-medium text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            {t(SECTION_LABEL_KEYS[s])}
-          </button>
-        ))}
+      <div className="relative mb-6">
+        <div ref={tabsRef} className="flex items-center gap-1 border-b border-canvas-150 overflow-x-auto">
+          {(Object.keys(SECTION_LABEL_KEYS) as Section[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSection(s)}
+              className={`text-md px-3 py-2.5 transition whitespace-nowrap ${
+                section === s
+                  ? 'font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px'
+                  : 'font-medium text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              {t(SECTION_LABEL_KEYS[s])}
+            </button>
+          ))}
+        </div>
+        {tabOverflow.left && (
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-gray-100 to-transparent" aria-hidden="true" />
+        )}
+        {tabOverflow.right && (
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-gray-100 to-transparent" aria-hidden="true" />
+        )}
       </div>
 
       {loading ? (

@@ -67,7 +67,7 @@ export default function ClassworkComposer({ instructorId, courses, defaultCourse
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[14px] border border-canvas-150 p-5 shadow-sm mb-6">
+    <form onSubmit={handleSubmit} className="rounded-[14px] border border-canvas-150 p-4 sm:p-5 shadow-sm mb-6">
       <div className="flex items-center gap-1 mb-4 rounded-[10px] bg-gray-100 p-1 w-fit">
         {TYPE_OPTIONS.map(({ type: optionType, labelKey, Icon }) => (
           <button

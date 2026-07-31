@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as authContext from '../contexts/AuthContext';
 import * as learnersLib from '../lib/instructorLearners';
@@ -161,6 +161,29 @@ describe('SLearnClassroom', () => {
 
     await user.click(screen.getByRole('button', { name: 'League' }));
     expect(screen.getByText(/all my courses/i)).toBeInTheDocument();
+  });
+
+  // Regression: a founder screenshot showed the section tabs clipped
+  // mid-word ("Tutor Matches" cut to "Tut") on mobile with no visual hint
+  // that the tab bar scrolls -- looked like a rendering bug, not an
+  // intentional scroll area. A fade should only appear when there's
+  // actually more to scroll to, never on a screen where every tab fits.
+  it('shows an edge fade only when the section tabs actually overflow', async () => {
+    vi.spyOn(learnersLib, 'fetchInstructorLearners').mockResolvedValue({ courses: [COURSE_A], rows: [], totalQuizAttempts: 0 });
+    const { container } = renderClassroom();
+    await screen.findByText('S@Learn Classroom');
+
+    // Every tab fits (jsdom's default 0/0 scrollWidth/clientWidth) -- no fade.
+    expect(container.querySelector('.bg-gradient-to-l')).not.toBeInTheDocument();
+    expect(container.querySelector('.bg-gradient-to-r')).not.toBeInTheDocument();
+
+    const tabsEl = screen.getByRole('button', { name: 'Stream' }).parentElement!;
+    Object.defineProperty(tabsEl, 'scrollWidth', { value: 600, configurable: true });
+    Object.defineProperty(tabsEl, 'clientWidth', { value: 300, configurable: true });
+    Object.defineProperty(tabsEl, 'scrollLeft', { value: 0, configurable: true });
+    fireEvent.scroll(tabsEl);
+
+    expect(container.querySelector('.bg-gradient-to-l')).toBeInTheDocument();
   });
 
   it('renders in French when the locale is French', async () => {
