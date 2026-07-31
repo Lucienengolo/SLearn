@@ -70,4 +70,23 @@ describe('getCurrentLocation', () => {
     vi.stubGlobal('navigator', {});
     await expect(getCurrentLocation()).rejects.toThrow(/n'est pas disponible/i);
   });
+
+  // Regression: a founder screenshot showed Chrome's own per-site Location
+  // toggle already ON, yet the app still blamed browser site settings for a
+  // PERMISSION_DENIED error -- the real block was the OS-level location
+  // service, one settings screen up from where the old message pointed.
+  it('blames the OS location service, not site permissions, when the site is already granted', async () => {
+    vi.stubGlobal('navigator', {
+      geolocation: {
+        getCurrentPosition: (_success: PositionCallback, error: PositionErrorCallback) => {
+          error({ code: 1 } as GeolocationPositionError);
+        },
+      },
+      permissions: {
+        query: () => Promise.resolve({ state: 'granted' }),
+      },
+    });
+
+    await expect(getCurrentLocation()).rejects.toThrow(/niveau système/i);
+  });
 });

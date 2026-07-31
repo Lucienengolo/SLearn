@@ -1,5 +1,11 @@
 # TODOS
 
+## Location error message was blaming the wrong settings screen (2026-07-31)
+
+Founder screenshot showed Chrome's own per-site "Location" permission toggle already ON (granted), yet `RequestForm.tsx` still displayed the PERMISSION_DENIED message telling them to "allow location for this site in your browser settings" -- advice that was already followed and couldn't fix anything, since the real block was one level up: the OS/device location-services toggle (common on Chromebooks, and on desktop OSes generally, when system location is off). The 2026-07-30 fix correctly split the 3 `GeolocationPositionError` codes apart but had no way to tell "site-level denied" from "site-level granted, blocked at the OS" -- both surfaced as code 1.
+
+Fixed in `lib/geolocation.ts`: `getCurrentLocation()` now queries the Permissions API (`navigator.permissions.query({ name: 'geolocation' })`) before calling `getCurrentPosition`, and passes the resulting state into `messageForGeolocationError`. When code 1 fires and the site permission was already `'granted'`, the message now points at the device's system-level location service instead of the browser's site settings; falls back to the original site-permission wording when the Permissions API isn't available (older Safari) or the state isn't `'granted'`. Verified: full suite (331/331, up 1), typecheck clean.
+
 ## PaymentStatus mobile layout: deposit/balance rows no longer wrap mid-phrase (2026-07-30)
 
 Founder screenshot of the matched-request view (Chat + PaymentStatus) on mobile showed the deposit/balance summary rows wrapping awkwardly mid-phrase (e.g. "en" / "attente" splitting across lines). Root cause: `flex justify-between` forces label and value onto one row, and at phone widths a long label ("Solde (à régler sur place)") next to a long value ("4 000 FCFA — en attente") don't both fit, so the value itself wraps. Changed both rows in `PaymentStatus.tsx` to `flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5` -- stacked (each gets a full-width line) below 640px, back to side-by-side at `sm:` and above. Verified: existing 12 PaymentStatus tests unaffected (className-only change), typecheck clean.
