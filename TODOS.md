@@ -1,5 +1,21 @@
 # TODOS
 
+## Mobile: nested-padding "wasted width" pattern fixed across the app (2026-07-31)
+
+Founder screenshot of the lesson-creation section (`CourseEditor.tsx`, mobile) showed a big chunk of the phone's width going unused around the upload dropzones/preview box. Root cause, found by reading the JSX rather than guessing: 2-3 levels of bordered "card" boxes nested directly inside each other, each with its own fixed `p-4`/`p-6` and no mobile-scaled variant -- e.g. the page wrapper's padding + the lesson-card's padding + the lesson-content box's padding all stacked, eating ~96px (roughly a quarter of a 375px phone screen) from both sides combined before any real content rendered.
+
+Founder also asked to apply the same fix everywhere on mobile, not just this one screen. Used an Explore subagent to search `components/Dashboard/**` and `components/Tutors/**` for the same genuine compounding-nesting pattern (not just any padded card -- only actual parent-padding-directly-containing-child-padding cases). Fixed every confirmed instance by adding a smaller mobile padding with a `sm:` breakpoint back up to the original value, same pattern already used elsewhere in the app (e.g. `px-4 sm:px-6 lg:px-8`):
+
+- `App.tsx`: 3 page wrappers (`my-requests`, `tutor-request-new`, `tutor-request-detail`) used a flat `px-6` with **no** responsive variant at all -- worse than the confirmed bug, since it never scaled down on any screen. Now `px-4 sm:px-6`.
+- `InstructorDashboard.tsx`: same flat `px-6` on its own list-view wrapper -- same fix.
+- `CourseEditor.tsx`: lesson card (`p-4`) and the lesson-content box nested inside it (`p-4`) -- now `p-3 sm:p-4` each.
+- `RequestForm.tsx`: the form's own card (`p-6`) and each child's nested box (`p-4`) -- now `p-4 sm:p-6` / `p-3 sm:p-4`.
+- `MatchStatus.tsx`, `Chat.tsx`, `PaymentStatus.tsx`: each component's own root card (`p-6`) -- now `p-4 sm:p-6`.
+- `QuizBuilder.tsx`: the quiz card (`p-4`), which itself nests inside `CourseEditor`'s now-fixed lesson card -- now `p-3 sm:p-4`.
+- `ApplicationWizard.tsx` + `IdentityCapture.tsx`: the deepest offender found -- wizard card (`p-6`) containing 2 document-upload boxes (`p-4` each), a 3-level non-responsive stack. Wizard card now `p-4 sm:p-6`, both doc boxes now `p-3 sm:p-4`.
+
+Left alone: single-level cards not nested inside another padded box (no compounding to fix), and the smallest inner status/verification boxes (`p-3`/`p-3.5`) that were already near-minimal padding for their content. Verified: full suite (331/331), typecheck clean -- every change is className-only (no JS/behavior touched), so no new tests were required beyond re-running the existing suite.
+
 ## Location error message was blaming the wrong settings screen (2026-07-31)
 
 Founder screenshot showed Chrome's own per-site "Location" permission toggle already ON (granted), yet `RequestForm.tsx` still displayed the PERMISSION_DENIED message telling them to "allow location for this site in your browser settings" -- advice that was already followed and couldn't fix anything, since the real block was one level up: the OS/device location-services toggle (common on Chromebooks, and on desktop OSes generally, when system location is off). The 2026-07-30 fix correctly split the 3 `GeolocationPositionError` codes apart but had no way to tell "site-level denied" from "site-level granted, blocked at the OS" -- both surfaced as code 1.

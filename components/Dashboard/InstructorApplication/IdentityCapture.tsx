@@ -151,7 +151,7 @@ export default function IdentityCapture({
 
   return (
     <div className="space-y-4">
-      <div className="border border-canvas-150 rounded-[10px] p-4">
+      <div className="border border-canvas-150 rounded-[10px] p-3 sm:p-4">
         <div className="flex items-center justify-between mb-1">
           <p className="font-medium text-gray-800 text-sm">{t('dashboard.instructorApplication.governmentIdRequired')}</p>
           {governmentId && (
@@ -216,7 +216,7 @@ export default function IdentityCapture({
         )}
       </div>
 
-      <div className="border border-canvas-150 rounded-[10px] p-4">
+      <div className="border border-canvas-150 rounded-[10px] p-3 sm:p-4">
         <p className="font-medium text-gray-800 text-sm mb-1">{t('dashboard.instructorApplication.liveSelfieRequired')}</p>
         {selfie ? (
           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1 mb-2">

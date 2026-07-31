@@ -150,13 +150,13 @@ export default function Chat({ matchId, currentUserId, viewerRole }: ChatProps) 
   const isTutorAwaitingResponse = viewerRole === 'tutor' && match.status === 'matched';
 
   return (
-    <div className="bg-paper border border-ink-border rounded-xl p-6 max-w-[600px] font-general-sans text-ink">
+    <div className="bg-paper border border-ink-border rounded-xl p-4 sm:p-6 max-w-[600px] font-general-sans text-ink">
       <h1 className="font-fraunces text-[24px] font-medium mb-4">
         {viewerRole === 'parent' ? `${t('tutorMarketplace.chat.discussionWithPrefix')} ${tutorProfile.full_name ?? t('tutorMarketplace.chat.yourTutorFallback')}` : t('tutorMarketplace.chat.discussionTitle')}
       </h1>
 
       {isTutorAwaitingResponse ? (
-        <div className="border border-ink-border rounded-lg p-4 mb-4">
+        <div className="border border-ink-border rounded-lg p-3 sm:p-4 mb-4">
           <p className="text-sm mb-3">
             {t('tutorMarketplace.chat.requestLabel')} {request.grade}, {request.neighborhood}
           </p>

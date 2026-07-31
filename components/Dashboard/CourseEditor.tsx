@@ -643,7 +643,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
 
             <div className="space-y-4">
               {lessons.map((lesson, index) => (
-                <div key={lesson.id} className="border border-canvas-150 rounded-[10px] p-4 bg-canvas-25">
+                <div key={lesson.id} className="border border-canvas-150 rounded-[10px] p-3 sm:p-4 bg-canvas-25">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <GripVertical size={20} className="text-gray-400" />
@@ -678,7 +678,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                       aria-label={`${t('dashboard.courseEditor.lessonLabel')} ${index + 1} ${t('dashboard.courseEditor.descriptionWord')}`}
                     />
 
-                    <div className="bg-primary-50 border border-primary-200 rounded-[10px] p-4">
+                    <div className="bg-primary-50 border border-primary-200 rounded-[10px] p-3 sm:p-4">
                       <p className="text-sm font-semibold text-gray-800 mb-3">
                         {t('dashboard.courseEditor.lessonContentLabel')}
                       </p>

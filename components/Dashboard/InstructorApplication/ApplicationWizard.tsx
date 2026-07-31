@@ -186,7 +186,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
       {error && <div className="bg-red-50 text-red-600 p-3 rounded-[10px] text-sm mb-6">{error}</div>}
 
-      <div className="rounded-[14px] border border-canvas-150 p-6 space-y-4">
+      <div className="rounded-[14px] border border-canvas-150 p-4 sm:p-6 space-y-4">
         {step === 0 && (
           <>
             <Field label={t('dashboard.instructorApplication.fullNameLabel')}>

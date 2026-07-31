@@ -96,7 +96,7 @@ export default function MatchStatus({ requestId, currentUserId, onCancelled }: M
   }
 
   return (
-    <div className="bg-paper border border-ink-border rounded-xl p-6 max-w-[600px] font-general-sans text-ink">
+    <div className="bg-paper border border-ink-border rounded-xl p-4 sm:p-6 max-w-[600px] font-general-sans text-ink">
       <h1 className="font-fraunces text-[24px] font-medium mb-4">{t('tutorMarketplace.matchStatus.stillSearchingTitle')}</h1>
 
       <div className="bg-[#EAF1EE] border border-forest/30 rounded-lg p-3.5 mb-4 flex gap-2.5 items-start">

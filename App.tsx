@@ -235,7 +235,7 @@ function AppContent() {
 
         {currentPage === 'my-requests' && user && profile?.role === 'student' && (
           <Suspense fallback={<PageFallback />}>
-            <div className="max-w-[1200px] mx-auto px-6 py-10">
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
               <MyRequests
                 parentId={user.id}
                 onSelectRequest={handleSelectTutorRequest}
@@ -247,7 +247,7 @@ function AppContent() {
 
         {currentPage === 'tutor-request-new' && user && profile?.role === 'student' && (
           <Suspense fallback={<PageFallback />}>
-            <div className="max-w-[1200px] mx-auto px-6 py-10">
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
               <RequestForm
                 onSubmitted={(requests) => {
                   // Multiple children/subjects can now create several
@@ -268,7 +268,7 @@ function AppContent() {
 
         {currentPage === 'tutor-request-detail' && user && selectedTutorRequestId && (
           <Suspense fallback={<PageFallback />}>
-            <div className="max-w-[1200px] mx-auto px-6 py-10">
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
               <button onClick={handleBackToMyRequests} className="text-sm text-gray-500 hover:text-gray-800 transition mb-5">
                 ← Back to my requests
               </button>

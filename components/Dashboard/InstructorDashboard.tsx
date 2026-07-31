@@ -177,7 +177,7 @@ export default function InstructorDashboard() {
   });
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-10">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
       <TabNav tab={tab} onSelect={setTab} />
 
       <div className="flex justify-between items-center mb-8 gap-4">

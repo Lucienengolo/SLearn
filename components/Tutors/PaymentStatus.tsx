@@ -94,7 +94,7 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
   const dotClass = (s: StepState) => (s === 'done' ? 'bg-forest text-white' : s === 'active' ? 'bg-oxblood text-white' : 'bg-warm-gray-light text-white');
 
   return (
-    <div className="bg-paper border border-ink-border rounded-xl p-6 max-w-[640px] font-general-sans text-ink">
+    <div className="bg-paper border border-ink-border rounded-xl p-4 sm:p-6 max-w-[640px] font-general-sans text-ink">
       <h1 className="font-fraunces text-[24px] font-medium mb-5">{t('tutorMarketplace.paymentStatus.title')}</h1>
 
       <div className="flex items-center mb-6" role="group" aria-label={t('tutorMarketplace.paymentStatus.paymentStatusAriaLabel')}>

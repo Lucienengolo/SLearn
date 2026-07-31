@@ -238,12 +238,12 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-paper border border-ink-border rounded-xl p-6 max-w-[560px] font-general-sans text-ink"
+      className="bg-paper border border-ink-border rounded-xl p-4 sm:p-6 max-w-[560px] font-general-sans text-ink"
     >
       <h1 className="font-fraunces text-[28px] font-medium mb-6">{t('tutorMarketplace.requestForm.title')}</h1>
 
       {children.map((child, index) => (
-        <div key={child.key} className="border border-ink-border rounded-lg p-4 mb-4">
+        <div key={child.key} className="border border-ink-border rounded-lg p-3 sm:p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[13px] font-semibold uppercase tracking-wide text-warm-gray">
               {t('tutorMarketplace.requestForm.childNumberLabel')} {index + 1}
