@@ -105,9 +105,19 @@ export const translations = {
     'footer.columns.learners.certificates': 'Mes certificats',
     'footer.columns.educators.title': 'Pour les éducateurs',
     'footer.columns.organizations.title': 'Pour les organisations',
+    'footer.columns.legal.title': 'Mentions légales',
     'footer.disclaimer':
       'S@Learn met en relation des apprenants avec des instructeurs et tuteurs indépendants. Le contenu des cours et la disponibilité des tuteurs sont fournis par chaque instructeur ; le statut de vérification est affiché lorsqu\'il est disponible.',
     'footer.copyrightSuffix': 'S@Learn — Store of Learning. Conçu à Douala, Cameroun.',
+
+    'legal.terms': 'Conditions Générales d\'Utilisation',
+    'legal.privacy': 'Politique de Confidentialité',
+    'legal.dpa': 'Accord de Traitement des Données',
+    'legal.refund': 'Politique de Remboursement',
+    'legal.instructorMsa': 'Contrat Instructeur',
+    'legal.backButton': '← Retour',
+    'legal.draftDisclaimer':
+      'Ce document est une première version rédigée avec des recherches sur le droit camerounais, et ne remplace pas l\'examen d\'un avocat inscrit au barreau camerounais avant toute mise en service réelle.',
 
     'courses.explore': 'Explorer les cours',
     'courses.allCategories': 'Toutes les catégories',
@@ -894,9 +904,19 @@ export const translations = {
     'footer.columns.learners.certificates': 'My certificates',
     'footer.columns.educators.title': 'For Educators',
     'footer.columns.organizations.title': 'For Organizations',
+    'footer.columns.legal.title': 'Legal',
     'footer.disclaimer':
       'S@Learn connects learners with independent instructors and tutors. Course content and tutor availability are provided by individual instructors; verification status is shown where available.',
     'footer.copyrightSuffix': 'S@Learn — Store of Learning. Built in Douala, Cameroon.',
+
+    'legal.terms': 'Terms of Service',
+    'legal.privacy': 'Privacy Policy',
+    'legal.dpa': 'Data Processing Agreement',
+    'legal.refund': 'Refund Policy',
+    'legal.instructorMsa': 'Instructor Agreement',
+    'legal.backButton': '← Back',
+    'legal.draftDisclaimer':
+      'This is a first draft grounded in research on Cameroonian law, and is not a substitute for review by a licensed Cameroonian attorney before this goes live for real users.',
 
     'courses.explore': 'Explore courses',
     'courses.allCategories': 'All categories',

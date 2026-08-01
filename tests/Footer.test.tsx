@@ -39,10 +39,21 @@ describe('Footer', () => {
     expect(onNavigate).toHaveBeenCalledWith('my-requests');
   });
 
-  it('does not link to any Terms/Privacy/social pages, since none exist', () => {
-    renderFooter();
-    expect(screen.queryByText(/terms of use/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/privacy policy/i)).not.toBeInTheDocument();
+  // Regression: this used to assert the opposite (no Terms/Privacy links,
+  // since none existed yet) -- flipped 2026-08-01 once real legal documents
+  // existed to link to (see lib/legalDocs.ts).
+  it('links to the real legal documents (Terms, Privacy, DPA, Refund, Instructor MSA)', async () => {
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+    renderFooter(onNavigate);
+
+    expect(screen.getByText('Legal')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Terms of Service' }));
+    expect(onNavigate).toHaveBeenCalledWith('legal-terms');
+
+    await user.click(screen.getByRole('button', { name: 'Privacy Policy' }));
+    expect(onNavigate).toHaveBeenCalledWith('legal-privacy');
   });
 
   it('renders the copyright line', () => {
@@ -63,6 +74,7 @@ describe('Footer', () => {
     expect(screen.getByText('Pour les apprenants')).toBeInTheDocument();
     expect(screen.getByText('Pour les éducateurs')).toBeInTheDocument();
     expect(screen.getByText('Pour les organisations')).toBeInTheDocument();
+    expect(screen.getByText('Mentions légales')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Parcourir les cours' })).toBeInTheDocument();
 
     vi.unstubAllGlobals();

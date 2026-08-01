@@ -13,9 +13,9 @@ type FooterColumn = {
 // Global footer (founder request, 2026-07-24), structured after the
 // reference screenshot: dark contrast band, logo + top nav-header row,
 // multi-column link grid, disclaimer, copyright. Every link routes
-// somewhere real -- no fabricated Terms/Privacy/social pages, since none
-// exist yet (regulatory/compliance is still an explicit P3 "let's talk
-// first" item, not something to fake with dead links).
+// somewhere real -- no fabricated dead links. A Legal column was added
+// 2026-08-01 once real (if still first-draft) Terms/Privacy/DPA/Refund/
+// Instructor-MSA documents existed to link to -- see lib/legalDocs.ts.
 //
 // Link labels built from `t()` inside the component (not a module-level
 // constant) so they re-translate on locale change -- several reuse the
@@ -53,6 +53,16 @@ function buildColumns(t: (key: TranslationKey) => string): FooterColumn[] {
         { label: t('nav.audience.government'), page: 'audience-government' },
       ],
     },
+    {
+      title: t('footer.columns.legal.title'),
+      links: [
+        { label: t('legal.terms'), page: 'legal-terms' },
+        { label: t('legal.privacy'), page: 'legal-privacy' },
+        { label: t('legal.dpa'), page: 'legal-dpa' },
+        { label: t('legal.refund'), page: 'legal-refund' },
+        { label: t('legal.instructorMsa'), page: 'legal-instructor-msa' },
+      ],
+    },
   ];
 }
 
@@ -84,7 +94,7 @@ export default function Footer({ onNavigate }: FooterProps) {
           </nav>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 py-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-10">
           {columns.map((col) => (
             <div key={col.title}>
               <h3 className="text-white font-semibold mb-3">{col.title}</h3>

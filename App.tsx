@@ -27,6 +27,7 @@ const MyRequests = lazy(() => import('./components/Tutors/MyRequests'));
 const RequestForm = lazy(() => import('./components/Tutors/RequestForm'));
 const MatchStatus = lazy(() => import('./components/Tutors/MatchStatus'));
 const InstitutionalLandingPage = lazy(() => import('./components/Institutional/InstitutionalLandingPage'));
+const LegalDocument = lazy(() => import('./components/Legal/LegalDocument'));
 
 function PageFallback() {
   return (
@@ -149,6 +150,11 @@ function AppContent() {
     'audience-schools',
     'audience-business',
     'audience-government',
+    'legal-terms',
+    'legal-privacy',
+    'legal-dpa',
+    'legal-refund',
+    'legal-instructor-msa',
   ].includes(currentPage);
 
   return (
@@ -328,6 +334,32 @@ function AppContent() {
         {currentPage === 'audience-government' && (
           <Suspense fallback={<PageFallback />}>
             <InstitutionalLandingPage accountType="government" />
+          </Suspense>
+        )}
+
+        {currentPage === 'legal-terms' && (
+          <Suspense fallback={<PageFallback />}>
+            <LegalDocument docKey="terms" onBack={() => handleNavigate('home')} />
+          </Suspense>
+        )}
+        {currentPage === 'legal-privacy' && (
+          <Suspense fallback={<PageFallback />}>
+            <LegalDocument docKey="privacy" onBack={() => handleNavigate('home')} />
+          </Suspense>
+        )}
+        {currentPage === 'legal-dpa' && (
+          <Suspense fallback={<PageFallback />}>
+            <LegalDocument docKey="dpa" onBack={() => handleNavigate('home')} />
+          </Suspense>
+        )}
+        {currentPage === 'legal-refund' && (
+          <Suspense fallback={<PageFallback />}>
+            <LegalDocument docKey="refund" onBack={() => handleNavigate('home')} />
+          </Suspense>
+        )}
+        {currentPage === 'legal-instructor-msa' && (
+          <Suspense fallback={<PageFallback />}>
+            <LegalDocument docKey="instructor-msa" onBack={() => handleNavigate('home')} />
           </Suspense>
         )}
       </main>

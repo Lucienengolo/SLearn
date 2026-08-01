@@ -8,14 +8,16 @@ type Mode = 'login' | 'signup' | 'forgot';
 type AuthModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onNavigate: (page: string) => void;
   initialMode?: Mode;
 };
 
-export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmationPending, setConfirmationPending] = useState(false);
@@ -29,7 +31,17 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     setResetSent(false);
     setMode('login');
     setError('');
+    setAgreedToTerms(false);
     onClose();
+  };
+
+  // Terms/Privacy links close the modal and navigate away -- signup
+  // progress (email/password already typed) is lost, same tradeoff most
+  // signup-with-legal-links flows accept rather than opening a second
+  // overlay on top of this one.
+  const handleLegalLinkClick = (page: string) => {
+    handleClose();
+    onNavigate(page);
   };
 
   // Syncs on every open (not just first mount) -- this component stays
@@ -199,10 +211,40 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               )}
 
               {mode === 'signup' && (
-                <p className="text-2xs text-gray-500">
-                  Every account starts as a learner. You can apply to become an
-                  instructor from your dashboard once you're signed in.
-                </p>
+                <>
+                  <p className="text-2xs text-gray-500">
+                    Every account starts as a learner. You can apply to become an
+                    instructor from your dashboard once you're signed in.
+                  </p>
+
+                  <label className="flex items-start gap-2 text-2xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-0.5"
+                      required
+                    />
+                    <span>
+                      I agree to the{' '}
+                      <button
+                        type="button"
+                        onClick={() => handleLegalLinkClick('legal-terms')}
+                        className="text-primary-700 hover:underline"
+                      >
+                        Terms of Service
+                      </button>{' '}
+                      and{' '}
+                      <button
+                        type="button"
+                        onClick={() => handleLegalLinkClick('legal-privacy')}
+                        className="text-primary-700 hover:underline"
+                      >
+                        Privacy Policy
+                      </button>
+                    </span>
+                  </label>
+                </>
               )}
 
               {error && (
@@ -213,7 +255,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (mode === 'signup' && !agreedToTerms)}
                 className="w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
               >
                 {loading

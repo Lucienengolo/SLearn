@@ -316,7 +316,7 @@ export default function Header({
       </header>
       </div>
 
-      <AuthModal isOpen={authModalOpen} onClose={onCloseAuthModal} initialMode={authModalMode} />
+      <AuthModal isOpen={authModalOpen} onClose={onCloseAuthModal} onNavigate={onNavigate} initialMode={authModalMode} />
     </>
   );
 }
