@@ -2,6 +2,12 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User } from '@supabase/supabase-js';
 import { supabase, Profile } from '../lib/supabase';
 import { identifyUser, resetAnalytics, trackEvent } from '../lib/analytics';
+import { markSessionStart, clearSessionStart, isSessionExpired } from '../lib/sessionTimeout';
+
+// Checked on mount and every 15 min while the tab stays open -- frequent
+// enough that nobody stays signed in meaningfully past 72h, infrequent
+// enough it's not a real resource cost.
+const SESSION_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
 type AuthContextType = {
   user: User | null;
@@ -47,6 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && isSessionExpired()) {
+        clearSessionStart();
+        supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
       setUser(session?.user ?? null);
       if (session?.user) {
         identifyUser(session.user.id, { email: session.user.email });
@@ -65,6 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsPasswordRecovery(true);
       }
 
+      // Only a genuine new sign-in resets the 72h clock -- a silent
+      // TOKEN_REFRESHED must NOT extend it, or the max-session cap would
+      // never actually apply to a tab left open and quietly refreshing.
+      if (event === 'SIGNED_IN') {
+        markSessionStart();
+      }
+      if (event === 'SIGNED_OUT') {
+        clearSessionStart();
+      }
+
       (async () => {
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -78,7 +101,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })();
     });
 
-    return () => subscription.unsubscribe();
+    const sessionCheckInterval = setInterval(() => {
+      if (isSessionExpired()) {
+        clearSessionStart();
+        supabase.auth.signOut();
+      }
+    }, SESSION_CHECK_INTERVAL_MS);
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(sessionCheckInterval);
+    };
   }, []);
 
   // Accounts are single-role and start as students. Becoming an instructor

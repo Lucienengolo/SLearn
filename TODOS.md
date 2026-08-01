@@ -1,5 +1,21 @@
 # TODOS
 
+## Beta-readiness roadmap, Batch 7 (final): 72-hour session timeout (2026-08-01)
+
+Founder: "setup a session ending to handle connexion of more than 72H." `AuthContext.tsx` had zero session-duration logic before this -- a Supabase session just lived as long as its refresh token did, with no app-level cap.
+
+New `lib/sessionTimeout.ts` tracks a session-start timestamp in `localStorage`, reset only on a genuine `SIGNED_IN` event -- explicitly NOT on `TOKEN_REFRESHED`, since this is a **max-duration cap counted from original sign-in**, not an idle timeout; resetting on every silent refresh would mean a tab left open forever never actually hits the cap, defeating the point. Checked on mount and every 15 minutes while the tab is open (`AuthContext.tsx`'s `useEffect`); an expired session calls `supabase.auth.signOut()` and clears the marker.
+
+**Rollout edge case handled explicitly**: a session with no tracked start time (existed before this feature shipped, or `localStorage` was cleared independently of the actual Supabase session) is treated as "not yet expired, start counting from now," not as instantly expired -- the alternative would surprise-log-out every existing signed-in user the moment this deploys, which isn't the intent.
+
+**This is defense-in-depth, not the authoritative control** -- it's enforced client-side, so a token that's never opened in a browser again after 72h is untouched by this code (there's nothing running to check it). The real, authoritative control is Supabase's own Dashboard -> Authentication -> Sessions/JWT expiry settings, which is account configuration, not application code -- **flagged here as a manual action item the founder still needs to do**: set a matching (or tighter) server-side session/refresh-token lifetime in the Supabase dashboard so the cap holds even for a token nobody ever reopens.
+
+Verified: 6 unit tests for the pure timeout logic (`lib/sessionTimeout.ts`, using fake timers) plus 3 integration tests confirming `AuthContext` actually calls `signOut()` for an expired session on load and leaves a fresh one alone; full suite (366/366, up 9), typecheck clean. No migration needed -- this is entirely client-side.
+
+---
+
+**This closes out the 7-batch beta-readiness roadmap** from the founder's personal app review (plan at `~/.claude/plans/mighty-booping-tiger.md`, approved 2026-08-01): legal documents, payments-disabled-for-V1 + FCFA currency, instructor avatar, chat notifications, category management, instructor-name search, and this session cap. Everything shipped and pushed to `main` in 7 separate, individually-verified commits. Follow-ups intentionally left open and tracked above rather than silently done: (1) `create-checkout-session`'s currency fix is committed but not yet deployed (no fresh Supabase deploy credentials this session), (2) the payment gate is client-side only, not hardened server-side against a direct API call, (3) the Supabase Dashboard session/JWT config that's this batch's own server-side counterpart. None of these block the RLS/security review that was the whole reason this roadmap started -- they're each a known, scoped, one-sitting task for whenever deploy credentials or dashboard access are available.
+
 ## Beta-readiness roadmap, Batch 6: search courses by instructor name (2026-08-01)
 
 Founder: on the course search bar, let users search by instructor name too -- `CourseList.tsx`'s search previously only matched `title`/`description` via a single `.or()` call directly on the `courses` table. PostgREST's `.or()` can't filter on a joined table's column (`instructor.full_name`) in the same call as the base table's own columns, so a straight one-line addition wasn't possible.
