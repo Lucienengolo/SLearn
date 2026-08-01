@@ -134,7 +134,7 @@ describe('AuthModal locale', () => {
     expect(screen.getByText('Nom complet')).toBeInTheDocument();
     expect(screen.getByText('E-mail')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Créer un compte' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Conditions Générales d\'Utilisation' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'CGU' })).toBeInTheDocument();
 
     vi.unstubAllGlobals();
   });

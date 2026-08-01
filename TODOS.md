@@ -1,5 +1,13 @@
 # TODOS
 
+## Footer Legal column: locale-specific heading + shortened French link labels (2026-08-01)
+
+Founder screenshots (EN + FR side by side) showed the Legal column looking fine in English but visibly misaligned/cramped in French -- French legal terms are simply longer strings ("Conditions Générales d'Utilisation" vs. "Terms of Service"), so at the same column width the French labels wrapped far more (2 lines each for 3 of the 5 links) while English mostly stayed on one line. Also: an earlier fix today made the column heading "Mentions légales" in BOTH locales per a prior instruction -- founder now wants the heading locale-specific again: "Legal" in English, "Mentions légales" in French.
+
+Fixed both: `footer.columns.legal.title` reverted to `'Legal'` for the English dictionary (French keeps `'Mentions légales'`, unchanged). Shortened the French `legal.terms`/`legal.privacy`/`legal.dpa`/`legal.refund`/`legal.instructorMsa` values to standard, genuinely-used French abbreviations rather than their full formal names -- `'CGU'` (the universal French abbreviation for Terms of Service, not something invented for this fix), `'Confidentialité'`, `'Traitement des données'`, `'Remboursement'`, `'Contrat instructeur'`. These keys are used ONLY as short link/button labels (`Footer.tsx`'s column links, `AuthModal.tsx`'s consent-checkbox links) -- confirmed via grep before touching them -- not the actual legal document's own page title, which comes from a separate `titleFr`/`titleEn` pair in `lib/legalDocs.ts` and is untouched, so the full formal name still appears as the real heading once you open a document.
+
+Verified: full suite (368/368), typecheck clean.
+
 ## Session-expiry sign-out now shows a message instead of happening silently (2026-08-01)
 
 Follow-up from the i18n audit: the 72h session-timeout forced sign-out (`AuthContext.tsx`, added earlier today) called `supabase.auth.signOut()` with no user-visible explanation at all -- someone would just find themselves logged out. Added a toast (`t('auth.sessionExpiredMessage')`, both FR/EN) at both call sites (the mount-time check and the 15-min interval check).

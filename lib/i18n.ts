@@ -110,11 +110,11 @@ export const translations = {
       'S@Learn met en relation des apprenants avec des instructeurs et tuteurs indépendants. Le contenu des cours et la disponibilité des tuteurs sont fournis par chaque instructeur ; le statut de vérification est affiché lorsqu\'il est disponible.',
     'footer.copyrightSuffix': 'S@Learn — Store of Learning. Conçu à Douala, Cameroun.',
 
-    'legal.terms': 'Conditions Générales d\'Utilisation',
-    'legal.privacy': 'Politique de Confidentialité',
-    'legal.dpa': 'Accord de Traitement des Données',
-    'legal.refund': 'Politique de Remboursement',
-    'legal.instructorMsa': 'Contrat Instructeur',
+    'legal.terms': 'CGU',
+    'legal.privacy': 'Confidentialité',
+    'legal.dpa': 'Traitement des données',
+    'legal.refund': 'Remboursement',
+    'legal.instructorMsa': 'Contrat instructeur',
     'legal.backButton': '← Retour',
     'legal.draftDisclaimer':
       'Ce document est une première version rédigée avec des recherches sur le droit camerounais, et ne remplace pas l\'examen d\'un avocat inscrit au barreau camerounais avant toute mise en service réelle.',
@@ -955,7 +955,7 @@ export const translations = {
     'footer.columns.learners.certificates': 'My certificates',
     'footer.columns.educators.title': 'For Educators',
     'footer.columns.organizations.title': 'For Organizations',
-    'footer.columns.legal.title': 'Mentions légales',
+    'footer.columns.legal.title': 'Legal',
     'footer.disclaimer':
       'S@Learn connects learners with independent instructors and tutors. Course content and tutor availability are provided by individual instructors; verification status is shown where available.',
     'footer.copyrightSuffix': 'S@Learn — Store of Learning. Built in Douala, Cameroon.',
