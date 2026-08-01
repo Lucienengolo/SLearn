@@ -64,4 +64,40 @@ describe('CourseEditor', () => {
 
     vi.unstubAllGlobals();
   });
+
+  // Regression: founder request, 2026-08-01 -- "add a clear option to
+  // add or delete a course category." The delete RLS policy is scoped to
+  // verified instructors only, so the "Manage" button that opens the
+  // delete modal must be hidden from anyone who'd just hit an RLS error.
+  describe('category management button visibility', () => {
+    it('shows the Manage categories button for a verified instructor', () => {
+      vi.spyOn(authContext, 'useAuth').mockReturnValue({
+        user: { id: 'instructor-1' },
+        profile: { id: 'instructor-1', role: 'instructor', verified: true },
+      } as never);
+      renderEditor();
+
+      expect(screen.getByRole('button', { name: /manage/i })).toBeInTheDocument();
+    });
+
+    it('hides the Manage categories button for an unverified instructor', () => {
+      vi.spyOn(authContext, 'useAuth').mockReturnValue({
+        user: { id: 'instructor-1' },
+        profile: { id: 'instructor-1', role: 'instructor', verified: false },
+      } as never);
+      renderEditor();
+
+      expect(screen.queryByRole('button', { name: /manage/i })).not.toBeInTheDocument();
+    });
+
+    it('hides the Manage categories button for a student', () => {
+      vi.spyOn(authContext, 'useAuth').mockReturnValue({
+        user: { id: 'student-1' },
+        profile: { id: 'student-1', role: 'student', verified: false },
+      } as never);
+      renderEditor();
+
+      expect(screen.queryByRole('button', { name: /manage/i })).not.toBeInTheDocument();
+    });
+  });
 });

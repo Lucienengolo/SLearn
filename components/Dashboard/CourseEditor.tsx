@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { uploadLessonVideo, uploadLessonPDF, uploadCourseThumbnail } from '../../lib/storage';
 import { renderRichText } from '../../lib/richText';
 import QuizBuilder, { QuizDraft, emptyQuizDraft } from './QuizBuilder';
+import ManageCategoriesModal from './ManageCategoriesModal';
 import { useLocale } from '../../contexts/LocaleContext';
 import type { TranslationKey } from '../../lib/i18n';
 
@@ -139,7 +140,7 @@ type CourseEditorProps = {
 
 export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const { t } = useLocale();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -147,6 +148,7 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [creatingCategory, setCreatingCategory] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [durationHours, setDurationHours] = useState(0);
   const [price, setPrice] = useState(0);
@@ -172,6 +174,15 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
       .order('name');
 
     if (data) setCategories(data);
+    return data ?? [];
+  };
+
+  // After a delete in ManageCategoriesModal, clear categoryId if it was
+  // pointing at the just-deleted row -- otherwise the form would silently
+  // submit a category_id that no longer exists.
+  const handleCategoriesChanged = async () => {
+    const refreshed = await fetchCategories();
+    setCategoryId((current) => (refreshed.some((c) => c.id === current) ? current : ''));
   };
 
   const handleCreateCategory = async () => {
@@ -524,6 +535,20 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                     <Plus size={14} />
                     {t('dashboard.courseEditor.newCategoryButton')}
                   </button>
+                  {/* Verified-instructors-only, matching the delete RLS
+                      policy (0045_instructors_delete_categories.sql) --
+                      hiding the affordance from anyone who'd just get an
+                      RLS error avoids a confusing dead-end click. */}
+                  {profile?.role === 'instructor' && profile.verified && (
+                    <button
+                      type="button"
+                      onClick={() => setManageCategoriesOpen(true)}
+                      className="flex items-center gap-1 px-3 rounded-[10px] border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition flex-shrink-0 whitespace-nowrap"
+                    >
+                      <Trash2 size={14} />
+                      {t('dashboard.courseEditor.manageCategoriesButton')}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -876,6 +901,12 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
           </div>
         </div>
       </div>
+
+      <ManageCategoriesModal
+        isOpen={manageCategoriesOpen}
+        onClose={() => setManageCategoriesOpen(false)}
+        onCategoriesChanged={handleCategoriesChanged}
+      />
     </div>
   );
 }

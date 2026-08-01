@@ -1,5 +1,17 @@
 # TODOS
 
+## Beta-readiness roadmap, Batch 5: category management (add existed, delete didn't) (2026-08-01)
+
+Founder: "add a clear option to add or delete a course category." Adding already existed (`CourseEditor.tsx`'s inline "+" chip, and `RequestForm.tsx`'s equivalent for parents); deleting had no path at all -- `categories` had a public SELECT policy and 2 INSERT policies, but no UPDATE or DELETE policy whatsoever, meaning every delete attempt was RLS-denied for every role, full stop.
+
+`0045_instructors_delete_categories.sql` adds a DELETE policy scoped to **verified instructors only** (locked decision) -- matches the ORIGINAL, more conservative category-creation policy from before parents were allowed to create ad-hoc ones (0028 vs. the looser 0041), since deleting is more consequential than creating. There's no admin/moderator role anywhere in this app (`profiles.role` is a hard check constraint: only `'student'`/`'instructor'`), so this is the tightest scoping available without a bigger role-model change.
+
+**Deleting isn't just an RLS question, though.** The 3 tables that reference `categories.id` behave differently on delete: `courses.category_id` is `ON DELETE SET NULL` (would silently blank a course's category -- no error, but not what anyone wants), `tutor_requests.category_id` has no `ON DELETE` clause (defaults to RESTRICT -- blocks with a raw, unfriendly Postgres FK error), and `tutor_subjects.category_id` is `ON DELETE CASCADE` (would silently delete a tutor's subject-matching rows). New `lib/categories.ts`'s `checkCategoryUsage()` queries all 3 tables' row counts for a category *before* attempting the delete, so the UI can show a clear "used by N courses/requests, remove it from those first" message instead of any of those three surprising behaviors.
+
+New `components/Dashboard/ManageCategoriesModal.tsx` (a "Manage" button next to the existing category picker in `CourseEditor.tsx`, visible only to verified instructors -- hiding it from anyone who'd just hit the RLS wall) lists every category with a delete action, using the existing `ConfirmDialog` component (not a native `confirm()`) for the destructive-action confirmation, consistent with this app's established alert()/confirm()-replacement pattern.
+
+Verified both directions of the RLS policy (blocked: unverified instructor, student; allowed: verified instructor) plus the `SET NULL`/cascade FK behaviors against the local `ci_test` stub before deploying. Full suite (354/354, up 9), typecheck clean.
+
 ## Beta-readiness roadmap, Batch 4: new-chat-message notifications (2026-08-01)
 
 Founder: notify users of new messages on the tutor chat. `lib/matches.ts`'s `sendMessage()` inserts directly into `messages` as the authenticated sender -- `notifications`' own INSERT policy only allows a user to notify themselves (0023_notifications.sql), so a plain client-side insert can't notify the OTHER party in the conversation. `NotificationBell.tsx` (bell icon in `Header.tsx`) and the `notifications` table already existed and work (load-on-mount, mark-read) -- there was just never a trigger creating a notification for a new chat message specifically.
