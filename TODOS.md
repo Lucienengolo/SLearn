@@ -1,5 +1,15 @@
 # TODOS
 
+## Beta-readiness roadmap, Batch 4: new-chat-message notifications (2026-08-01)
+
+Founder: notify users of new messages on the tutor chat. `lib/matches.ts`'s `sendMessage()` inserts directly into `messages` as the authenticated sender -- `notifications`' own INSERT policy only allows a user to notify themselves (0023_notifications.sql), so a plain client-side insert can't notify the OTHER party in the conversation. `NotificationBell.tsx` (bell icon in `Header.tsx`) and the `notifications` table already existed and work (load-on-mount, mark-read) -- there was just never a trigger creating a notification for a new chat message specifically.
+
+Added `0044_message_notifications.sql`: a `security definer` Postgres trigger on `messages` AFTER INSERT, running with the migration owner's privileges to bypass the self-only INSERT policy for this one narrow, server-controlled side effect -- the same pattern the existing edge functions already use via the service-role key, just expressed as a trigger since messages are inserted directly by the client with no edge function in that path. Resolves the recipient (whichever of the match's tutor or the request's parent is NOT the sender) and reuses the flat-page-string `link` convention already established by `match-tutor-request`'s own notification inserts (`'tutor-matches'` / `'my-requests'` -- `NotificationBell` doesn't support per-match deep links today). The notification insert is wrapped in its own exception handler so a notification failure can never roll back the actual chat message -- mirrors the existing edge functions' "log and continue" leniency around notifications.
+
+**Local `ci_test` stub gap found and fixed along the way**: the stub was missing the `notifications` table entirely (0023_notifications.sql had never been applied to it, even though later migrations had) -- applied it before verifying this trigger. Also re-learned a subtlety from earlier sessions' RLS-testing notes: `auth.role()` reads `request.jwt.claim.role` (singular, dot-path), NOT the `request.jwt.claims` JSON blob used for `auth.uid()`-style claims elsewhere -- setting the wrong one silently no-ops trigger checks that gate on `auth.role() = 'service_role'` (like `profiles_set_updated_at()`'s role/verified guard) without raising an error, which briefly looked like the fixture setup itself was broken.
+
+Verified both directions (tutor->parent, parent->tutor) end-to-end against `ci_test` with real fixture data before deploying; migration pushed to production. No client-side changes needed.
+
 ## Beta-readiness roadmap, Batch 2: payments disabled for V1 + FCFA currency migration (2026-08-01)
 
 Founder decision (locked via AskUserQuestion during planning): local payment methods (Mobile Money) aren't integrated yet, and Stripe-in-USD isn't a good fit for this market either -- for V1, **both** course purchases and tutor deposit/balance payments switch to a "not available yet" message instead of real charging, while the payment buttons themselves stay visible (explicit founder instruction, not hidden/removed).
