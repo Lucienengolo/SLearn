@@ -145,7 +145,22 @@ export default function CourseList({ onCourseSelect, initialSearch, initialCateg
     }
 
     if (searchQuery) {
-      query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      // PostgREST's .or() can't filter on a joined table's column
+      // (instructor.full_name) in the same call as the base table's own
+      // columns -- resolve matching instructor ids in a separate query
+      // first, then fold them into the existing title/description OR via
+      // instructor_id.in.(...).
+      const { data: matchingInstructors } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'instructor')
+        .ilike('full_name', `%${searchQuery}%`);
+
+      const orParts = [`title.ilike.%${searchQuery}%`, `description.ilike.%${searchQuery}%`];
+      if (matchingInstructors && matchingInstructors.length > 0) {
+        orParts.push(`instructor_id.in.(${matchingInstructors.map((p) => p.id).join(',')})`);
+      }
+      query = query.or(orParts.join(','));
     }
 
     if (sortBy === 'price_low') {

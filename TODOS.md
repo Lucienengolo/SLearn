@@ -1,5 +1,13 @@
 # TODOS
 
+## Beta-readiness roadmap, Batch 6: search courses by instructor name (2026-08-01)
+
+Founder: on the course search bar, let users search by instructor name too -- `CourseList.tsx`'s search previously only matched `title`/`description` via a single `.or()` call directly on the `courses` table. PostgREST's `.or()` can't filter on a joined table's column (`instructor.full_name`) in the same call as the base table's own columns, so a straight one-line addition wasn't possible.
+
+Resolved with a two-step query: when `searchQuery` is set, first look up matching instructor ids (`profiles` where `role = 'instructor'` and `full_name ilike`), then fold those into the existing title/description `.or()` as `instructor_id.in.(...)` -- one extra round trip, no schema change or RPC needed. Falls back to the original title/description-only behavior when no instructor name matches, and is skipped entirely when the search box is empty (unchanged from before).
+
+`CourseList.tsx` had zero test coverage before this -- added `tests/CourseList.test.tsx` covering both the instructor-match and no-match cases plus the empty-search no-op, rather than adding tests only for the new behavior in an untested file. Verified: full suite (357/357, up 3), typecheck clean. No migration needed (uses the existing public-readable `profiles`/`courses` RLS).
+
 ## Beta-readiness roadmap, Batch 5: category management (add existed, delete didn't) (2026-08-01)
 
 Founder: "add a clear option to add or delete a course category." Adding already existed (`CourseEditor.tsx`'s inline "+" chip, and `RequestForm.tsx`'s equivalent for parents); deleting had no path at all -- `categories` had a public SELECT policy and 2 INSERT policies, but no UPDATE or DELETE policy whatsoever, meaning every delete attempt was RLS-denied for every role, full stop.
