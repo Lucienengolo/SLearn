@@ -1,5 +1,9 @@
 # TODOS
 
+## Security review (pre-beta): Permissions-Policy was blocking the app's own geolocation (2026-08-02)
+
+Pre-beta pentest found `vercel.json`'s `Permissions-Policy: geolocation=()` uses an *empty* allowlist, which blocks the geolocation feature for every origin, including same-origin -- the app itself calls `navigator.geolocation` for the tutor-request location-share feature. Changed to `geolocation=(self)`. Plausibly a contributing (or full) root cause of the earlier-reported "location is never shared" bug, independent of the browser/OS-permission-message fixes made earlier this session -- those fixes were still correct and necessary, this is a separate, additional cause at the HTTP-header level.
+
 ## Offline mode: opt-in toggle + connectivity banner + cached lesson review (2026-08-01)
 
 Founder request: an opt-in offline mode. The system should detect when a user loses internet connectivity and switch on offline behavior, but only for users who explicitly turned it on first. Planned via `/home/lucien/.claude/plans/mighty-booping-tiger.md` (plan-mode session, approved) with two scope decisions locked in beforehand: (1) "offline banner + cached course/lesson viewing," not a full offline-first PWA (service worker + background sync) -- that would be its own project comparable in size to today's entire beta-readiness roadmap; (2) the opt-in preference is stored device-locally (`localStorage`), not a database column, since connectivity is inherently per-device.
