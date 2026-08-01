@@ -1,5 +1,13 @@
 # TODOS
 
+## Beta-readiness roadmap, Batch 3: instructor avatar not showing on course page (2026-08-01)
+
+Founder screenshot showed an instructor's course-detail card always rendering initials ("LE") instead of their real uploaded photo. Root cause: `CourseDetail.tsx`'s `fetchCourseData()` select query never asked for `instructor.avatar_url` at all (`instructor:profiles!instructor_id(full_name, bio, verified)`) -- the photo upload flow in `AccountSettings.tsx` (`lib/storage.ts`'s `uploadAvatar`) is real and working, but CourseDetail had no way to know it existed. Added `avatar_url` to the select and the `CourseWithRelations` type, and render the real photo with the same broken-image-fallback pattern established earlier this session (`onError` -> fall back to initials) instead of always showing initials.
+
+Checked `CourseCard.tsx` (the course-list card) too, since the plan assumed it needed the same fix -- it doesn't: that component only ever renders the instructor's name as plain text, no avatar circle at all, so there was nothing to fix there. Fixed the one real bug (`CourseDetail.tsx`) rather than touching a file with no actual issue.
+
+Verified: 3 new regression tests (real photo renders, falls back to initials on load failure, falls back to initials when no avatar_url exists at all) plus the full suite (343/343, up 3), typecheck clean.
+
 ## Beta-readiness roadmap, Batch 1: legal documents (2026-08-01)
 
 Founder ran a personal app review ahead of the security/compliance/RLS pass gating beta testing and flagged 7 product/eng items plus a legal-documentation gap. Full 8-item prioritized roadmap planned via `/home/lucien/.claude/plans/mighty-booping-tiger.md` (plan-mode session, approved). This is Batch 1 of 7 -- highest priority, since research for the plan found Cameroon's Law No. 2024/017 (Personal Data Protection, enacted 23 Dec 2024) became enforceable/sanctionable on 23 June 2026, which has already passed. An app processing children's grades/neighborhoods/location and payment data without a compliant posture is exposed now, not just "should get to eventually."

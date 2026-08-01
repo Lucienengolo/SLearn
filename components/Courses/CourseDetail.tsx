@@ -22,7 +22,7 @@ type CourseDetailProps = {
 };
 
 type CourseWithRelations = Course & {
-  instructor?: { full_name: string; bio: string | null; verified?: boolean };
+  instructor?: { full_name: string; bio: string | null; verified?: boolean; avatar_url?: string | null };
   category?: { name: string };
 };
 
@@ -52,6 +52,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
   const [finalExamPassed, setFinalExamPassed] = useState(false);
   const [showFinalExam, setShowFinalExam] = useState(false);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const [instructorAvatarFailed, setInstructorAvatarFailed] = useState(false);
 
   useEffect(() => {
     fetchCourseData();
@@ -91,7 +92,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
       .from('courses')
       .select(`
         *,
-        instructor:profiles!instructor_id(full_name, bio, verified),
+        instructor:profiles!instructor_id(full_name, bio, verified, avatar_url),
         category:categories(name)
       `)
       .eq('id', courseId)
@@ -422,17 +423,26 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
             {/* Instructor */}
             {course.instructor && (
               <div className="rounded-[14px] border border-canvas-150 p-6 flex gap-4 items-start shadow-sm">
-                <span
-                  className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold"
-                  style={{ background: cover.gradient }}
-                >
-                  {course.instructor.full_name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join('')
-                    .toUpperCase()}
-                </span>
+                {course.instructor.avatar_url && !instructorAvatarFailed ? (
+                  <img
+                    src={course.instructor.avatar_url}
+                    alt={course.instructor.full_name}
+                    className="w-14 h-14 rounded-full flex-shrink-0 object-cover"
+                    onError={() => setInstructorAvatarFailed(true)}
+                  />
+                ) : (
+                  <span
+                    className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold"
+                    style={{ background: cover.gradient }}
+                  >
+                    {course.instructor.full_name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()}
+                  </span>
+                )}
                 <div>
                   <span className="text-2xs font-semibold tracking-[0.08em] uppercase text-gray-500">{t('courseDetail.instructor')}</span>
                   <p className="text-lg font-semibold text-gray-900 mt-0.5 flex items-center gap-1.5">

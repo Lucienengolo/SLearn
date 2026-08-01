@@ -30,7 +30,7 @@ const BASE_COURSE = {
   moderation_notes: null,
   created_at: '',
   updated_at: '',
-  instructor: { full_name: 'Aïcha Mbarga', bio: null, verified: false },
+  instructor: { full_name: 'Aïcha Mbarga', bio: null as string | null, verified: false, avatar_url: null as string | null },
   category: { name: 'Data Science' },
 };
 
@@ -106,5 +106,34 @@ describe('CourseDetail', () => {
     // maps to the BarChart3 icon -- confirms the real fallback cover
     // renders, not just "no img".
     expect(container.querySelector('svg.lucide-chart-column')).toBeInTheDocument();
+  });
+
+  // Regression: a founder screenshot showed the instructor card always
+  // rendering initials, even for an instructor who'd uploaded a real photo
+  // via AccountSettings -- the select query never asked for avatar_url at
+  // all, so the real photo could never appear regardless of upload status.
+  it('shows the instructor\'s real photo when avatar_url is set', async () => {
+    mockTables({ instructor: { full_name: 'Aïcha Mbarga', bio: null, verified: false, avatar_url: 'https://example.com/aicha.jpg' } });
+    renderCourseDetail();
+
+    expect(await screen.findByAltText('Aïcha Mbarga')).toHaveAttribute('src', 'https://example.com/aicha.jpg');
+  });
+
+  it('falls back to initials when the instructor photo fails to load', async () => {
+    mockTables({ instructor: { full_name: 'Aïcha Mbarga', bio: null, verified: false, avatar_url: 'https://example.com/broken.jpg' } });
+    renderCourseDetail();
+
+    const img = await screen.findByAltText('Aïcha Mbarga');
+    fireEvent.error(img);
+
+    expect(screen.queryByAltText('Aïcha Mbarga')).not.toBeInTheDocument();
+    expect(await screen.findByText('AM')).toBeInTheDocument();
+  });
+
+  it('shows initials when the instructor has no avatar_url', async () => {
+    mockTables();
+    renderCourseDetail();
+
+    expect(await screen.findByText('AM')).toBeInTheDocument();
   });
 });
