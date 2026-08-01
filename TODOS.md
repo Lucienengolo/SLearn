@@ -1,5 +1,23 @@
 # TODOS
 
+## Offline mode: opt-in toggle + connectivity banner + cached lesson review (2026-08-01)
+
+Founder request: an opt-in offline mode. The system should detect when a user loses internet connectivity and switch on offline behavior, but only for users who explicitly turned it on first. Planned via `/home/lucien/.claude/plans/mighty-booping-tiger.md` (plan-mode session, approved) with two scope decisions locked in beforehand: (1) "offline banner + cached course/lesson viewing," not a full offline-first PWA (service worker + background sync) -- that would be its own project comparable in size to today's entire beta-readiness roadmap; (2) the opt-in preference is stored device-locally (`localStorage`), not a database column, since connectivity is inherently per-device.
+
+**New `lib/offlineMode.ts`**: mirrors `lib/i18n.ts`'s locale-storage triad exactly (`isOfflineModeEnabled()`/`setOfflineModeEnabled()`), device-local, no migration.
+
+**New `contexts/OfflineContext.tsx`**: tracks real browser connectivity (`navigator.onLine` + `online`/`offline` window events) and the user's opt-in preference, both independently -- the banner and every action-gate check BOTH, so a user who never enabled this sees zero behavior change if their connection drops. New `components/UI/OfflineBanner.tsx` renders only when both are true.
+
+**New `lib/offlineLessonCache.ts`**: caches a lesson's text `content` (not video/PDF -- those are just Supabase Storage URLs, and actually caching the bytes for offline playback needs the Cache API/a service worker, ruled out of scope) after a successful online view, LRU-evicted at 20 entries. **Scope adjustment made during implementation, not anticipated in the plan**: the quiz itself is NOT cached, even though the plan mentioned "quiz JSON" -- `QuizViewer.tsx` does its own separate live fetch of `quiz_questions`, untouched by this feature, so caching the `Quiz` metadata row alone couldn't have made quiz-taking work offline anyway; caching it would have been a promise this code couldn't keep, so it was dropped rather than shipped half-working.
+
+**`LessonViewer.tsx`**: caches content after every successful online fetch (if offline mode is enabled); when offline with a cache hit, renders a simple dedicated "viewing offline" view (title + cached content, no curriculum sidebar/quiz/progress tracking, since none of that data exists offline) instead of trying to fake the full rich view with placeholder data; when offline with no cache hit, shows a clear "open this once while online first" message instead of hanging on a failed fetch.
+
+**Action gates** (2 spots, explicitly not an exhaustive sweep of the ~24 files that call Supabase -- these two are the clearest "needs a live round-trip right now" actions): `Chat.tsx`'s send-message button and `RequestForm.tsx`'s submit both check online status first and show an inline "needs an internet connection" message (each file's own existing error-display pattern) instead of attempting the call.
+
+**`AccountSettings.tsx`**: new "Offline mode" toggle (a real switch, not a checkbox) between the Password and Delete-account cards. This file is entirely hardcoded English -- confirmed via grep before adding anything -- so the new toggle matches that (plain English), rather than introducing the one bilingual section in an otherwise all-English page. Same judgment call made for `AuthModal.tsx`'s consent checkbox before that file got fully translated; `OfflineBanner.tsx` (a brand-new standalone component, not a retrofit) IS bilingual, matching every other new component built today.
+
+Verified: 22 new tests across `lib/offlineMode.ts`, `lib/offlineLessonCache.ts` (including LRU eviction at the 20-entry boundary), `OfflineContext` (real `online`/`offline` event dispatch), `OfflineBanner`, `AccountSettings`' toggle, `LessonViewer`'s three offline paths (caches on success, renders from cache, friendly message with no cache), and both action gates. Full suite (390/390, up 22), typecheck clean.
+
 ## Footer Legal column: locale-specific heading + shortened French link labels (2026-08-01)
 
 Founder screenshots (EN + FR side by side) showed the Legal column looking fine in English but visibly misaligned/cramped in French -- French legal terms are simply longer strings ("Conditions Générales d'Utilisation" vs. "Terms of Service"), so at the same column width the French labels wrapped far more (2 lines each for 3 of the 5 links) while English mostly stayed on one line. Also: an earlier fix today made the column heading "Mentions légales" in BOTH locales per a prior instruction -- founder now wants the heading locale-specific again: "Legal" in English, "Mentions légales" in French.

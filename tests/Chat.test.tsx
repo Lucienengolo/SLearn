@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import Chat from '../components/Tutors/Chat';
 import * as matchesLib from '../lib/matches';
 import { LocaleProvider } from '../contexts/LocaleContext';
+import { OfflineProvider } from '../contexts/OfflineContext';
 import type { Match, ChatMessage, TutorRequest, Profile, TutorProfileFields } from '../lib/supabase';
 import type { MatchContext } from '../lib/matches';
 import type { ComponentProps } from 'react';
@@ -11,7 +12,9 @@ import type { ComponentProps } from 'react';
 function renderChat(props: ComponentProps<typeof Chat>) {
   return render(
     <LocaleProvider>
-      <Chat {...props} />
+      <OfflineProvider>
+        <Chat {...props} />
+      </OfflineProvider>
     </LocaleProvider>
   );
 }
@@ -89,6 +92,7 @@ function mockContext(match: Match): MatchContext {
 describe('Chat', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   it("shows the tutor's accept/decline block when awaiting response, not the message composer", async () => {
@@ -183,6 +187,30 @@ describe('Chat', () => {
 
     await waitFor(() => expect(sendSpy).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByText(/failed to send/i)).not.toBeInTheDocument());
+  });
+
+  // Regression: founder request, 2026-08-01 -- a user who opted into
+  // offline mode and is currently offline should see a clear message
+  // instead of the send silently failing/retrying against a dead network.
+  it('blocks sending and shows a message when offline mode is enabled and the browser is offline', async () => {
+    localStorage.setItem('slearn_offline_mode_enabled', 'true');
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+
+    const user = userEvent.setup();
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
+    vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
+    const sendSpy = vi.spyOn(matchesLib, 'sendMessage');
+
+    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
+
+    const input = await screen.findByPlaceholderText(/write a message/i);
+    await user.type(input, 'Salut');
+    await user.click(screen.getByRole('button', { name: /^send$/i }));
+
+    expect(await screen.findByText(/needs an internet connection/i)).toBeInTheDocument();
+    expect(sendSpy).not.toHaveBeenCalled();
+
+    Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
   });
 
   it('shows the session-date confirmation form while messaging with no confirmed date, and submits it', async () => {

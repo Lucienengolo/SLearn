@@ -2,8 +2,10 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { OfflineProvider } from './contexts/OfflineContext';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
+import OfflineBanner from './components/UI/OfflineBanner';
 import HomePage from './components/Home/HomePage';
 import LandingPage from './components/Home/LandingPage';
 import CourseList from './components/Courses/CourseList';
@@ -174,6 +176,8 @@ function AppContent() {
         onOpenAuthModal={handleOpenAuthModal}
         onCloseAuthModal={() => setAuthModalOpen(false)}
       />
+
+      <OfflineBanner />
 
       {isPasswordRecovery && <ResetPasswordPrompt />}
 
@@ -373,9 +377,11 @@ function App() {
   return (
     <LocaleProvider>
       <ToastProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
+        <OfflineProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </OfflineProvider>
       </ToastProvider>
     </LocaleProvider>
   );

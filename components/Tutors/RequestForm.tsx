@@ -4,6 +4,7 @@ import { supabase, Category, TutorRequest } from '../../lib/supabase';
 import { createTutorRequest, matchTutorRequest, isValidWhatsappContact } from '../../lib/tutorRequests';
 import { getCurrentLocation } from '../../lib/geolocation';
 import { useLocale } from '../../contexts/LocaleContext';
+import { useOfflineStatus } from '../../contexts/OfflineContext';
 
 type RequestFormProps = {
   onSubmitted: (requests: TutorRequest[]) => void;
@@ -42,6 +43,7 @@ type SharedErrors = Partial<{
 // one sitting instead of repeating the whole form.
 export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const { t } = useLocale();
+  const { isOnline, offlineModeEnabled } = useOfflineStatus();
   const [categories, setCategories] = useState<Category[]>([]);
   const [children, setChildren] = useState<ChildEntry[]>([emptyChild()]);
   const [neighborhood, setNeighborhood] = useState('');
@@ -181,6 +183,14 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
     setChildErrors(nextChildErrors);
     setSharedErrors(nextSharedErrors);
     if (Object.keys(nextChildErrors).length > 0 || Object.keys(nextSharedErrors).length > 0) return;
+
+    // Only gated for users who opted into offline mode -- a real network
+    // failure for anyone else still surfaces via the existing catch below,
+    // same as before this feature existed.
+    if (!isOnline && offlineModeEnabled) {
+      setSubmitError(t('offline.actionUnavailable'));
+      return;
+    }
 
     setSubmitting(true);
     setSubmitError('');

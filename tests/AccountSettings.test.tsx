@@ -7,6 +7,7 @@ import AccountSettings from '../components/Account/AccountSettings';
 import { supabase } from '../lib/supabase';
 import { ToastProvider } from '../contexts/ToastContext';
 import { LocaleProvider } from '../contexts/LocaleContext';
+import { OfflineProvider } from '../contexts/OfflineContext';
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn(), functions: { invoke: vi.fn() } },
@@ -41,7 +42,9 @@ function renderAccountSettings(props: Partial<{ onBack: () => void; onNavigate: 
   return render(
     <LocaleProvider>
       <ToastProvider>
-        <AccountSettings onBack={props.onBack ?? vi.fn()} onNavigate={props.onNavigate ?? vi.fn()} />
+        <OfflineProvider>
+          <AccountSettings onBack={props.onBack ?? vi.fn()} onNavigate={props.onNavigate ?? vi.fn()} />
+        </OfflineProvider>
       </ToastProvider>
     </LocaleProvider>
   );
@@ -176,6 +179,23 @@ describe('AccountSettings', () => {
 
       expect(await screen.findByText(/failed to delete account/i)).toBeInTheDocument();
       expect(signOut).not.toHaveBeenCalled();
+    });
+  });
+
+  // Regression: founder request, 2026-08-01 -- an opt-in offline-mode
+  // toggle, stored device-locally (no database column), so a user must
+  // explicitly turn it on before losing connectivity changes anything.
+  describe('offline mode toggle', () => {
+    it('defaults to off and can be turned on', async () => {
+      const user = userEvent.setup();
+      mockAuth();
+      renderAccountSettings();
+
+      const toggle = screen.getByRole('checkbox', { name: /enable offline mode/i });
+      expect(toggle).not.toBeChecked();
+
+      await user.click(toggle);
+      expect(toggle).toBeChecked();
     });
   });
 });

@@ -5,13 +5,16 @@ import RequestForm from '../components/Tutors/RequestForm';
 import * as tutorRequestsLib from '../lib/tutorRequests';
 import * as geolocationLib from '../lib/geolocation';
 import { LocaleProvider } from '../contexts/LocaleContext';
+import { OfflineProvider } from '../contexts/OfflineContext';
 import type { TutorRequest } from '../lib/supabase';
 import type { ComponentProps } from 'react';
 
 function renderRequestForm(props: ComponentProps<typeof RequestForm>) {
   return render(
     <LocaleProvider>
-      <RequestForm {...props} />
+      <OfflineProvider>
+        <RequestForm {...props} />
+      </OfflineProvider>
     </LocaleProvider>
   );
 }
@@ -74,7 +77,10 @@ async function fillChild(user: ReturnType<typeof userEvent.setup>, subjectName: 
 }
 
 describe('RequestForm', () => {
-  beforeEach(() => vi.restoreAllMocks());
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
 
   it('shows validation errors and does not submit when required fields are empty', async () => {
     const user = userEvent.setup();
@@ -90,6 +96,27 @@ describe('RequestForm', () => {
     expect(screen.getByText('Enter the neighborhood')).toBeInTheDocument();
     expect(screen.getByText('WhatsApp number required')).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  // Regression: founder request, 2026-08-01 -- a user who opted into
+  // offline mode and is currently offline should see a clear message
+  // instead of the submission silently failing against a dead network.
+  it('blocks submission and shows a message when offline mode is enabled and the browser is offline', async () => {
+    localStorage.setItem('slearn_offline_mode_enabled', 'true');
+    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
+
+    const user = userEvent.setup();
+    const createSpy = vi.spyOn(tutorRequestsLib, 'createTutorRequest');
+    renderRequestForm({ onSubmitted: vi.fn() });
+
+    await fillChild(user, /^Mathématiques$/);
+    await fillSharedFields(user);
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
+
+    expect(await screen.findByText(/needs an internet connection/i)).toBeInTheDocument();
+    expect(createSpy).not.toHaveBeenCalled();
+
+    Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
   });
 
   it('rejects a malformed WhatsApp number without calling createTutorRequest', async () => {

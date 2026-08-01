@@ -150,6 +150,13 @@ export const translations = {
     'auth.genericError': "Une erreur s'est produite",
     'auth.sessionExpiredMessage': 'Votre session a expiré après 72 heures. Veuillez vous reconnecter.',
 
+    'offline.bannerMessage': "Vous êtes hors ligne. Certaines actions ne seront pas disponibles tant que votre connexion n'est pas rétablie.",
+    'offline.actionUnavailable': "Cette action nécessite une connexion internet. Réessayez une fois reconnecté.",
+    'offline.lessonUnavailablePrefix': "Cette leçon n'est pas disponible hors ligne.",
+    'offline.lessonUnavailableSuffix': 'Ouvrez-la une première fois en ligne pour y accéder hors ligne ensuite.',
+    'offline.viewingCached': 'Affichage hors ligne — version mise en cache',
+    'offline.mediaUnavailable': 'La vidéo/le PDF nécessite une connexion internet.',
+
     'courses.explore': 'Explorer les cours',
     'courses.allCategories': 'Toutes les catégories',
     'courses.saved': 'Enregistrés',
@@ -999,6 +1006,13 @@ export const translations = {
     'auth.browseGuestSuffix': 'Browse free courses as a guest',
     'auth.genericError': 'An error occurred',
     'auth.sessionExpiredMessage': 'Your session expired after 72 hours. Please sign in again.',
+
+    'offline.bannerMessage': "You're offline. Some actions won't be available until your connection is back.",
+    'offline.actionUnavailable': 'This action needs an internet connection. Try again once reconnected.',
+    'offline.lessonUnavailablePrefix': "This lesson isn't available offline.",
+    'offline.lessonUnavailableSuffix': 'Open it once while online first to access it offline afterwards.',
+    'offline.viewingCached': 'Viewing offline — cached version',
+    'offline.mediaUnavailable': 'Video/PDF needs an internet connection.',
 
     'courses.explore': 'Explore courses',
     'courses.allCategories': 'All categories',

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, ListTree, Lock, PlayCircle, Sparkles, Wifi } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Download, FileText, ListTree, Lock, PlayCircle, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { supabase, Lesson, Course, LessonProgress, Quiz } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfflineStatus } from '../../contexts/OfflineContext';
 import { completeGuestLesson, isGuestLessonComplete } from '../../lib/guestSession';
 import { trackEvent } from '../../lib/analytics';
 import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
 import { isSlowConnection, getNetworkInfo } from '../../lib/connectionDetection';
+import { cacheLessonForOffline, getCachedLesson, CachedLesson } from '../../lib/offlineLessonCache';
 import { renderRichText } from '../../lib/richText';
 import { ICON_BADGE_GRADIENTS } from '../../lib/iconBadgeTones';
 import IconBadge from '../UI/IconBadge';
@@ -20,6 +22,7 @@ type LessonViewerProps = {
 
 export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   const { user } = useAuth();
+  const { isOnline, offlineModeEnabled } = useOfflineStatus();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
@@ -29,6 +32,12 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
   const [courseProgressPercentage, setCourseProgressPercentage] = useState(0);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  // Set only when viewing from the offline cache (no live course/curriculum/
+  // quiz data exists in that case) or when offline with nothing cached yet
+  // for this lesson -- these render a much simpler view than the full
+  // lesson page, since neither has the rest of the course context to show.
+  const [offlineCachedLesson, setOfflineCachedLesson] = useState<CachedLesson | null>(null);
+  const [offlineNoCacheAvailable, setOfflineNoCacheAvailable] = useState(false);
   const [showKairosMind, setShowKairosMind] = useState(() => localStorage.getItem('kairos-mind-visible') !== 'false');
   const [showCurriculum, setShowCurriculum] = useState(() => localStorage.getItem('curriculum-visible') !== 'false');
   // Stored preference wins over auto-detection, same as showKairosMind/
@@ -70,10 +79,24 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
     // before auth resolves, taking the guest-mode branch and never
     // refetching once the real signed-in user loads (found by screenshot-
     // testing the deployed curriculum sidebar showing lessons as
-    // incomplete/locked despite being done in the real account).
-  }, [lessonId, user]);
+    // incomplete/locked despite being done in the real account). isOnline
+    // is also real -- coming back online mid-read should retry the full
+    // fetch instead of staying stuck on the cached/unavailable view.
+  }, [lessonId, user, isOnline]);
 
   const fetchLessonData = async () => {
+    // Offline mode is opt-in (lib/offlineMode.ts) -- a user who never
+    // enabled it gets the exact previous behavior (the live fetch below
+    // just fails/hangs as it always did), no surprise new code path.
+    if (!isOnline && offlineModeEnabled) {
+      const cached = getCachedLesson(lessonId);
+      setOfflineCachedLesson(cached);
+      setOfflineNoCacheAvailable(!cached);
+      return;
+    }
+    setOfflineCachedLesson(null);
+    setOfflineNoCacheAvailable(false);
+
     const { data: lessonData } = await supabase
       .from('lessons')
       .select('*')
@@ -82,6 +105,19 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
 
     if (lessonData) {
       setLesson(lessonData);
+
+      // Only the lesson's text content is cached -- not video/PDF (just
+      // Storage URLs, actual offline playback needs a service worker,
+      // ruled out of scope) and not the quiz (QuizViewer.tsx does its own
+      // separate live fetch of quiz_questions, untouched by this feature).
+      if (offlineModeEnabled && lessonData.content) {
+        cacheLessonForOffline({
+          id: lessonData.id,
+          courseId: lessonData.course_id,
+          title: lessonData.title,
+          content: lessonData.content,
+        });
+      }
 
       const { data: courseData } = await supabase
         .from('courses')
@@ -272,6 +308,37 @@ export default function LessonViewer({ lessonId, onBack }: LessonViewerProps) {
       fetchLessonData();
     }
   };
+
+  if (offlineNoCacheAvailable) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <WifiOff size={36} className="mx-auto text-gray-400 mb-4" />
+        <p className="text-gray-700 font-medium mb-1">This lesson isn't available offline.</p>
+        <p className="text-sm text-gray-500 mb-6">Open it once while online first to access it offline afterwards.</p>
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mx-auto">
+          <ChevronLeft size={16} />
+          Back to course
+        </button>
+      </div>
+    );
+  }
+
+  if (offlineCachedLesson) {
+    return (
+      <div className="max-w-[760px] mx-auto px-4 sm:px-6 py-7">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-5">
+          <ChevronLeft size={16} />
+          Back to course
+        </button>
+        <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-[10px] px-3.5 py-2.5 mb-5">
+          <WifiOff size={15} className="flex-shrink-0" />
+          Viewing offline — cached version
+        </div>
+        <h1 className="font-display text-2xl sm:text-3xl text-gray-900 mb-6">{offlineCachedLesson.title}</h1>
+        <div className="prose max-w-none text-gray-700 leading-relaxed">{renderRichText(offlineCachedLesson.content)}</div>
+      </div>
+    );
+  }
 
   if (!lesson || !course) {
     return (

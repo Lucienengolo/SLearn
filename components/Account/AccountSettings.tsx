@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Camera, LogOut, User as UserIcon, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useOfflineStatus } from '../../contexts/OfflineContext';
 import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/storage';
 import { TOTEMS, totemByName } from '../../lib/totems';
@@ -24,6 +25,7 @@ type AccountSettingsProps = {
 export default function AccountSettings({ onBack, onNavigate }: AccountSettingsProps) {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const { showToast } = useToast();
+  const { offlineModeEnabled, setOfflineModeEnabled } = useOfflineStatus();
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -384,6 +386,34 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
             >
               {savingPassword ? 'Updating…' : 'Update password'}
             </button>
+          </div>
+        </div>
+
+        {/* This file is entirely hardcoded English (confirmed before adding
+            this) -- matching its current state rather than introducing the
+            one bilingual section in an otherwise all-English page, same
+            call made for AuthModal.tsx's consent checkbox before that file
+            got fully translated. */}
+        <div className="rounded-[14px] border border-canvas-150 p-6 mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-gray-900 mb-1">Offline mode</h2>
+              <p className="text-sm text-gray-500">
+                When enabled, lessons you've already opened stay available to review without an internet
+                connection, and the app shows a clear notice if you lose connectivity.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={offlineModeEnabled}
+                onChange={(e) => setOfflineModeEnabled(e.target.checked)}
+                className="sr-only peer"
+                aria-label="Enable offline mode"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-checked:bg-primary-500 rounded-full transition-colors" />
+              <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+            </label>
           </div>
         </div>
 

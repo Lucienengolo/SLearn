@@ -12,6 +12,7 @@ import {
 } from '../../lib/matches';
 import { ChatMessage } from '../../lib/supabase';
 import { useLocale } from '../../contexts/LocaleContext';
+import { useOfflineStatus } from '../../contexts/OfflineContext';
 import type { TranslationKey } from '../../lib/i18n';
 
 type ChatProps = {
@@ -43,6 +44,7 @@ type PendingMessage = { tempId: string; body: string; failed: boolean };
 // designs/tutor-mvp-screens-20260721/wireframe.html
 export default function Chat({ matchId, currentUserId, viewerRole }: ChatProps) {
   const { t } = useLocale();
+  const { isOnline, offlineModeEnabled } = useOfflineStatus();
   const [context, setContext] = useState<MatchContext | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [composerText, setComposerText] = useState('');
@@ -94,6 +96,13 @@ export default function Chat({ matchId, currentUserId, viewerRole }: ChatProps) 
     e.preventDefault();
     const body = composerText.trim();
     if (!body || pending) return;
+    // Only gated for users who opted into offline mode -- a real network
+    // failure for anyone else still surfaces via attemptSend's own catch,
+    // same as before this feature existed.
+    if (!isOnline && offlineModeEnabled) {
+      setActionError(t('offline.actionUnavailable'));
+      return;
+    }
     setComposerText('');
     const tempId = `temp-${Date.now()}`;
     setPending({ tempId, body, failed: false });
