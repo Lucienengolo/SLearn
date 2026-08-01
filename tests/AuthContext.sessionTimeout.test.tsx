@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { ToastProvider } from '../contexts/ToastContext';
+import { LocaleProvider } from '../contexts/LocaleContext';
 import { supabase } from '../lib/supabase';
 import { markSessionStart, SESSION_MAX_DURATION_MS } from '../lib/sessionTimeout';
 
@@ -26,9 +28,13 @@ function Probe() {
 
 function renderAuth() {
   return render(
-    <AuthProvider>
-      <Probe />
-    </AuthProvider>
+    <LocaleProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      </ToastProvider>
+    </LocaleProvider>
   );
 }
 
@@ -60,6 +66,22 @@ describe('AuthContext 72h session timeout', () => {
     expect(supabase.auth.signOut).toHaveBeenCalled();
   });
 
+  // Regression: a forced sign-out from the 72h cap used to happen
+  // completely silently -- the user would just find themselves logged out
+  // with no explanation.
+  it('shows a toast explaining the session expired', async () => {
+    const startedAt = Date.now() - (SESSION_MAX_DURATION_MS + 60_000);
+    localStorage.setItem('slearn_session_started_at', String(startedAt));
+
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: FAKE_USER } },
+    } as never);
+
+    renderAuth();
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/session expired/i);
+  });
+
   it('keeps a session signed in when it started well within the last 72h', async () => {
     markSessionStart();
 
@@ -71,6 +93,7 @@ describe('AuthContext 72h session timeout', () => {
 
     await waitFor(() => expect(screen.getByText('signed-in:user-1')).toBeInTheDocument());
     expect(supabase.auth.signOut).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('does not call signOut when there is no session at all to begin with', async () => {

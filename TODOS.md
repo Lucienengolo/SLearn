@@ -1,5 +1,15 @@
 # TODOS
 
+## Session-expiry sign-out now shows a message instead of happening silently (2026-08-01)
+
+Follow-up from the i18n audit: the 72h session-timeout forced sign-out (`AuthContext.tsx`, added earlier today) called `supabase.auth.signOut()` with no user-visible explanation at all -- someone would just find themselves logged out. Added a toast (`t('auth.sessionExpiredMessage')`, both FR/EN) at both call sites (the mount-time check and the 15-min interval check).
+
+`AuthProvider` now calls `useToast()`/`useLocale()`, which only works because `App.tsx` already nests it inside both `ToastProvider` and `LocaleProvider` -- confirmed before making the change rather than assuming. The `showToast`/`t` references are captured once at effect setup (the effect's empty dependency array is intentional, to avoid tearing down and re-subscribing the auth listener/interval on every locale change) -- documented as an accepted tradeoff: a session that expires long after a locale switch shows the message in whatever locale was active on mount, but this path fires at most once per 72h, so it's not worth the added complexity to keep it perfectly current.
+
+`tests/AuthContext.sessionTimeout.test.tsx` needed `ToastProvider`/`LocaleProvider` added to its render wrapper (same pattern as `AuthModal.test.tsx` needing `LocaleProvider` earlier today) -- added a new regression test asserting the toast actually renders with session-expiry text, and confirmed no toast appears for a session that's still valid.
+
+Verified: full suite (368/368, up 1), typecheck clean.
+
 ## AuthModal fully translated (was the last untranslated surface) (2026-08-01)
 
 Founder: "apply the translation to all the new modifications" (from today's beta-readiness roadmap work). Audited every file touched today (`ManageCategoriesModal.tsx`, `LegalDocument.tsx`, `Footer.tsx`, `CourseDetail.tsx`'s and `PaymentStatus.tsx`'s new payment-gate messages, `CourseEditor.tsx`'s new "Manage" button) -- all of them already used `t()` throughout. The one real gap: `AuthModal.tsx` was entirely hardcoded English, a known, previously-deferred i18n gap (explicitly not translated when the Terms/Privacy consent checkbox was added earlier today, to avoid a form that's partially bilingual and partially not).

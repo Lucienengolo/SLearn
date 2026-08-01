@@ -3,6 +3,8 @@ import { User } from '@supabase/supabase-js';
 import { supabase, Profile } from '../lib/supabase';
 import { identifyUser, resetAnalytics, trackEvent } from '../lib/analytics';
 import { markSessionStart, clearSessionStart, isSessionExpired } from '../lib/sessionTimeout';
+import { useToast } from './ToastContext';
+import { useLocale } from './LocaleContext';
 
 // Checked on mount and every 15 min while the tab stays open -- frequent
 // enough that nobody stays signed in meaningfully past 72h, infrequent
@@ -29,6 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const { showToast } = useToast();
+  const { t } = useLocale();
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -51,11 +55,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // A forced sign-out from the 72h session cap used to happen silently --
+  // the user would just find themselves logged out with no explanation.
+  // showToast/t here are captured once at effect setup (empty dep array,
+  // intentional -- re-running this effect on every locale change would
+  // mean tearing down and re-subscribing the auth listener/interval just
+  // to keep a toast string current), so a session that expires long after
+  // a locale switch shows the message in whatever locale was active on
+  // mount. Acceptable: this path fires at most once per 72h, and the
+  // moment itself (silently losing your session) mattered far more than
+  // which language explains it.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && isSessionExpired()) {
         clearSessionStart();
         supabase.auth.signOut();
+        showToast(t('auth.sessionExpiredMessage'), 'info');
         setLoading(false);
         return;
       }
@@ -105,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSessionExpired()) {
         clearSessionStart();
         supabase.auth.signOut();
+        showToast(t('auth.sessionExpiredMessage'), 'info');
       }
     }, SESSION_CHECK_INTERVAL_MS);
 

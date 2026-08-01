@@ -148,6 +148,7 @@ export const translations = {
     'auth.notReadyPrefix': 'Pas encore prêt ?',
     'auth.browseGuestSuffix': 'Parcourir les cours gratuits en tant qu\'invité',
     'auth.genericError': "Une erreur s'est produite",
+    'auth.sessionExpiredMessage': 'Votre session a expiré après 72 heures. Veuillez vous reconnecter.',
 
     'courses.explore': 'Explorer les cours',
     'courses.allCategories': 'Toutes les catégories',
@@ -997,6 +998,7 @@ export const translations = {
     'auth.notReadyPrefix': 'Not ready?',
     'auth.browseGuestSuffix': 'Browse free courses as a guest',
     'auth.genericError': 'An error occurred',
+    'auth.sessionExpiredMessage': 'Your session expired after 72 hours. Please sign in again.',
 
     'courses.explore': 'Explore courses',
     'courses.allCategories': 'All categories',
