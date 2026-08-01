@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale } from '../../contexts/LocaleContext';
 import IconBadge from '../UI/IconBadge';
 
 type Mode = 'login' | 'signup' | 'forgot';
@@ -24,6 +25,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
   const [resetSent, setResetSent] = useState(false);
 
   const { signIn, signUp, requestPasswordReset } = useAuth();
+  const { t } = useLocale();
   const isLogin = mode === 'login';
 
   const handleClose = () => {
@@ -85,7 +87,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : t('auth.genericError'));
     } finally {
       setLoading(false);
     }
@@ -97,12 +99,12 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
         className="bg-white rounded-[14px] max-w-md w-full p-7 relative"
         role="dialog"
         aria-modal="true"
-        aria-label={mode === 'forgot' ? 'Reset password' : isLogin ? 'Sign in' : 'Create account'}
+        aria-label={mode === 'forgot' ? t('auth.ariaResetPassword') : isLogin ? t('auth.ariaSignIn') : t('auth.ariaCreateAccount')}
       >
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 p-2.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition"
-          aria-label="Close"
+          aria-label={t('auth.closeAria')}
         >
           <X size={20} />
         </button>
@@ -110,44 +112,42 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
         {confirmationPending ? (
           <div className="text-center py-4">
             <IconBadge icon={CheckCircle} tone="green" size={56} iconSize={30} className="mx-auto mb-4" />
-            <h2 className="font-display text-2xl mb-2 text-gray-900">Check your email</h2>
+            <h2 className="font-display text-2xl mb-2 text-gray-900">{t('auth.checkYourEmail')}</h2>
             <p className="text-gray-500 text-sm">
-              We sent a confirmation link to <strong className="text-gray-700">{email}</strong>. Click it to activate
-              your account, then sign in here.
+              {t('auth.confirmationSentPrefix')} <strong className="text-gray-700">{email}</strong>. {t('auth.confirmationSentSuffix')}
             </p>
             <button
               onClick={handleClose}
               className="mt-6 w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold"
             >
-              Got it
+              {t('auth.gotIt')}
             </button>
           </div>
         ) : resetSent ? (
           <div className="text-center py-4">
             <IconBadge icon={CheckCircle} tone="green" size={56} iconSize={30} className="mx-auto mb-4" />
-            <h2 className="font-display text-2xl mb-2 text-gray-900">Check your email</h2>
+            <h2 className="font-display text-2xl mb-2 text-gray-900">{t('auth.checkYourEmail')}</h2>
             <p className="text-gray-500 text-sm">
-              If an account exists for <strong className="text-gray-700">{email}</strong>, we sent a link to reset
-              your password.
+              {t('auth.resetSentPrefix')} <strong className="text-gray-700">{email}</strong>, {t('auth.resetSentSuffix')}
             </p>
             <button
               onClick={handleClose}
               className="mt-6 w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold"
             >
-              Got it
+              {t('auth.gotIt')}
             </button>
           </div>
         ) : (
           <>
             <h2 className="font-display text-2xl mb-6 text-gray-900">
-              {mode === 'forgot' ? 'Reset your password' : isLogin ? 'Welcome back' : 'Create your account'}
+              {mode === 'forgot' ? t('auth.titleResetPassword') : isLogin ? t('auth.titleWelcomeBack') : t('auth.titleCreateAccount')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
                 <div>
                   <label htmlFor="auth-full-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full name
+                    {t('auth.fullNameLabel')}
                   </label>
                   <input
                     id="auth-full-name"
@@ -162,7 +162,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
 
               <div>
                 <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  {t('auth.emailLabel')}
                 </label>
                 <input
                   id="auth-email"
@@ -178,7 +178,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700">
-                      Password
+                      {t('auth.passwordLabel')}
                     </label>
                     {isLogin && (
                       <button
@@ -189,7 +189,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                         }}
                         className="text-2xs text-primary-700 hover:underline"
                       >
-                        Forgot password?
+                        {t('auth.forgotPassword')}
                       </button>
                     )}
                   </div>
@@ -204,7 +204,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                   />
                   {mode === 'signup' && (
                     <p className="text-2xs text-gray-500 mt-1">
-                      At least 8 characters, with a mix of uppercase, lowercase and numbers.
+                      {t('auth.passwordHint')}
                     </p>
                   )}
                 </div>
@@ -213,8 +213,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
               {mode === 'signup' && (
                 <>
                   <p className="text-2xs text-gray-500">
-                    Every account starts as a learner. You can apply to become an
-                    instructor from your dashboard once you're signed in.
+                    {t('auth.everyAccountNote')}
                   </p>
 
                   <label className="flex items-start gap-2 text-2xs text-gray-600">
@@ -226,21 +225,21 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                       required
                     />
                     <span>
-                      I agree to the{' '}
+                      {t('auth.agreeToPrefix')}{' '}
                       <button
                         type="button"
                         onClick={() => handleLegalLinkClick('legal-terms')}
                         className="text-primary-700 hover:underline"
                       >
-                        Terms of Service
+                        {t('legal.terms')}
                       </button>{' '}
-                      and{' '}
+                      {t('auth.agreeToAnd')}{' '}
                       <button
                         type="button"
                         onClick={() => handleLegalLinkClick('legal-privacy')}
                         className="text-primary-700 hover:underline"
                       >
-                        Privacy Policy
+                        {t('legal.privacy')}
                       </button>
                     </span>
                   </label>
@@ -259,12 +258,12 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                 className="w-full bg-primary-500 text-gray-900 h-11 rounded-[10px] hover:bg-primary-400 transition font-semibold disabled:opacity-50"
               >
                 {loading
-                  ? 'Loading…'
+                  ? t('common.loadingEllipsis')
                   : mode === 'forgot'
-                  ? 'Send reset link'
+                  ? t('auth.sendResetLink')
                   : isLogin
-                  ? 'Sign in'
-                  : 'Create account'}
+                  ? t('auth.ariaSignIn')
+                  : t('auth.ariaCreateAccount')}
               </button>
             </form>
 
@@ -277,7 +276,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                   }}
                   className="text-primary-700 hover:underline text-sm"
                 >
-                  Back to sign in
+                  {t('auth.backToSignIn')}
                 </button>
               ) : (
                 <button
@@ -287,9 +286,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                   }}
                   className="text-primary-700 hover:underline text-sm"
                 >
-                  {isLogin
-                    ? "Don't have an account? Sign up"
-                    : 'Already have an account? Sign in'}
+                  {isLogin ? t('auth.noAccountSignUp') : t('auth.haveAccountSignIn')}
                 </button>
               )}
             </div>
@@ -300,7 +297,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                   onClick={handleClose}
                   className="text-sm text-gray-500 hover:text-gray-700 transition"
                 >
-                  Not ready? <span className="font-medium text-gray-700 underline">Browse free courses as a guest</span>
+                  {t('auth.notReadyPrefix')} <span className="font-medium text-gray-700 underline">{t('auth.browseGuestSuffix')}</span>
                 </button>
               </div>
             )}

@@ -3,6 +3,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as authContext from '../contexts/AuthContext';
 import AuthModal from '../components/Auth/AuthModal';
+import { LocaleProvider } from '../contexts/LocaleContext';
+
+function renderAuthModal(props: Partial<Parameters<typeof AuthModal>[0]> = {}) {
+  return render(
+    <LocaleProvider>
+      <AuthModal isOpen={props.isOpen ?? true} onClose={props.onClose ?? vi.fn()} onNavigate={props.onNavigate ?? vi.fn()} initialMode={props.initialMode} />
+    </LocaleProvider>
+  );
+}
 
 describe('AuthModal initialMode', () => {
   function mockAuth() {
@@ -15,27 +24,43 @@ describe('AuthModal initialMode', () => {
 
   it('opens in login mode by default', () => {
     mockAuth();
-    render(<AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} />);
+    renderAuthModal();
     expect(screen.getByRole('dialog', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 
   it('opens directly in signup mode when initialMode="signup" (landing page CTA)', () => {
     mockAuth();
-    render(<AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="signup" />);
+    renderAuthModal({ initialMode: 'signup' });
     expect(screen.getByRole('dialog', { name: /create account/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument();
   });
 
   it('re-syncs to the new initialMode each time it reopens, since the component stays mounted', () => {
     mockAuth();
-    const { rerender } = render(<AuthModal isOpen={false} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="login" />);
+    const { rerender } = render(
+      <LocaleProvider>
+        <AuthModal isOpen={false} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="login" />
+      </LocaleProvider>
+    );
 
-    rerender(<AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="signup" />);
+    rerender(
+      <LocaleProvider>
+        <AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="signup" />
+      </LocaleProvider>
+    );
     expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument();
 
-    rerender(<AuthModal isOpen={false} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="signup" />);
-    rerender(<AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="login" />);
+    rerender(
+      <LocaleProvider>
+        <AuthModal isOpen={false} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="signup" />
+      </LocaleProvider>
+    );
+    rerender(
+      <LocaleProvider>
+        <AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="login" />
+      </LocaleProvider>
+    );
     expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 });
@@ -55,7 +80,7 @@ describe('AuthModal signup consent', () => {
 
   it('disables account creation until the terms checkbox is checked', async () => {
     mockAuth();
-    render(<AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="signup" />);
+    renderAuthModal({ initialMode: 'signup' });
 
     expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled();
 
@@ -67,7 +92,7 @@ describe('AuthModal signup consent', () => {
 
   it('does not require the checkbox in login mode', () => {
     mockAuth();
-    render(<AuthModal isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} initialMode="login" />);
+    renderAuthModal({ initialMode: 'login' });
 
     expect(screen.getByRole('button', { name: 'Sign in' })).not.toBeDisabled();
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
@@ -77,12 +102,40 @@ describe('AuthModal signup consent', () => {
     mockAuth();
     const onNavigate = vi.fn();
     const onClose = vi.fn();
-    render(<AuthModal isOpen={true} onClose={onClose} onNavigate={onNavigate} initialMode="signup" />);
+    renderAuthModal({ initialMode: 'signup', onClose, onNavigate });
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Terms of Service' }));
 
     expect(onClose).toHaveBeenCalled();
     expect(onNavigate).toHaveBeenCalledWith('legal-terms');
+  });
+});
+
+// Regression: AuthModal was entirely hardcoded English until 2026-08-01 --
+// the whole modal now follows the FR/EN toggle like the rest of the app.
+describe('AuthModal locale', () => {
+  function mockAuth() {
+    vi.spyOn(authContext, 'useAuth').mockReturnValue({
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      requestPasswordReset: vi.fn(),
+    } as never);
+  }
+
+  it('renders in French when the locale is French', () => {
+    vi.stubGlobal('navigator', { language: 'fr-FR' });
+    localStorage.clear();
+    mockAuth();
+
+    renderAuthModal({ initialMode: 'signup' });
+
+    expect(screen.getByRole('heading', { name: 'Créez votre compte' })).toBeInTheDocument();
+    expect(screen.getByText('Nom complet')).toBeInTheDocument();
+    expect(screen.getByText('E-mail')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Créer un compte' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Conditions Générales d\'Utilisation' })).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
   });
 });

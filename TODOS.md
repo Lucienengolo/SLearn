@@ -1,5 +1,15 @@
 # TODOS
 
+## AuthModal fully translated (was the last untranslated surface) (2026-08-01)
+
+Founder: "apply the translation to all the new modifications" (from today's beta-readiness roadmap work). Audited every file touched today (`ManageCategoriesModal.tsx`, `LegalDocument.tsx`, `Footer.tsx`, `CourseDetail.tsx`'s and `PaymentStatus.tsx`'s new payment-gate messages, `CourseEditor.tsx`'s new "Manage" button) -- all of them already used `t()` throughout. The one real gap: `AuthModal.tsx` was entirely hardcoded English, a known, previously-deferred i18n gap (explicitly not translated when the Terms/Privacy consent checkbox was added earlier today, to avoid a form that's partially bilingual and partially not).
+
+Converted the whole file to `useLocale()`/`t()` -- every label, button, aria-label, hint, and state message (sign-in/signup/forgot-password modes, email-confirmation and password-reset "check your email" screens, the consent checkbox text). ~30 new `auth.*` i18n keys added to `lib/i18n.ts` (both FR/EN). Reused the existing `legal.terms`/`legal.privacy` keys for the consent checkbox's link labels rather than duplicating them, and `common.loadingEllipsis` for the submit button's loading state.
+
+`tests/AuthModal.test.tsx` needed a `LocaleProvider` wrapper added (it never needed one before) -- added a shared `renderAuthModal()` helper and a new French-locale regression test, matching the pattern used by every other translated component's test file this session.
+
+Verified: full suite (367/367, up 1), typecheck clean.
+
 ## Footer mobile layout reverted to 2 columns, with smaller text instead (2026-08-01)
 
 Founder: after the earlier single-column mobile stack (this same day), wanted the footer back to 2 columns on mobile -- just with smaller text so it fits without the previous wrapping/cramping problem. Reverted `grid-cols-1` -> `grid-cols-2` (still `sm:grid-cols-4` at wider widths); shrank column headings from the unset base size (~16px) to `text-sm` and links from `text-sm` to `text-xs`, tightened the row/column gaps to match. "Data Processing Agreement" (the longest label, the original culprit) now fits within a half-width mobile column at the smaller size.
