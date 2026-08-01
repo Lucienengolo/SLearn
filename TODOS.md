@@ -1,5 +1,11 @@
 # TODOS
 
+## Footer mobile layout reverted to 2 columns, with smaller text instead (2026-08-01)
+
+Founder: after the earlier single-column mobile stack (this same day), wanted the footer back to 2 columns on mobile -- just with smaller text so it fits without the previous wrapping/cramping problem. Reverted `grid-cols-1` -> `grid-cols-2` (still `sm:grid-cols-4` at wider widths); shrank column headings from the unset base size (~16px) to `text-sm` and links from `text-sm` to `text-xs`, tightened the row/column gaps to match. "Data Processing Agreement" (the longest label, the original culprit) now fits within a half-width mobile column at the smaller size.
+
+Verified: full suite (366/366), typecheck clean.
+
 ## Footer "Legal" column: mobile fit + renamed to "Mentions légales" (2026-08-01)
 
 Founder screenshot showed the footer's new Legal column (added earlier today) looking cramped on mobile -- the footer grid was `grid-cols-2` below `sm:`, and with 4 columns now (up from 3), the 2-up mobile split paired columns of very different heights: Legal has 5 links against its row-mate "For Organizations"' 3, and "Data Processing Agreement" wrapped awkwardly in the half-width cell. Changed to `grid-cols-1 sm:grid-cols-4` -- every column stacks full-width on mobile (giving "Data Processing Agreement" room to sit on one line) and the side-by-side layout returns at `sm:` and up.

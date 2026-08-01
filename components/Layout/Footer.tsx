@@ -94,23 +94,23 @@ export default function Footer({ onNavigate }: FooterProps) {
           </nav>
         </div>
 
-        {/* grid-cols-1 on mobile, not grid-cols-2: with 4 columns now
-            (Legal added 2026-08-01), a 2-up mobile split pairs columns of
-            very different heights -- Legal has 5 links against its
-            row-mate's 2-3, and "Data Processing Agreement" wraps
-            awkwardly in a half-width cell. Single-column stacking gives
-            every column its natural full-width height; sm:grid-cols-4
-            restores the side-by-side layout once there's room. */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 py-10">
+        {/* Back to grid-cols-2 on mobile (founder preferred the more
+            compact 2-up layout over the single-column stack) -- the
+            uneven-column-height/wrapping problem that caused the earlier
+            switch to single-column is addressed by shrinking the text
+            instead: heading text-base->text-sm, links text-sm->text-xs,
+            tighter gaps. "Data Processing Agreement" now fits a half-width
+            mobile column without an awkward wrap. */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6 sm:gap-8 py-8 sm:py-10">
           {columns.map((col) => (
             <div key={col.title}>
-              <h3 className="text-white font-semibold mb-3">{col.title}</h3>
-              <ul className="space-y-2">
+              <h3 className="text-sm text-white font-semibold mb-2">{col.title}</h3>
+              <ul className="space-y-1.5">
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <button
                       onClick={() => onNavigate(link.page)}
-                      className="text-sm text-gray-400 hover:text-white transition"
+                      className="text-xs text-gray-400 hover:text-white transition"
                     >
                       {link.label}
                     </button>
