@@ -94,7 +94,14 @@ export default function Footer({ onNavigate }: FooterProps) {
           </nav>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-10">
+        {/* grid-cols-1 on mobile, not grid-cols-2: with 4 columns now
+            (Legal added 2026-08-01), a 2-up mobile split pairs columns of
+            very different heights -- Legal has 5 links against its
+            row-mate's 2-3, and "Data Processing Agreement" wraps
+            awkwardly in a half-width cell. Single-column stacking gives
+            every column its natural full-width height; sm:grid-cols-4
+            restores the side-by-side layout once there's room. */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 py-10">
           {columns.map((col) => (
             <div key={col.title}>
               <h3 className="text-white font-semibold mb-3">{col.title}</h3>

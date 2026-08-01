@@ -47,7 +47,7 @@ describe('Footer', () => {
     const onNavigate = vi.fn();
     renderFooter(onNavigate);
 
-    expect(screen.getByText('Legal')).toBeInTheDocument();
+    expect(screen.getByText('Mentions légales')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Terms of Service' }));
     expect(onNavigate).toHaveBeenCalledWith('legal-terms');

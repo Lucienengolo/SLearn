@@ -924,7 +924,7 @@ export const translations = {
     'footer.columns.learners.certificates': 'My certificates',
     'footer.columns.educators.title': 'For Educators',
     'footer.columns.organizations.title': 'For Organizations',
-    'footer.columns.legal.title': 'Legal',
+    'footer.columns.legal.title': 'Mentions légales',
     'footer.disclaimer':
       'S@Learn connects learners with independent instructors and tutors. Course content and tutor availability are provided by individual instructors; verification status is shown where available.',
     'footer.copyrightSuffix': 'S@Learn — Store of Learning. Built in Douala, Cameroon.',

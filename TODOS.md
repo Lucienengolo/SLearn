@@ -1,5 +1,13 @@
 # TODOS
 
+## Footer "Legal" column: mobile fit + renamed to "Mentions légales" (2026-08-01)
+
+Founder screenshot showed the footer's new Legal column (added earlier today) looking cramped on mobile -- the footer grid was `grid-cols-2` below `sm:`, and with 4 columns now (up from 3), the 2-up mobile split paired columns of very different heights: Legal has 5 links against its row-mate "For Organizations"' 3, and "Data Processing Agreement" wrapped awkwardly in the half-width cell. Changed to `grid-cols-1 sm:grid-cols-4` -- every column stacks full-width on mobile (giving "Data Processing Agreement" room to sit on one line) and the side-by-side layout returns at `sm:` and up.
+
+Also renamed the column heading from "Legal" to "Mentions légales" in both locales (the French locale already used this; English now matches) -- founder's explicit request, and "Mentions légales" is the standard term of art for this exact section on Francophone sites, kept as-is rather than translated.
+
+Verified: full suite (366/366), typecheck clean.
+
 ## Beta-readiness roadmap, Batch 7 (final): 72-hour session timeout (2026-08-01)
 
 Founder: "setup a session ending to handle connexion of more than 72H." `AuthContext.tsx` had zero session-duration logic before this -- a Supabase session just lived as long as its refresh token did, with no app-level cap.
