@@ -567,10 +567,10 @@ export default function CourseEditor({ courseId, onBack }: CourseEditorProps) {
                 id="course-price"
                 type="number"
                 value={price}
-                onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setPrice(parseInt(e.target.value, 10) || 0)}
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                 min="0"
-                step="0.01"
+                step="1"
               />
             </div>
           </div>

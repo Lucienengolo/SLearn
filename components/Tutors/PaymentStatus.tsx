@@ -3,6 +3,7 @@ import { fetchMatchContext, MatchContext } from '../../lib/matches';
 import { fetchPaymentForMatch, createDepositCheckout, confirmBalanceReceived, cancelBooking } from '../../lib/tutorPayments';
 import { TutorSessionPayment } from '../../lib/supabase';
 import { useLocale } from '../../contexts/LocaleContext';
+import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
 
 type PaymentStatusProps = {
   matchId: string;
@@ -47,6 +48,10 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
 
   async function handlePayDeposit() {
     setActionError('');
+    if (!PAYMENTS_ENABLED) {
+      setActionError(t('tutorMarketplace.paymentStatus.paymentsComingSoon'));
+      return;
+    }
     setBusy(true);
     try {
       const url = await createDepositCheckout(matchId, window.location.origin);

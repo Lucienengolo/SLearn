@@ -10,6 +10,8 @@ import { getGuestCourseProgress, isGuestLessonComplete, guestEnroll, isGuestEnro
 import { trackEvent } from '../../lib/analytics';
 import { getCourseCover } from '../../lib/courseCovers';
 import { getCourseFinalExam, hasPassedQuiz, issueCertificateIfEligible } from '../../lib/certificates';
+import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
+import { formatFCFA } from '../../lib/currency';
 import ReviewForm from './ReviewForm';
 import QuizViewer from '../Quiz/QuizViewer';
 import ClassworkList from './ClassworkList';
@@ -177,6 +179,11 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
     }
 
     if (course && course.price > 0) {
+      if (!PAYMENTS_ENABLED) {
+        showToast(t('courseDetail.paymentsComingSoon'), 'info');
+        return;
+      }
+
       setStartingCheckout(true);
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: { courseId, origin: window.location.origin },
@@ -519,7 +526,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               )}
 
               <p className="font-display text-4xl text-gray-900 mb-4">
-                {course.price > 0 ? `$${course.price.toFixed(2)}` : t('common.free')}
+                {course.price > 0 ? formatFCFA(course.price) : t('common.free')}
               </p>
 
               {isEnrolled ? (
@@ -618,7 +625,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
               </>
             ) : (
               <div className="font-bold text-lg text-gray-900">
-                {course.price > 0 ? `$${course.price.toFixed(2)}` : t('common.free')}
+                {course.price > 0 ? formatFCFA(course.price) : t('common.free')}
               </div>
             )}
           </div>

@@ -9,6 +9,14 @@ import type { Match, TutorRequest, Profile, TutorProfileFields, TutorSessionPaym
 import type { MatchContext } from '../lib/matches';
 import type { ComponentProps } from 'react';
 
+// This file tests the underlying Stripe checkout mechanics, which real
+// payments being live for V1 -- PAYMENTS_ENABLED is false by default (see
+// lib/paymentsConfig.ts), so these code paths are currently dormant behind
+// that flag, not the live default. Mocked true here so this coverage
+// doesn't rot while it's dormant; tests/PaymentStatus.paymentsGate.test.tsx
+// covers the actual current (disabled) default behavior.
+vi.mock('../lib/paymentsConfig', () => ({ PAYMENTS_ENABLED: true }));
+
 function renderPaymentStatus(props: ComponentProps<typeof PaymentStatus>) {
   return render(
     <LocaleProvider>

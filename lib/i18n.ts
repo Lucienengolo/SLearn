@@ -175,6 +175,8 @@ export const translations = {
     'courseDetail.signInToEnroll': "Se connecter pour s'inscrire",
     'courseDetail.signInForPaid': 'Veuillez vous connecter pour vous inscrire aux cours payants',
     'courseDetail.checkoutError': 'Impossible de démarrer le paiement. Veuillez réessayer.',
+    'courseDetail.paymentsComingSoon':
+      "Le paiement en ligne n'est pas encore disponible pour le moment — nous travaillons à l'intégration de moyens de paiement locaux (Mobile Money). Revenez bientôt !",
     'courseDetail.enrollError': "Échec de l'inscription au cours",
 
     'dashboard.sidebar.myProgress': 'Mes progrès',
@@ -429,7 +431,7 @@ export const translations = {
     'dashboard.courseEditor.levelLabel': 'Niveau',
     'dashboard.courseEditor.selectLevelTitle': 'Sélectionner le niveau du cours',
     'dashboard.courseEditor.durationLabel': 'Durée (heures)',
-    'dashboard.courseEditor.priceLabel': 'Prix ($)',
+    'dashboard.courseEditor.priceLabel': 'Prix (FCFA)',
     'dashboard.courseEditor.thumbnailLabel': 'Image du cours',
     'dashboard.courseEditor.thumbnailReady': 'Image prête',
     'dashboard.courseEditor.removeThumbnail': "Supprimer l'image",
@@ -704,6 +706,8 @@ export const translations = {
 
     'tutorMarketplace.paymentStatus.errorLoad': 'Impossible de charger le statut de votre réservation.',
     'tutorMarketplace.paymentStatus.errorStartDeposit': "Impossible de démarrer le paiement de l'acompte.",
+    'tutorMarketplace.paymentStatus.paymentsComingSoon':
+      "Le paiement en ligne n'est pas encore disponible pour le moment — nous travaillons à l'intégration de moyens de paiement locaux (Mobile Money). Revenez bientôt !",
     'tutorMarketplace.paymentStatus.errorConfirmBalance': 'Impossible de confirmer la réception du solde. Réessayez.',
     'tutorMarketplace.paymentStatus.errorCancel': "Impossible d'annuler la réservation. Réessayez.",
     'tutorMarketplace.paymentStatus.title': 'Statut de votre réservation',
@@ -972,6 +976,8 @@ export const translations = {
     'courseDetail.signInToEnroll': 'Sign in to enroll',
     'courseDetail.signInForPaid': 'Please sign in to enroll in paid courses',
     'courseDetail.checkoutError': 'Could not start checkout. Please try again.',
+    'courseDetail.paymentsComingSoon':
+      "Online payment isn't available yet — we're working on local payment options (Mobile Money). Check back soon!",
     'courseDetail.enrollError': 'Failed to enroll in course',
 
     'dashboard.sidebar.myProgress': 'My Progress',
@@ -1226,7 +1232,7 @@ export const translations = {
     'dashboard.courseEditor.levelLabel': 'Level',
     'dashboard.courseEditor.selectLevelTitle': 'Select course level',
     'dashboard.courseEditor.durationLabel': 'Duration (hours)',
-    'dashboard.courseEditor.priceLabel': 'Price ($)',
+    'dashboard.courseEditor.priceLabel': 'Price (FCFA)',
     'dashboard.courseEditor.thumbnailLabel': 'Course thumbnail',
     'dashboard.courseEditor.thumbnailReady': 'Thumbnail ready',
     'dashboard.courseEditor.removeThumbnail': 'Remove thumbnail',
@@ -1493,6 +1499,8 @@ export const translations = {
 
     'tutorMarketplace.paymentStatus.errorLoad': 'Could not load your booking status.',
     'tutorMarketplace.paymentStatus.errorStartDeposit': 'Could not start the deposit payment.',
+    'tutorMarketplace.paymentStatus.paymentsComingSoon':
+      "Online payment isn't available yet — we're working on local payment options (Mobile Money). Check back soon!",
     'tutorMarketplace.paymentStatus.errorConfirmBalance': 'Could not confirm balance receipt. Try again.',
     'tutorMarketplace.paymentStatus.errorCancel': 'Could not cancel the booking. Try again.',
     'tutorMarketplace.paymentStatus.title': 'Your booking status',

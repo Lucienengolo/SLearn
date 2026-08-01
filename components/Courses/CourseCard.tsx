@@ -4,6 +4,7 @@ import { Course } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
 import { useLocale } from '../../contexts/LocaleContext';
 import { TranslationKey } from '../../lib/i18n';
+import { formatFCFA } from '../../lib/currency';
 
 const LEVEL_KEYS: Record<string, TranslationKey> = {
   beginner: 'courses.level.beginner',
@@ -116,7 +117,7 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
           )}
           {course.price > 0 ? (
             <p className="text-base font-bold text-gray-900 flex-shrink-0">
-              ${course.price.toFixed(2)}
+              {formatFCFA(course.price)}
             </p>
           ) : (
             <p className="text-base font-bold text-green-700 flex-shrink-0">{t('common.free')}</p>

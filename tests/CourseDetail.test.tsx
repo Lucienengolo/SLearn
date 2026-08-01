@@ -136,4 +136,31 @@ describe('CourseDetail', () => {
 
     expect(await screen.findByText('AM')).toBeInTheDocument();
   });
+
+  // Regression: founder decision, 2026-08-01 -- real payment processing is
+  // disabled for V1 (lib/paymentsConfig.ts's PAYMENTS_ENABLED). The enroll
+  // button stays visible for a paid course, but clicking it must show an
+  // informational message instead of ever reaching create-checkout-session.
+  it('shows a "coming soon" message instead of starting checkout for a paid course', async () => {
+    vi.spyOn(authContext, 'useAuth').mockReturnValue({
+      user: { id: 'student-1' },
+      profile: { id: 'student-1', role: 'student' },
+    } as never);
+    mockTables({ price: 5000 });
+    const { findAllByRole, findByText } = render(
+      <LocaleProvider>
+        <ToastProvider>
+          <CourseDetail courseId="course-1" onBack={vi.fn()} onStartLesson={vi.fn()} />
+        </ToastProvider>
+      </LocaleProvider>
+    );
+
+    // Desktop sidebar + mobile sticky-footer both render an "Enroll now"
+    // button -- either works, so click the first.
+    const [enrollButton] = await findAllByRole('button', { name: /enroll now/i });
+    fireEvent.click(enrollButton);
+
+    expect(await findByText(/isn't available yet/i)).toBeInTheDocument();
+    expect(supabase.functions.invoke).not.toHaveBeenCalledWith('create-checkout-session', expect.anything());
+  });
 });

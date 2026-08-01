@@ -108,9 +108,14 @@ Deno.serve(async (req: Request) => {
     line_items: [
       {
         price_data: {
-          currency: 'usd',
+          // xaf, not usd -- course.price is FCFA as of the 2026-08-01
+          // currency migration (0043_courses_price_fcfa.sql). XAF is a
+          // Stripe zero-decimal currency (same as the tutor-marketplace
+          // deposit flow in create-tutor-deposit-checkout), so unit_amount
+          // is the FCFA integer directly, no *100.
+          currency: 'xaf',
           product_data: { name: course.title },
-          unit_amount: Math.round(course.price * 100),
+          unit_amount: Math.round(course.price),
         },
         quantity: 1,
       },
@@ -133,7 +138,7 @@ Deno.serve(async (req: Request) => {
     course_id: course.id,
     stripe_checkout_session_id: session.id,
     amount: course.price,
-    currency: 'usd',
+    currency: 'xaf',
     status: 'pending',
   });
 
