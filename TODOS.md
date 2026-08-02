@@ -1,5 +1,21 @@
 # TODOS
 
+## Security review (pre-beta): RLS negative-path sweep found 4 real integrity holes (2026-08-02)
+
+Founder asked for a couple of RLS checks beyond the original review, "before the last review before beta testing." Read through every self-service INSERT/UPDATE RLS policy looking specifically for the negative path (is a non-owner or an out-of-scope *column* change actually blocked, not just "does the owner succeed"), then live-exploited every suspect one against `ci_test` with policy text confirmed identical to production. All 4 were real:
+
+1. **Certificate self-forgery.** `certificates`' INSERT policy only checked `student_id = auth.uid()` -- a student could insert a certificate row for any course, including one they'd never enrolled in.
+2. **Enrollment self-completion.** `enrollments`' progress-update policy had no `with_check` at all -- a student could set their own `progress_percentage`/`completed_at` to any value directly, bypassing `lesson_progress`/`quiz_attempts` entirely.
+3. **Match tutor hijack.** `matches`' "confirm the session date" UPDATE policy's `with_check` only pinned `status = 'messaging'`, not `tutor_id`/`request_id` -- either match participant could reassign their own booking to a completely different, non-consenting tutor.
+4. **Instructor applicant self-clears their own background check.** The applicant-edit UPDATE policy on `instructor_applications` didn't restrict `background_check_status` (or `decided_at`/`decision_notes`, which are reviewer-owned) -- an applicant could flip their own flagged status straight to clear.
+
+All 4 share the same root cause `profiles`/`courses` already had a fix for (a same-session discovery from the earlier `profiles.email` work): a self-service policy scoped by ownership, with no guard on which *columns* the owner can change. Fixed in `0047_rls_negative_path_hardening.sql`:
+- `enrollments` gets a `security definer` `BEFORE UPDATE` trigger that recomputes `progress_percentage`/`completed_at` from the student's real `lesson_progress` (and `quiz_attempts`, if the course has a final exam) on every write, overriding whatever the client sent -- the exact computation `LessonViewer.tsx`'s `updateCourseProgress()` already does client-side, just made authoritative. This closes #2 directly and makes #1's fix safe: `certificates`' INSERT policy now additionally requires a matching `enrollments` row with `completed_at is not null`, which is trustworthy now that it's server-computed.
+- `matches` gets a guard trigger (`matches_guard_reassignment`) reverting `tutor_id`/`request_id` to their prior value on any UPDATE not made by `service_role` -- same silently-revert pattern as the existing `profiles_set_updated_at`/`courses_guard_moderation` triggers, needed because RLS `with_check` has no way to reference the row's prior value directly.
+- `instructor_applications` gets an equivalent guard (`instructor_applications_guard_review_fields`) for `background_check_status`/`decided_at`/`decision_notes`. `background_check_status` turned out to be entirely unwired to any application code today (grepped -- no edge function or client path sets it), so this fix has zero legitimate-flow impact, purely closes the gap.
+
+Verified against `ci_test` (synced 2 migrations it was missing -- `0024`'s `instructor_applications` policy widening and `0029`'s `quizzes.course_id` column -- to avoid testing against stale policy text): all 4 exploits now blocked (certificate insert rejected outright; the other 3 silently corrected back to truth rather than erroring, matching the existing guard-trigger UX). Re-verified the legitimate paths still work identically: real lesson completion still produces real progress/completion, a course with a final exam still correctly withholds `completed_at` until the exam is passed, and the reviewer/`service_role` decision flow (`instructor-approval` edge function) still writes `decided_at`/`decision_notes` normally. Full suite (397/397) and typecheck clean -- no client code changes were needed, since the client already sends the values the trigger recomputes.
+
 ## Security review (pre-beta): missing CSP, checkout-session auth-check ordering (2026-08-02)
 
 Pre-beta pentest's two remaining lower-severity findings, both fixed:
