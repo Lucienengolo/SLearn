@@ -128,27 +128,41 @@ export type ApplicationWithApplicant = InstructorApplication & {
 
 const REVIEWABLE_STATUSES = ['submitted', 'review', 'interview'] as const;
 
+// email is no longer selectable via the embedded profiles join (2026-08-02
+// security fix, see 0046_restrict_profile_email.sql) -- fetched separately
+// per application via a security-definer RPC that independently
+// re-verifies the caller is actually a reviewer, then merged in.
+async function attachApplicantEmails(applications: ApplicationWithApplicant[]): Promise<ApplicationWithApplicant[]> {
+  const emails = await Promise.all(
+    applications.map((a) => supabase.rpc('get_application_applicant_email', { p_application_id: a.id }))
+  );
+  return applications.map((a, i) => ({
+    ...a,
+    applicant: a.applicant ? { ...a.applicant, email: emails[i].data ?? '' } : null,
+  }));
+}
+
 export async function fetchReviewQueue(): Promise<ApplicationWithApplicant[]> {
   const { data, error } = await supabase
     .from('instructor_applications')
-    .select('*, applicant:profiles!applicant_id(email, full_name)')
+    .select('*, applicant:profiles!applicant_id(full_name)')
     .in('status', REVIEWABLE_STATUSES)
     .order('submitted_at', { ascending: true });
 
   if (error) throw error;
-  return (data ?? []) as ApplicationWithApplicant[];
+  return attachApplicantEmails((data ?? []) as ApplicationWithApplicant[]);
 }
 
 export async function fetchDecidedApplications(): Promise<ApplicationWithApplicant[]> {
   const { data, error } = await supabase
     .from('instructor_applications')
-    .select('*, applicant:profiles!applicant_id(email, full_name)')
+    .select('*, applicant:profiles!applicant_id(full_name)')
     .in('status', ['approved', 'rejected'])
     .order('decided_at', { ascending: false })
     .limit(25);
 
   if (error) throw error;
-  return (data ?? []) as ApplicationWithApplicant[];
+  return attachApplicantEmails((data ?? []) as ApplicationWithApplicant[]);
 }
 
 export async function getCredentialFileUrl(storagePath: string): Promise<string | null> {

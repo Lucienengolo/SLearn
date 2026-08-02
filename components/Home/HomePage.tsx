@@ -79,12 +79,12 @@ export default function HomePage({ onNavigate, onCourseSelect, onSearchCourses, 
 
     const { count: studentsCount } = await supabase
       .from('profiles')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('role', 'student');
 
     const { count: instructorsCount } = await supabase
       .from('profiles')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('role', 'instructor');
 
     setStats({

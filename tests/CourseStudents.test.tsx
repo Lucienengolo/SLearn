@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { LocaleProvider } from '../contexts/LocaleContext';
 
 vi.mock('../lib/supabase', () => ({
-  supabase: { from: vi.fn() },
+  supabase: { from: vi.fn(), rpc: vi.fn() },
 }));
 
 // Relative to real "now" rather than mocked system time -- vi.useFakeTimers()
@@ -46,6 +46,16 @@ function mockTables(overrides: {
     };
     return builder as unknown as ReturnType<typeof supabase.from>;
   });
+
+  // get_my_students_emails RPC (replaces the embedded profiles.email
+  // select, see 0046_restrict_profile_email.sql) -- derived from the same
+  // enrollments fixtures' embedded student.email so existing tests don't
+  // need individually updating.
+  const emailRows = (overrides.enrollments ?? []).map((e: unknown) => {
+    const enrollment = e as { student_id: string; student?: { email?: string } | null };
+    return { student_id: enrollment.student_id, email: enrollment.student?.email ?? '' };
+  });
+  vi.mocked(supabase.rpc).mockResolvedValue({ data: emailRows, error: null } as never);
 }
 
 function renderCourseStudents(overrides: Parameters<typeof mockTables>[0] = {}) {

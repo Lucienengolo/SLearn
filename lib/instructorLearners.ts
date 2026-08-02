@@ -34,17 +34,25 @@ type RawEnrollment = {
   enrolled_at: string;
   completed_at: string | null;
   progress_percentage: number;
-  student: { full_name: string | null; email: string; avatar_url: string | null } | null;
+  student: { full_name: string | null; avatar_url: string | null } | null;
 };
 
 // Pure: builds learner rows from already-fetched raw data. `lastActivityKey`
 // is `${studentId}:${courseId}` so a student enrolled in 2 courses gets an
 // independent staleness read per course, not one blended read.
+//
+// emailByStudentId comes from a separate get_my_students_emails() RPC call,
+// not the enrollments/profiles embed -- profiles.email is no longer a
+// selectable column for a plain client query (2026-08-02 security fix, see
+// 0046_restrict_profile_email.sql), so this data has to be fetched via a
+// security-definer function that independently re-verifies the caller
+// actually owns the course before returning any email.
 export function buildLearnerRows(
   enrollments: RawEnrollment[],
   courseTitleById: Map<string, string>,
   certifiedKeys: Set<string>,
   lastActivityByKey: Map<string, string>,
+  emailByStudentId: Map<string, string>,
   now: Date = new Date()
 ): LearnerRow[] {
   const staleCutoff = now.getTime() - STALE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -52,13 +60,14 @@ export function buildLearnerRows(
   return enrollments.map((e) => {
     const key = `${e.student_id}:${e.course_id}`;
     const lastActivityAt = lastActivityByKey.get(key) ?? e.enrolled_at;
+    const email = emailByStudentId.get(e.student_id) ?? '';
     return {
       enrollmentId: e.id,
       studentId: e.student_id,
       courseId: e.course_id,
       courseTitle: courseTitleById.get(e.course_id) ?? 'Unknown course',
-      fullName: e.student?.full_name || e.student?.email || 'Unknown student',
-      email: e.student?.email || '',
+      fullName: e.student?.full_name || email || 'Unknown student',
+      email,
       avatarUrl: e.student?.avatar_url ?? null,
       enrolledAt: e.enrolled_at,
       completedAt: e.completed_at,
@@ -111,10 +120,18 @@ export async function fetchInstructorLearners(instructorId: string): Promise<Ins
     .from('enrollments')
     .select(
       `id, student_id, course_id, enrolled_at, completed_at, progress_percentage,
-       student:profiles!student_id(full_name, email, avatar_url)`
+       student:profiles!student_id(full_name, avatar_url)`
     )
     .in('course_id', courseIds)
     .order('enrolled_at', { ascending: false });
+
+  // Security-definer RPC, not an embedded profiles.email select -- see
+  // 0046_restrict_profile_email.sql. No course_id filter needed: it
+  // aggregates across every course where instructor_id = auth.uid().
+  const { data: emailRows } = await supabase.rpc('get_my_students_emails');
+  const emailByStudentId = new Map<string, string>(
+    (emailRows ?? []).map((r: { student_id: string; email: string }): [string, string] => [r.student_id, r.email])
+  );
 
   const { data: certificates } = await supabase
     .from('certificates')
@@ -157,7 +174,8 @@ export async function fetchInstructorLearners(instructorId: string): Promise<Ins
     (enrollments ?? []) as unknown as RawEnrollment[],
     courseTitleById,
     certifiedKeys,
-    lastActivityByKey
+    lastActivityByKey,
+    emailByStudentId
   );
 
   return { courses: courseList, rows, totalQuizAttempts: totalQuizAttempts ?? 0 };

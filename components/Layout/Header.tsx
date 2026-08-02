@@ -137,7 +137,7 @@ export default function Header({
               {user && profile ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600">
-                    {profile.full_name || profile.email}
+                    {profile.full_name || user?.email}
                   </span>
                   {/* Founder feedback (2026-07-22): account type shouldn't be
                       a visible label for students -- "instructor" is kept
@@ -266,7 +266,7 @@ export default function Header({
               {user && profile ? (
                 <div className="pt-2 border-t">
                   <div className="px-4 py-2 text-sm text-gray-600">
-                    {profile.full_name || profile.email}
+                    {profile.full_name || user?.email}
                   </div>
                   <button
                     onClick={() => {

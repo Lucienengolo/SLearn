@@ -80,10 +80,18 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
       .from('enrollments')
       .select(`
         id, student_id, enrolled_at, completed_at, progress_percentage,
-        student:profiles!student_id(full_name, email, avatar_url)
+        student:profiles!student_id(full_name, avatar_url)
       `)
       .eq('course_id', courseId)
       .order('enrolled_at', { ascending: false });
+
+    // Security-definer RPC, not an embedded profiles.email select -- see
+    // 0046_restrict_profile_email.sql. Scoped to this one course; the
+    // function independently re-verifies the caller actually owns it.
+    const { data: emailRows } = await supabase.rpc('get_my_students_emails', { p_course_id: courseId });
+    const emailByStudentId = new Map<string, string>(
+      (emailRows ?? []).map((r: { student_id: string; email: string }): [string, string] => [r.student_id, r.email])
+    );
 
     const { data: certificates } = await supabase
       .from('certificates')
@@ -129,17 +137,18 @@ export default function CourseStudents({ courseId, onBack, onEditCourse }: Cours
       enrolled_at: string;
       completed_at: string | null;
       progress_percentage: number;
-      student: { full_name: string | null; email: string; avatar_url: string | null } | null;
+      student: { full_name: string | null; avatar_url: string | null } | null;
     };
 
     setRows(
       ((enrollments ?? []) as unknown as EnrollmentWithStudent[]).map((e) => {
         const lastActivityAt = lastActivityByStudent.get(e.student_id) ?? e.enrolled_at;
+        const email = emailByStudentId.get(e.student_id) ?? '';
         return {
           enrollmentId: e.id,
           studentId: e.student_id,
-          fullName: e.student?.full_name || e.student?.email || t('dashboard.courseStudents.unknownStudent'),
-          email: e.student?.email || '',
+          fullName: e.student?.full_name || email || t('dashboard.courseStudents.unknownStudent'),
+          email,
           avatarUrl: e.student?.avatar_url ?? null,
           enrolledAt: e.enrolled_at,
           completedAt: e.completed_at,

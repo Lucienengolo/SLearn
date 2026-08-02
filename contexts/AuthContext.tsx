@@ -35,8 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { t } = useLocale();
 
   const fetchProfile = async (userId: string) => {
+    // public_profiles (2026-08-02 security fix, 0046_restrict_profile_email.sql)
+    // -- email isn't a selectable column on `profiles` for a plain client
+    // query anymore, including reading one's own row. Display of the
+    // signed-in user's email uses `user.email` from the auth session
+    // instead (see Header.tsx/AccountSettings.tsx/CertificatesPage.tsx).
     const { data, error } = await supabase
-      .from('profiles')
+      .from('public_profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();

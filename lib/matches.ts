@@ -73,7 +73,10 @@ export async function fetchMatchContext(matchId: string): Promise<MatchContext> 
   const [{ data: request, error: requestError }, { data: tutorProfile, error: profileError }, { data: tutorFields, error: fieldsError }] =
     await Promise.all([
       supabase.from('tutor_requests').select('*').eq('id', match.request_id).single(),
-      supabase.from('profiles').select('*').eq('id', match.tutor_id).single(),
+      // public_profiles (2026-08-02 security fix, 0046_restrict_profile_email.sql)
+      // -- only full_name is actually used here (Chat.tsx header), and email
+      // isn't a selectable column on `profiles` for a plain client query anymore.
+      supabase.from('public_profiles').select('*').eq('id', match.tutor_id).single(),
       supabase.from('tutor_profile_fields').select('*').eq('tutor_id', match.tutor_id).single(),
     ]);
 

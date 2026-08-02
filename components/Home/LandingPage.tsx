@@ -36,8 +36,8 @@ export default function LandingPage({ onNavigate, onGetStarted }: LandingPagePro
   const fetchStats = async () => {
     const [{ count: coursesCount }, { count: studentsCount }, { count: instructorsCount }] = await Promise.all([
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'instructor'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'instructor'),
     ]);
     setStats({
       totalCourses: coursesCount ?? 0,

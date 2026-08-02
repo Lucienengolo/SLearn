@@ -11,7 +11,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Profile = {
   id: string;
-  email: string;
+  // Optional: public_profiles (2026-08-02 security fix,
+  // 0046_restrict_profile_email.sql) never returns this column, and it's
+  // the source for AuthContext's own-profile fetch plus matches.ts's
+  // tutor-profile-in-chat fetch. Still present on rows fetched via the
+  // dedicated security-definer RPCs (get_my_students_emails, etc.).
+  email?: string;
   full_name: string | null;
   role: 'student' | 'instructor';
   verified: boolean;

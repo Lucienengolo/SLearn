@@ -5,31 +5,48 @@ export type CourseWithInstructor = Course & {
   category: { name: string } | null;
 };
 
+// email is no longer selectable via the embedded profiles join (2026-08-02
+// security fix, see 0046_restrict_profile_email.sql) -- fetched separately
+// per course via a security-definer RPC that independently re-verifies
+// the caller is actually a reviewer, then merged in. One RPC call per
+// course rather than a batch call: moderation queues are small (a
+// handful of pending/recent items at a time), so this stays simple
+// rather than adding a second batch-shaped RPC for marginal benefit.
+async function attachInstructorEmails(courses: CourseWithInstructor[]): Promise<CourseWithInstructor[]> {
+  const emails = await Promise.all(
+    courses.map((c) => supabase.rpc('get_course_instructor_email', { p_course_id: c.id }))
+  );
+  return courses.map((c, i) => ({
+    ...c,
+    instructor: c.instructor ? { ...c.instructor, email: emails[i].data ?? '' } : null,
+  }));
+}
+
 // Reviewer-only (profiles.is_reviewer = true; RLS backs this up
 // regardless of what the client asks for -- see 0025_course_moderation.sql's
 // "reviewers view all courses" policy).
 export async function fetchPendingCourses(): Promise<CourseWithInstructor[]> {
   const { data, error } = await supabase
     .from('courses')
-    .select('*, instructor:profiles!instructor_id(full_name, email), category:categories(name)')
+    .select('*, instructor:profiles!instructor_id(full_name), category:categories(name)')
     .eq('is_published', true)
     .eq('moderation_status', 'pending')
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return (data ?? []) as CourseWithInstructor[];
+  return attachInstructorEmails((data ?? []) as CourseWithInstructor[]);
 }
 
 export async function fetchDecidedCourses(): Promise<CourseWithInstructor[]> {
   const { data, error } = await supabase
     .from('courses')
-    .select('*, instructor:profiles!instructor_id(full_name, email), category:categories(name)')
+    .select('*, instructor:profiles!instructor_id(full_name), category:categories(name)')
     .in('moderation_status', ['approved', 'rejected'])
     .order('updated_at', { ascending: false })
     .limit(25);
 
   if (error) throw error;
-  return (data ?? []) as CourseWithInstructor[];
+  return attachInstructorEmails((data ?? []) as CourseWithInstructor[]);
 }
 
 // Direct table update rather than an edge function (unlike instructor

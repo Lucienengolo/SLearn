@@ -18,7 +18,7 @@ describe('buildLearnerRows', () => {
           enrolled_at: '2026-06-01T00:00:00Z',
           completed_at: null,
           progress_percentage: 40,
-          student: { full_name: 'Jane Doe', email: 'jane@example.com', avatar_url: null },
+          student: { full_name: 'Jane Doe', avatar_url: null },
         },
         {
           id: 'enr-2',
@@ -27,7 +27,7 @@ describe('buildLearnerRows', () => {
           enrolled_at: '2026-06-01T00:00:00Z',
           completed_at: null,
           progress_percentage: 60,
-          student: { full_name: 'Jane Doe', email: 'jane@example.com', avatar_url: null },
+          student: { full_name: 'Jane Doe', avatar_url: null },
         },
       ],
       courseTitleById,
@@ -36,6 +36,7 @@ describe('buildLearnerRows', () => {
         ['student-1:course-1', '2026-06-05T00:00:00Z'], // stale (49 days ago)
         ['student-1:course-2', '2026-07-23T00:00:00Z'], // fresh (yesterday)
       ]),
+      new Map([['student-1', 'jane@example.com']]),
       now
     );
 
@@ -59,7 +60,7 @@ describe('buildLearnerRows', () => {
           enrolled_at: '2026-06-01T00:00:00Z',
           completed_at: '2026-06-10T00:00:00Z',
           progress_percentage: 100,
-          student: { full_name: 'Jane Doe', email: 'jane@example.com', avatar_url: null },
+          student: { full_name: 'Jane Doe', avatar_url: null },
         },
         {
           id: 'enr-2',
@@ -68,12 +69,13 @@ describe('buildLearnerRows', () => {
           enrolled_at: '2026-06-01T00:00:00Z',
           completed_at: null,
           progress_percentage: 20,
-          student: { full_name: 'Jane Doe', email: 'jane@example.com', avatar_url: null },
+          student: { full_name: 'Jane Doe', avatar_url: null },
         },
       ],
       courseTitleById,
       new Set(['student-1:course-1']),
       new Map(),
+      new Map([['student-1', 'jane@example.com']]),
       now
     );
 
@@ -91,15 +93,69 @@ describe('buildLearnerRows', () => {
           enrolled_at: '2026-01-01T00:00:00Z',
           completed_at: '2026-01-15T00:00:00Z',
           progress_percentage: 100,
-          student: { full_name: 'Jane Doe', email: 'jane@example.com', avatar_url: null },
+          student: { full_name: 'Jane Doe', avatar_url: null },
         },
       ],
       courseTitleById,
       new Set(),
       new Map(),
+      new Map([['student-1', 'jane@example.com']]),
       now
     );
     expect(rows[0].isStale).toBe(false);
+  });
+
+  // Regression: profiles.email is no longer selectable via a plain
+  // embedded join (2026-08-02 security fix) -- email now comes from a
+  // separate emailByStudentId map (populated by the get_my_students_emails
+  // RPC), not the embedded `student` object.
+  it('takes email from the emailByStudentId map, not the embedded student object', () => {
+    const rows = buildLearnerRows(
+      [
+        {
+          id: 'enr-1',
+          student_id: 'student-1',
+          course_id: 'course-1',
+          enrolled_at: '2026-06-01T00:00:00Z',
+          completed_at: null,
+          progress_percentage: 40,
+          student: { full_name: null, avatar_url: null },
+        },
+      ],
+      courseTitleById,
+      new Set(),
+      new Map(),
+      new Map([['student-1', 'jane@example.com']]),
+      now
+    );
+
+    expect(rows[0].email).toBe('jane@example.com');
+    // full_name falls back to email when the student never set a display name.
+    expect(rows[0].fullName).toBe('jane@example.com');
+  });
+
+  it('leaves email empty when the RPC has no entry for that student', () => {
+    const rows = buildLearnerRows(
+      [
+        {
+          id: 'enr-1',
+          student_id: 'student-1',
+          course_id: 'course-1',
+          enrolled_at: '2026-06-01T00:00:00Z',
+          completed_at: null,
+          progress_percentage: 40,
+          student: { full_name: 'Jane Doe', avatar_url: null },
+        },
+      ],
+      courseTitleById,
+      new Set(),
+      new Map(),
+      new Map(),
+      now
+    );
+
+    expect(rows[0].email).toBe('');
+    expect(rows[0].fullName).toBe('Jane Doe');
   });
 });
 

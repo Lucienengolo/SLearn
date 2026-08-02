@@ -240,7 +240,7 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display text-2xl text-gray-900">{profile.full_name || profile.email}</h1>
+              <h1 className="font-display text-2xl text-gray-900">{profile.full_name || user?.email}</h1>
               {profile.role === 'instructor' && profile.verified && (
                 <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded flex items-center gap-1">
                   <CheckCircle size={12} />
