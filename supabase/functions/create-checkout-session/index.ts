@@ -32,6 +32,20 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Sign in to enroll' }, 401);
   }
 
+  // Verify the caller before doing (or revealing) anything else -- an
+  // invalid/expired token used to be able to walk through body parsing,
+  // the origin allowlist check, and the "is Stripe configured on this
+  // deployment" check before ever being rejected, leaking deployment
+  // config state to a caller who was never actually authenticated.
+  const admin = createAdminClient();
+  const caller = createCallerClient(authHeader);
+
+  const { data: userData, error: userError } = await caller.auth.getUser();
+  if (userError || !userData.user) {
+    return json({ error: 'Invalid or expired session' }, 401);
+  }
+  const userId = userData.user.id;
+
   let body: unknown;
   try {
     body = await req.json();
@@ -57,15 +71,6 @@ Deno.serve(async (req: Request) => {
   if (!stripeKey) {
     return json({ error: 'Payments are not configured on this deployment' }, 500);
   }
-
-  const admin = createAdminClient();
-  const caller = createCallerClient(authHeader);
-
-  const { data: userData, error: userError } = await caller.auth.getUser();
-  if (userError || !userData.user) {
-    return json({ error: 'Invalid or expired session' }, 401);
-  }
-  const userId = userData.user.id;
 
   const { data: profile } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle();
   if (profile?.role !== 'student') {

@@ -32,6 +32,19 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Sign in to pay a deposit' }, 401);
   }
 
+  // Verify the caller before doing (or revealing) anything else -- see the
+  // same ordering fix in create-checkout-session/index.ts (2026-08-02
+  // security review): an invalid/expired token shouldn't be able to walk
+  // through body parsing, the origin allowlist, and the "is Stripe
+  // configured" check before ever being rejected.
+  const admin = createAdminClient();
+  const caller = createCallerClient(authHeader);
+
+  const { data: userData, error: userError } = await caller.auth.getUser();
+  if (userError || !userData.user) {
+    return json({ error: 'Invalid or expired session' }, 401);
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -53,14 +66,6 @@ Deno.serve(async (req: Request) => {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
   if (!stripeKey) {
     return json({ error: 'Payments are not configured on this deployment' }, 500);
-  }
-
-  const admin = createAdminClient();
-  const caller = createCallerClient(authHeader);
-
-  const { data: userData, error: userError } = await caller.auth.getUser();
-  if (userError || !userData.user) {
-    return json({ error: 'Invalid or expired session' }, 401);
   }
 
   // RLS ("parents view matches tied to their own requests") enforces
