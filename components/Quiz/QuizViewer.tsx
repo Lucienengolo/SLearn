@@ -41,9 +41,15 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
     if (quizData) {
       setQuiz(quizData);
 
+      // quiz_questions.correct_answer is no longer selectable by a plain
+      // client query (2026-08-02 security fix,
+      // 0048_quiz_grading_and_classwork_hardening.sql) -- an explicit
+      // column list here, not select('*'), since that would now hard-error
+      // (Postgres checks column privilege for every column '*' expands to
+      // before RLS even applies). Grading moved server-side accordingly.
       const { data: questionsData } = await supabase
         .from('quiz_questions')
-        .select('*')
+        .select('id, quiz_id, question_text, question_type, options, points, order_index')
         .eq('quiz_id', quizId)
         .order('order_index');
 
@@ -55,27 +61,29 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
   const handleSubmit = async () => {
     if (!quiz) return;
 
-    let score = 0;
-    let totalPoints = 0;
-
-    questions.forEach((question) => {
-      totalPoints += question.points;
-      if (answers[question.id] === question.correct_answer) {
-        score += question.points;
-      }
+    // Grading is fully server-side now: the client no longer has
+    // correct_answer to compare against, and compute_quiz_grade() is the
+    // one place that reads it -- it never returns the answers themselves,
+    // just the result. Used for both guest preview and signed-in students,
+    // so the on-screen result is identical either way.
+    const { data: grade, error: gradeError } = await supabase.rpc('compute_quiz_grade', {
+      p_quiz_id: quizId,
+      p_answers: answers,
     });
 
-    const percentage = Math.round((score / totalPoints) * 100);
-    const passed = percentage >= quiz.passing_score;
-    const buildResult = () => ({
-      score: percentage,
+    const gradeRow = grade?.[0];
+    if (gradeError || !gradeRow) return;
+
+    const { score_percentage, passed, correct_count, total_questions, total_points } = gradeRow;
+    const buildResult = (): QuizResult => ({
+      score: score_percentage,
       passed,
-      correctCount: questions.filter((q) => answers[q.id] === q.correct_answer).length,
-      totalQuestions: questions.length,
+      correctCount: correct_count,
+      totalQuestions: total_questions,
     });
 
-    // Guest mode: grade locally, no server write — matches lesson completion
-    // in LessonViewer, which is what actually records guest XP.
+    // Guest mode: no server write — matches lesson completion in
+    // LessonViewer, which is what actually records guest XP.
     if (!user) {
       setResult(buildResult());
       setSubmitted(true);
@@ -83,11 +91,15 @@ export default function QuizViewer({ quizId, onBack, onComplete }: QuizViewerPro
       return;
     }
 
+    // score/total_points/passed are recomputed authoritatively by a BEFORE
+    // INSERT trigger regardless of what's sent here (same
+    // compute_quiz_grade() call) -- included anyway so the row is
+    // self-descriptive rather than relying on trigger internals.
     const { error } = await supabase.from('quiz_attempts').insert({
       student_id: user.id,
       quiz_id: quizId,
-      score: percentage,
-      total_points: totalPoints,
+      score: score_percentage,
+      total_points,
       passed,
       answers,
     });

@@ -104,7 +104,13 @@ export type QuizQuestion = {
   question_text: string;
   question_type: 'multiple_choice' | 'true_false';
   options: string[];
-  correct_answer: string;
+  // Optional: quiz_questions.correct_answer is no longer selectable by a
+  // plain client query (2026-08-02 security fix,
+  // 0048_quiz_grading_and_classwork_hardening.sql) -- grading happens
+  // server-side via the compute_quiz_grade() RPC instead. Still present on
+  // rows fetched via get_quiz_questions_for_editing (the owning
+  // instructor's quiz-editing flow).
+  correct_answer?: string;
   points: number;
   order_index: number;
 };

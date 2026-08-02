@@ -1,6 +1,6 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { ArrowLeft, Plus, Trash2, GripVertical, Upload, X, FileText, Video, Eye } from 'lucide-react';
-import { supabase, Category } from '../../lib/supabase';
+import { supabase, Category, QuizQuestion } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadLessonVideo, uploadLessonPDF, uploadCourseThumbnail } from '../../lib/storage';
 import { renderRichText } from '../../lib/richText';
@@ -60,22 +60,25 @@ const loadQuizDraft = async (defaultTitle: string, filter: { lesson_id: string }
 
   if (!quizRow) return emptyQuizDraft(defaultTitle);
 
-  const { data: questionRows } = await supabase
-    .from('quiz_questions')
-    .select('*')
-    .eq('quiz_id', quizRow.id)
-    .order('order_index');
+  // quiz_questions.correct_answer is no longer selectable by a plain client
+  // query (2026-08-02 security fix, 0048_quiz_grading_and_classwork_hardening.sql)
+  // -- get_quiz_questions_for_editing is a security-definer RPC that
+  // returns the full row (including correct_answer) only when the caller
+  // owns the course, the one legitimate reason to need it back.
+  const { data: questionRows } = await supabase.rpc('get_quiz_questions_for_editing', {
+    p_quiz_id: quizRow.id,
+  });
 
   return {
     enabled: true,
     title: quizRow.title,
     passing_score: quizRow.passing_score,
-    questions: (questionRows ?? []).map((q) => ({
+    questions: ((questionRows ?? []) as QuizQuestion[]).map((q) => ({
       key: q.id,
       question_text: q.question_text,
       question_type: q.question_type,
       options: q.question_type === 'true_false' ? ['True', 'False'] : (q.options?.length ? q.options : ['', '', '', '']),
-      correct_answer: q.correct_answer,
+      correct_answer: q.correct_answer ?? '',
       points: q.points,
     })),
   };
