@@ -1,5 +1,20 @@
 # TODOS
 
+## WAF, adaptive rate limiting, and a DDoS response plan (2026-08-03)
+
+Founder asked for a WAF in front of the stack, adaptive rate limiting recognizing attack patterns, IP-based anomaly detection escalating from throttle to temporary ban, and a DDoS response plan document. Full detail and setup steps are in the new `SECURITY.md` -- this entry is the summary.
+
+**Scoping, locked in with the founder before building anything:** the app's actual backend (auth, database REST API, every edge function hardened earlier this session) is 100% on Supabase, called directly by the browser -- Vercel's firewall has zero visibility into that traffic, so "WAF in front of the stack" only meaningfully covers the Vercel-hosted frontend. Also ruled out fronting Vercel with Cloudflare: Vercel's own guidance is explicit that external reverse proxies in front of Vercel *reduce* firewall/bot-detection accuracy (real client IPs become opaque), so it'd be counterproductive here, not additive. Founder confirmed this project is on the Hobby plan, which matters because native Vercel WAF custom rules only support persistent enforcement (`--duration`, e.g. "deny for 30 minutes") on Pro/Enterprise -- so genuine throttle-to-temporary-ban escalation on Hobby needed custom logic, not just firewall config.
+
+**Built:**
+- `middleware.ts` (new) -- Vercel Routing Middleware (framework-agnostic, works for this Vite SPA) implementing the adaptive layer: per-IP fixed-window throttling, escalating to a temporary ban after repeated violations within an hour, state tracked via Vercel's Runtime Cache (`@vercel/functions`' `getCache()` -- no new external service, no marketplace integration, zero added cost). Decision logic extracted into `lib/rateLimitDecision.ts` as a pure function so it's unit-testable without mocking the Edge runtime (`tests/rateLimitDecision.test.ts`).
+- **Ships in `LOG_ONLY = true` mode** -- computes and logs what it would block but never actually blocks anything, deliberately safe to deploy straight to production without a staged branch/preview workflow (nothing can break for real users while `LOG_ONLY` is on). Founder needs to review real `[waf]` log lines for a representative period before flipping it off -- exact steps in `SECURITY.md`.
+- `SECURITY.md` (new) -- combines the native-WAF setup runbook (exact `vercel firewall` CLI commands for two rules: known exploit-probe path blocking, a coarse rate-limit backstop, both following Vercel's log -> preview -> production staged rollout) with the DDoS active-incident response plan (how to confirm an attack, when/how to enable Attack Mode, emergency IP blocks, a postmortem template) and a "known limitations" section (per-region counters, non-atomic increments) stated plainly rather than glossed over.
+
+**What's founder-run, not something this session could execute:** no Vercel CLI is installed in this environment and there's no active login, so the native WAF rules in `SECURITY.md` are documented commands, not something already published -- consistent with Vercel's own guidance that rule *publishing* should always be a deliberate human action anyway (a bad rule can silently block the entire site). Attack Mode is also explicitly blocked for scripts/agents given its severity, by Vercel's own design, not a gap on this end.
+
+`middleware.ts` added to `tsconfig.app.json`'s `include` (it wasn't covered before, meaning `npm run typecheck` would have silently skipped a real file at the project root -- caught and fixed as part of this work, not left as a blind spot). Full suite and typecheck clean.
+
 ## Payment gate hardened server-side, closing the "ready for beta" caveat from the wrap-up (2026-08-02)
 
 The wrap-up entry below flagged one pre-existing gap before opening the app to beta testers: `PAYMENTS_ENABLED = false` (`lib/paymentsConfig.ts`, Batch 2 of the 2026-08-01 roadmap) only gated the client -- `create-checkout-session` and `create-tutor-deposit-checkout` never checked it themselves, so a signed-in caller who called either edge function directly (bypassing the UI) could still start a real Stripe checkout if `STRIPE_SECRET_KEY` happened to be configured.
