@@ -19,6 +19,13 @@ function isRequestBody(value: unknown): value is RequestBody {
 
 const DEPOSIT_RATE = 0.2;
 
+// V1 payment kill-switch, server-side half -- see the identical guard (and
+// full rationale) in create-checkout-session/index.ts. PaymentStatus.tsx's
+// handlePayDeposit() is gated by the same lib/paymentsConfig.ts flag
+// client-side; this is the matching server-side half so a direct API call
+// can't bypass it.
+const PAYMENTS_ENABLED = false;
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -43,6 +50,10 @@ Deno.serve(async (req: Request) => {
   const { data: userData, error: userError } = await caller.auth.getUser();
   if (userError || !userData.user) {
     return json({ error: 'Invalid or expired session' }, 401);
+  }
+
+  if (!PAYMENTS_ENABLED) {
+    return json({ error: 'Payments are not available yet' }, 503);
   }
 
   let body: unknown;

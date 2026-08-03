@@ -18,6 +18,17 @@ function isRequestBody(value: unknown): value is RequestBody {
   return typeof v.courseId === 'string' && typeof v.origin === 'string';
 }
 
+// V1 payment kill-switch, server-side half (see lib/paymentsConfig.ts's
+// PAYMENTS_ENABLED, the client-side gate this mirrors -- 2026-08-02
+// security review). The client gate alone stops the checkout button from
+// ever reaching this function, but doesn't stop a direct API call from
+// starting a real Stripe checkout if STRIPE_SECRET_KEY happens to be
+// configured. Flip both this and the client constant together when
+// payments actually go live -- deliberately not read from an env var,
+// since re-enabling real payments should require an explicit code change,
+// not a forgotten dashboard toggle.
+const PAYMENTS_ENABLED = false;
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -45,6 +56,10 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Invalid or expired session' }, 401);
   }
   const userId = userData.user.id;
+
+  if (!PAYMENTS_ENABLED) {
+    return json({ error: 'Payments are not available yet' }, 503);
+  }
 
   let body: unknown;
   try {

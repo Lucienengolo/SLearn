@@ -6,10 +6,11 @@
 // buttons, they stay visible (founder's explicit instruction) but clicking
 // them shows an informational message instead of redirecting to Stripe.
 //
-// This flag gates the CLIENT only -- it stops the checkout button from
-// ever calling the edge functions, but doesn't harden create-checkout-session
-// or create-tutor-deposit-checkout themselves against a direct call. That
-// server-side hardening is a real follow-up (tracked in TODOS.md) that
-// needs an edge-function redeploy this session doesn't have fresh
-// deploy credentials for -- flagged rather than silently left undone.
+// This flag gates the CLIENT -- it stops the checkout button from ever
+// calling the edge functions. create-checkout-session and
+// create-tutor-deposit-checkout each carry a matching server-side
+// PAYMENTS_ENABLED = false (2026-08-02 security review), so a direct API
+// call bypassing the UI can't start a real Stripe checkout either. Flip
+// all three together (this constant + both edge functions, then redeploy
+// the functions) when payments actually go live.
 export const PAYMENTS_ENABLED = false;

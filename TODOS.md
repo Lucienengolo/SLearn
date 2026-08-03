@@ -1,5 +1,13 @@
 # TODOS
 
+## Payment gate hardened server-side, closing the "ready for beta" caveat from the wrap-up (2026-08-02)
+
+The wrap-up entry below flagged one pre-existing gap before opening the app to beta testers: `PAYMENTS_ENABLED = false` (`lib/paymentsConfig.ts`, Batch 2 of the 2026-08-01 roadmap) only gated the client -- `create-checkout-session` and `create-tutor-deposit-checkout` never checked it themselves, so a signed-in caller who called either edge function directly (bypassing the UI) could still start a real Stripe checkout if `STRIPE_SECRET_KEY` happened to be configured.
+
+Couldn't confirm whether the key is actually set in production -- no `SUPABASE_ACCESS_TOKEN`/CLI login this session, so `supabase secrets list` isn't reachable (same recurring credential gap as the edge-function-deploy steps earlier today). Fixed regardless, since the server-side guard is correct either way and doesn't depend on knowing the key's current state: both edge functions now carry their own `const PAYMENTS_ENABLED = false`, checked right after the auth check (consistent with the auth-ordering fix from earlier today -- verify identity first, then check whether the feature is even on, before any other work) and rejected with a 503 if a caller reaches it directly. Deliberately a hardcoded constant, not an env var -- re-enabling real payments should require an explicit code change and edge-function redeploy, not a forgotten dashboard toggle. `lib/paymentsConfig.ts`'s comment updated to point at both server-side copies instead of describing them as an open follow-up.
+
+Deployed to the Supabase Edge Functions runtime (`supabase functions deploy create-checkout-session create-tutor-deposit-checkout --use-api --import-map supabase/functions/deno.json`). Live-verified: an authenticated call to either function now gets `503 Payments are not available yet` instead of proceeding to Stripe. Full suite and typecheck clean (no test coverage exists for edge functions in this repo -- Deno runtime, separate from the vitest suite -- consistent with every other edge function change this session).
+
 ## Security review (pre-beta): wrap-up (2026-08-02)
 
 Closing out the pre-beta security review that ran across this session (founder: "let's connect chrome to do some pentesting and security checkings before the last review before beta testing" -> read-only RLS probes + live edge-function calls, then two rounds of "do a couple/full RLS sweep" once the first round's methodology paid off). Everything found was fixed, verified against `ci_test` with policy text confirmed identical to production before shipping, and deployed. Full list, newest first (see each entry below for detail):
