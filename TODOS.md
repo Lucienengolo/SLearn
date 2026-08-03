@@ -1,5 +1,15 @@
 # TODOS
 
+## Supabase Security Advisor: fixed public_profiles' missing security_invoker, left 2 similar findings alone on purpose (2026-08-03)
+
+Founder pasted a Supabase Security Advisor finding: `public_profiles` (from the `profiles.email` fix, `0046`) is a "Security Definer" view -- plain `CREATE VIEW` in Postgres runs with the view *owner's* privileges for RLS purposes by default, not the querying role's, unless `security_invoker` is explicitly set (PG15+; this project runs 17.6). Checked the whole schema rather than just the one view named in the report -- found 3 views missing it (`public_profiles`, `course_stats`, `tutor_request_match_stats`); a 4th (`student_course_progress`) already had it set correctly.
+
+Fixed `public_profiles` only (`0049_view_security_invoker.sql`, `alter view ... set (security_invoker = on)`), verified zero behavior change since `profiles`' own SELECT policy is `using (true)` -- every row is already visible to every role regardless of invoker/definer, so this is pure hardening (protects against a future RLS tightening on `profiles` silently *not* applying to this view) rather than a fix for anything currently exploitable.
+
+**Deliberately did not touch `course_stats` or `tutor_request_match_stats`** -- the lint is a blanket heuristic, and both genuinely need the elevated access it's flagging: `course_stats` aggregates enrollment/review counts across every user for public display (`HomePage.tsx`, `CourseList.tsx` -- anonymous visitors see these), and `tutor_request_match_stats` aggregates across every parent's tutor requests for reviewer-facing platform stats, already gated by its own `is_reviewer` check embedded directly in the view body (`0033_tutor_request_match_stats.sql`, plain SQL using `auth.uid()`, unaffected by invoker/definer either way). Setting `security_invoker = on` on either would make it respect the *caller's own* RLS on the underlying tables instead of aggregating across everyone -- breaking the actual feature, not fixing a vulnerability. Both only ever return aggregate counts, never raw per-user rows, so there's no PII exposure from the current design.
+
+Live-verified in production: `public_profiles` still returns correct data for anon (`security_invoker` confirmed `on` via `pg_options_to_table`), no client code needed to change.
+
 ## WAF, adaptive rate limiting, and a DDoS response plan (2026-08-03)
 
 Founder asked for a WAF in front of the stack, adaptive rate limiting recognizing attack patterns, IP-based anomaly detection escalating from throttle to temporary ban, and a DDoS response plan document. Full detail and setup steps are in the new `SECURITY.md` -- this entry is the summary.

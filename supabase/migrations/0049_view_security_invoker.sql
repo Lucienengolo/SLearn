@@ -1,0 +1,43 @@
+-- Supabase Security Advisor flagged public_profiles, course_stats, and
+-- tutor_request_match_stats as "Security Definer" views (2026-08-03) --
+-- plain CREATE VIEW in Postgres runs with the view OWNER's privileges for
+-- RLS purposes by default (definer-like), not the querying role's, unless
+-- security_invoker is explicitly set (Postgres 15+; this project runs 17).
+-- student_course_progress already had it set correctly, which is why it
+-- wasn't in the flagged list.
+--
+-- Checked each flagged view against its actual underlying RLS before
+-- deciding whether to change it -- the lint is a blanket heuristic, not
+-- proof of a live issue in every case:
+--
+-- public_profiles: fixed. profiles' own SELECT policy is `using (true)` --
+-- every row is already visible to every role regardless of invoker vs
+-- definer, so this is a zero-behavior-change hardening fix, not a bug fix.
+-- It future-proofs against profiles' RLS ever being tightened to filter
+-- rows (not just columns) later -- without this, public_profiles would
+-- silently keep exposing everything via the definer bypass even after
+-- such a tightening, which would be a nasty surprise to discover later.
+--
+-- course_stats and tutor_request_match_stats: deliberately left alone,
+-- NOT a fix-it-blindly case. Both need real elevated access:
+--   - course_stats aggregates enrollment/review counts across ALL users
+--     for public display (HomePage.tsx, CourseList.tsx -- anonymous
+--     visitors see these stats). Setting security_invoker=on would make
+--     it respect the caller's own RLS on enrollments/reviews, which is
+--     scoped to "your own enrollment" -- an anonymous or non-enrolled
+--     caller would see near-zero counts instead of the real aggregate,
+--     breaking the actual feature.
+--   - tutor_request_match_stats aggregates across ALL parents' tutor
+--     requests for reviewer-facing platform stats, and already embeds its
+--     own `exists (select 1 from profiles where id = auth.uid() and
+--     is_reviewer = true)` check directly in the view body (see
+--     0033_tutor_request_match_stats.sql) -- this check is plain SQL, not
+--     RLS, so it works correctly regardless of invoker/definer. Setting
+--     security_invoker=on would instead make the view respect the
+--     *reviewer's own* RLS on tutor_requests (scoped to rows where
+--     they're the parent), and a reviewer isn't typically also a parent
+--     with tutor_requests of their own -- they'd see zero rows, breaking
+--     the view's entire purpose.
+-- Both only ever return aggregate counts, never raw per-user rows, so
+-- there's no PII/row-level exposure from the definer-style access itself.
+alter view public_profiles set (security_invoker = on);
