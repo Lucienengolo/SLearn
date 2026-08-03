@@ -1,5 +1,22 @@
 # TODOS
 
+## Security review (pre-beta): wrap-up (2026-08-02)
+
+Closing out the pre-beta security review that ran across this session (founder: "let's connect chrome to do some pentesting and security checkings before the last review before beta testing" -> read-only RLS probes + live edge-function calls, then two rounds of "do a couple/full RLS sweep" once the first round's methodology paid off). Everything found was fixed, verified against `ci_test` with policy text confirmed identical to production before shipping, and deployed. Full list, newest first (see each entry below for detail):
+
+- **`0048`**: quiz answer key leak (`quiz_questions.correct_answer` readable by any quiz-taker), self-declared quiz results, self-graded classwork.
+- **`0047`**: certificate self-forgery, enrollment self-completion, match tutor hijacking, instructor applicant self-clearing their own background check.
+- **`0046`**: `profiles.email` publicly readable by anyone (the finding that kicked off the whole review).
+- Missing CSP header; `create-checkout-session`/`create-tutor-deposit-checkout` validating the caller's JWT after doing other work instead of first; `Permissions-Policy: geolocation=()` blocking the app's own geolocation feature (also the likely root cause of an earlier-reported "location never shares" bug).
+
+**Known, deliberately-deferred items** -- not bugs, just the honest edges of this pass:
+- `interview_slots` has a real RLS gap (its booking policy doesn't identify who's booking) but the table is dead code -- interviews go through Cal.com (`supabase/functions/cal-webhook`), nothing in the client reads or writes it. Worth a real fix or a straight `drop table` if the Cal.com path is permanent, whichever the founder prefers -- not urgent either way since there's no live exploit path.
+- The CSP's `connect-src` doesn't list PostHog/Sentry, since neither is configured in this deployment. If either gets a real key later, `connect-src` needs a matching addition or that integration silently stops sending data -- easy to forget since the failure is invisible (no user-facing error, analytics/error-tracking just goes quiet).
+- `lesson_progress.completed` is still a self-reported "I watched this" signal from the client, one row per lesson -- `0047` closed the "one API call marks the whole course done" hole, but didn't add real watch-time/engagement verification per lesson. That's a materially bigger feature (video analytics, not RLS), intentionally out of scope here.
+- Side effect worth noting: deploying `create-checkout-session` for this review's auth-ordering fix also deployed whatever else was sitting in that file, including the FCFA currency fix from the 2026-08-01 roadmap that Batch 7's entry (below) flagged as "committed but not yet deployed" for lack of credentials at the time. That gap is now closed too.
+
+Beta-readiness verdict: every finding from this review is fixed, deployed, and live-verified (either via direct production API calls or, where that needed a real signed-in session I didn't have credentials for, exploited-and-confirmed-fixed against `ci_test` with production-identical policy text). Nothing outstanding blocks beta on the security side.
+
 ## Security review (pre-beta): full RLS sweep on the remaining tables found 3 more holes, all in graded content (2026-08-02)
 
 Founder asked to extend the negative-path sweep to every remaining table (21 not yet covered by the first pass). Read every policy on `ai_tutor_requests`, `categories`, `classwork_posts`, `classwork_submissions`, `institutional_inquiries`, `instructor_credentials`, `interview_slots`, `interviews`, `lesson_progress`, `lessons`, `messages`, `notification_dispatch`, `notifications`, `quiz_attempts`, `quiz_questions`, `quizzes`, `reviews`, `saved_courses`, `tutor_profile_fields`, `tutor_requests`, `tutor_subjects`. Most were fine; 3 were real, live-exploitable, all in assessed/graded content:
