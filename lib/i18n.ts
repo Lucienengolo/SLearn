@@ -795,6 +795,11 @@ export const translations = {
     'tutorMarketplace.paymentStatus.finalizeWithTeamNote':
       'Vous êtes tous les deux prêts ! Finalisez le paiement avec notre équipe sur WhatsApp pour confirmer la réservation.',
     'tutorMarketplace.paymentStatus.finalizeOnWhatsapp': 'Finaliser sur WhatsApp ↗',
+    'tutorMarketplace.paymentStatus.whatsappGreeting': 'Bonjour, nous souhaitons finaliser notre réservation de tutorat.',
+    'tutorMarketplace.paymentStatus.whatsappTutorLabel': 'Tuteur',
+    'tutorMarketplace.paymentStatus.whatsappSessionLabel': 'Séance',
+    'tutorMarketplace.paymentStatus.whatsappRateLabel': 'Tarif',
+    'tutorMarketplace.paymentStatus.whatsappReferenceLabel': 'Référence',
     'tutorMarketplace.paymentStatus.tutorWillConfirmNote': 'Le tuteur confirmera la réception du solde après la séance.',
     'tutorMarketplace.paymentStatus.cancelBooking': 'Annuler la réservation',
     'tutorMarketplace.paymentStatus.refundPolicyNote':
@@ -1653,6 +1658,11 @@ export const translations = {
     'tutorMarketplace.paymentStatus.finalizeWithTeamNote':
       "You're both ready! Finalize payment with our team on WhatsApp to confirm the booking.",
     'tutorMarketplace.paymentStatus.finalizeOnWhatsapp': 'Finalize on WhatsApp ↗',
+    'tutorMarketplace.paymentStatus.whatsappGreeting': "Hello, we'd like to finalize our tutoring booking.",
+    'tutorMarketplace.paymentStatus.whatsappTutorLabel': 'Tutor',
+    'tutorMarketplace.paymentStatus.whatsappSessionLabel': 'Session',
+    'tutorMarketplace.paymentStatus.whatsappRateLabel': 'Rate',
+    'tutorMarketplace.paymentStatus.whatsappReferenceLabel': 'Reference',
     'tutorMarketplace.paymentStatus.tutorWillConfirmNote': 'The tutor will confirm balance receipt after the session.',
     'tutorMarketplace.paymentStatus.cancelBooking': 'Cancel the booking',
     'tutorMarketplace.paymentStatus.refundPolicyNote':

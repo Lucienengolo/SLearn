@@ -105,6 +105,24 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
     expect(screen.queryByRole('button', { name: /pay the deposit/i })).not.toBeInTheDocument();
   });
 
+  it('prefills the WhatsApp message with tutor name, grade, neighborhood, date, rate and a reference', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    const link = await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    const href = link.getAttribute('href') ?? '';
+    const decodedText = decodeURIComponent(href.split('text=')[1] ?? '');
+
+    expect(decodedText).toContain('Aïcha Mbarga');
+    expect(decodedText).toContain('3ème');
+    expect(decodedText).toContain('Bonamoussadi');
+    expect(decodedText).toContain('8');
+    expect(decodedText).toContain('000');
+    expect(decodedText).toContain('match-1');
+  });
+
   it('shows the same WhatsApp handoff CTA for the tutor, not the passive waiting note', async () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);

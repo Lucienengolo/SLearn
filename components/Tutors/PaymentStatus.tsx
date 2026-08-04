@@ -5,6 +5,7 @@ import { TutorSessionPayment } from '../../lib/supabase';
 import { useLocale } from '../../contexts/LocaleContext';
 import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
 import { adminWhatsappLink } from '../../lib/adminContact';
+import type { TranslationKey } from '../../lib/i18n';
 
 type PaymentStatusProps = {
   matchId: string;
@@ -12,6 +13,24 @@ type PaymentStatusProps = {
 };
 
 const FCFA = new Intl.NumberFormat('fr-FR');
+
+// Everything the admin needs to act on the handoff without opening the app:
+// who the tutor is, what/where the request was for, when the session is,
+// and the rate -- founder feedback, 2026-08-05, the original one-line
+// message ("je souhaite finaliser une réservation...") made them go look
+// the match up manually every time.
+function buildWhatsappContext(context: MatchContext, t: (key: TranslationKey) => string): string {
+  const { match, request, tutorProfile, tutorFields } = context;
+  const sessionDate = match.confirmed_session_date ? new Date(match.confirmed_session_date).toLocaleString('fr-FR') : '—';
+  return [
+    t('tutorMarketplace.paymentStatus.whatsappGreeting'),
+    `${t('tutorMarketplace.paymentStatus.whatsappTutorLabel')} : ${tutorProfile.full_name ?? '—'}`,
+    `${t('tutorMarketplace.chat.requestLabel')} ${request.grade}, ${request.neighborhood}`,
+    `${t('tutorMarketplace.paymentStatus.whatsappSessionLabel')} : ${sessionDate}`,
+    `${t('tutorMarketplace.paymentStatus.whatsappRateLabel')} : ${FCFA.format(tutorFields.rate_per_session)} FCFA`,
+    `${t('tutorMarketplace.paymentStatus.whatsappReferenceLabel')} : ${match.id}`,
+  ].join('\n');
+}
 
 type StepState = 'done' | 'active' | 'upcoming';
 
@@ -154,7 +173,7 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
         <div className="bg-[#F2EEE2] border border-ink-border rounded-lg p-3.5 mb-4">
           <p className="text-sm mb-3">{t('tutorMarketplace.paymentStatus.finalizeWithTeamNote')}</p>
           <a
-            href={adminWhatsappLink(`Bonjour, je souhaite finaliser une réservation de tutorat (match ${match.id}, tuteur : ${context.tutorProfile.full_name ?? '—'}).`)}
+            href={adminWhatsappLink(buildWhatsappContext(context, t))}
             target="_blank"
             rel="noreferrer"
             className="min-h-11 flex items-center justify-center whitespace-nowrap px-4 border border-ink-border rounded-lg text-sm font-medium hover:border-warm-gray transition-colors w-full bg-paper"
