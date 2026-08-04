@@ -92,15 +92,37 @@ export async function fetchMatchContext(matchId: string): Promise<MatchContext> 
   };
 }
 
+const PARENT_RESPONSE_WINDOW_MS = 48 * 60 * 60 * 1000;
+
 // Tutor-only actions -- covered by the "tutors respond to or decline their
 // own new match" RLS policy (0030_tutor_marketplace.sql), which only allows
 // matched -> messaging/declined and only for tutor_id = auth.uid(). A plain
 // client update is safe here; no edge function needed for a single-row,
 // single-party state transition.
+//
+// Bug found 2026-08-04 (founder report: "tutor matching is not working"):
+// this never set parent_timeout_at, so expire_unresponsive_parent_matches()
+// (0031_tutor_marketplace_cron.sql, runs hourly, confirmed active in
+// production) could never fire -- its WHERE clause requires
+// parent_timeout_at is not null. A match that reached 'messaging' and the
+// parent then went silent (never confirmed a session date or paid a
+// deposit) stayed 'messaging' forever, permanently occupying that tutor's
+// one active-match slot (ACTIVE_MATCH_STATUSES below) and blocking them
+// from ever being matched again -- exactly what happened to the only
+// fully-onboarded tutor in production, whose one match from 2026-07-30 had
+// sat unresolved for 5 days, silently failing every subsequent match
+// attempt for that tutor's subjects.
 export async function acceptMatch(matchId: string): Promise<void> {
+  const now = new Date();
+  const parentTimeoutAt = new Date(now.getTime() + PARENT_RESPONSE_WINDOW_MS);
   const { error } = await supabase
     .from('matches')
-    .update({ status: 'messaging', tutor_responded_at: new Date().toISOString(), messaging_started_at: new Date().toISOString() })
+    .update({
+      status: 'messaging',
+      tutor_responded_at: now.toISOString(),
+      messaging_started_at: now.toISOString(),
+      parent_timeout_at: parentTimeoutAt.toISOString(),
+    })
     .eq('id', matchId);
   if (error) throw error;
 }
