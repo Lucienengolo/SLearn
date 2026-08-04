@@ -81,6 +81,11 @@ async function goToTutoringStep(user: ReturnType<typeof userEvent.setup>) {
 describe('ApplicationWizard tutoring section', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // ApplicationWizard now persists step position to localStorage keyed
+    // by user id (2026-08-04 fix) -- every test here mocks the same
+    // 'user-1', so a leftover step from a prior test would otherwise make
+    // the wizard resume somewhere other than step 0.
+    localStorage.clear();
     vi.spyOn(authContext, 'useAuth').mockReturnValue({
       // @ts-expect-error -- partial mock, only fields the wizard actually reads
       user: { id: 'user-1', email: 't@example.com' },

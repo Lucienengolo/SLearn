@@ -30,11 +30,59 @@ type Props = {
   onSubmitted: () => void;
 };
 
+// Bug report, 2026-08-04: "when you submit or do something like that it
+// pushes you out of the registration process, you have to start back from
+// the beginning although the information remains on the different form".
+// Root cause: this wizard's `step` is local component state, so it always
+// resets to 0 on mount -- and InstructorApplicationFlow (the parent)
+// really does remount it fresh on every page load/refresh/navigation back
+// to "Apply to teach", even though it correctly refetches the real saved
+// application + credentials each time (saveDraft upserts one row per
+// applicant; nothing was ever actually lost). The form fields/uploaded
+// documents (including a submitted CV) were never the problem -- the user
+// just had to click through every prior step again to see them, which
+// reads exactly like "I have to start over." Persisting the step position
+// itself (founder's own suggested fix: "save the progress locally") closes
+// the actual gap.
+const STEP_STORAGE_KEY_PREFIX = 'slearn:instructorApplicationStep:';
+
+function readStoredStep(userId: string | undefined): number {
+  if (!userId) return 0;
+  try {
+    const raw = localStorage.getItem(STEP_STORAGE_KEY_PREFIX + userId);
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    if (Number.isNaN(parsed)) return 0;
+    return Math.min(Math.max(parsed, 0), STEP_KEYS.length - 1);
+  } catch {
+    // Private browsing / storage disabled -- resuming at step 0 on a
+    // future remount is a minor inconvenience, not worth blocking on.
+    return 0;
+  }
+}
+
+function writeStoredStep(userId: string | undefined, step: number) {
+  if (!userId) return;
+  try {
+    localStorage.setItem(STEP_STORAGE_KEY_PREFIX + userId, String(step));
+  } catch {
+    // Same as above -- non-fatal.
+  }
+}
+
+function clearStoredStep(userId: string | undefined) {
+  if (!userId) return;
+  try {
+    localStorage.removeItem(STEP_STORAGE_KEY_PREFIX + userId);
+  } catch {
+    // Non-fatal.
+  }
+}
+
 export default function ApplicationWizard({ initialApplication, onSubmitted }: Props) {
   const { t } = useLocale();
   const { user } = useAuth();
   const [application, setApplication] = useState<InstructorApplication | null>(initialApplication);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => readStoredStep(user?.id));
   const [categories, setCategories] = useState<Category[]>([]);
   const [credentials, setCredentials] = useState<InstructorCredential[]>([]);
   const [saving, setSaving] = useState(false);
@@ -61,6 +109,10 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     tutoring_response_time_minutes: initialApplication?.tutoring_response_time_minutes ?? undefined,
     tutoring_whatsapp: initialApplication?.tutoring_whatsapp ?? '',
   });
+
+  useEffect(() => {
+    writeStoredStep(user?.id, step);
+  }, [step, user?.id]);
 
   useEffect(() => {
     supabase
@@ -164,6 +216,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     try {
       await submitApplication(application.id);
       trackEvent('instructor_application_submitted');
+      clearStoredStep(user?.id);
       onSubmitted();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('dashboard.instructorApplication.couldNotSubmit'));
