@@ -1,0 +1,127 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import PaymentStatus from '../components/Tutors/PaymentStatus';
+import * as matchesLib from '../lib/matches';
+import * as paymentsLib from '../lib/tutorPayments';
+import { LocaleProvider } from '../contexts/LocaleContext';
+import { ADMIN_WHATSAPP_NUMBER } from '../lib/adminContact';
+import type { Match, TutorRequest, Profile, TutorProfileFields } from '../lib/supabase';
+import type { MatchContext } from '../lib/matches';
+import type { ComponentProps } from 'react';
+
+function renderPaymentStatus(props: ComponentProps<typeof PaymentStatus>) {
+  return render(
+    <LocaleProvider>
+      <PaymentStatus {...props} />
+    </LocaleProvider>
+  );
+}
+
+const REQUEST: TutorRequest = {
+  id: 'req-1',
+  parent_id: 'parent-1',
+  category_id: 'cat-1',
+  grade: '3ème',
+  neighborhood: 'Bonamoussadi',
+  budget_min: null,
+  budget_max: null,
+  whatsapp_contact: '+237600000000',
+  child_identifier: null,
+  preferred_language: 'fr',
+  status: 'matched',
+  location_lat: null,
+  location_lng: null,
+  created_at: '',
+};
+
+const TUTOR_PROFILE: Profile = {
+  id: 'tutor-1',
+  email: 't@example.com',
+  full_name: 'Aïcha Mbarga',
+  role: 'instructor',
+  verified: true,
+  is_reviewer: false,
+  avatar_url: null,
+  bio: null,
+  totem: null,
+  created_at: '',
+  updated_at: '',
+};
+
+const TUTOR_FIELDS: TutorProfileFields = {
+  tutor_id: 'tutor-1',
+  teaching_mode: 'both',
+  neighborhood: 'Bonamoussadi',
+  languages: ['fr'],
+  rate_per_session: 8000,
+  response_time_minutes: 30,
+  whatsapp_contact: '+237611111111',
+  created_at: '',
+  updated_at: '',
+};
+
+function makeMatch(overrides: Partial<Match>): Match {
+  return {
+    id: 'match-1',
+    request_id: 'req-1',
+    tutor_id: 'tutor-1',
+    status: 'messaging',
+    matched_at: '',
+    tutor_responded_at: null,
+    tutor_timeout_at: null,
+    decline_reason: null,
+    messaging_started_at: null,
+    parent_timeout_at: null,
+    confirmed_session_date: null,
+    deposit_paid_at: null,
+    in_progress_at: null,
+    completed_at: null,
+    cancelled_at: null,
+    stalled_at: null,
+    created_at: '',
+    ...overrides,
+  };
+}
+
+function mockContext(overrides: Partial<Match>): MatchContext {
+  return { match: makeMatch(overrides), request: REQUEST, tutorProfile: TUTOR_PROFILE, tutorFields: TUTOR_FIELDS };
+}
+
+// Regression: founder report, 2026-08-04 -- "tutor matching don't end...
+// after a user finds a tutor and the tutor approves and schedules a date,
+// the session never ends." Root cause: messaging + confirmed_session_date
+// had no path forward while PAYMENTS_ENABLED=false -- the parent's only
+// action was a "Pay deposit" button that always errors. Fix: once both
+// parties have mutually agreed, hand off to the admin on WhatsApp instead.
+describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', () => {
+  it('shows the WhatsApp handoff CTA instead of Pay Deposit once a session date is confirmed', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    const link = await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    expect(link).toHaveAttribute('href', expect.stringContaining(ADMIN_WHATSAPP_NUMBER.replace(/[^\d]/g, '')));
+    expect(screen.queryByRole('button', { name: /pay the deposit/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the same WhatsApp handoff CTA for the tutor, not the passive waiting note', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'tutor' });
+
+    expect(await screen.findByRole('link', { name: /finalize on whatsapp/i })).toBeInTheDocument();
+    expect(screen.queryByText(/waiting for the parent's deposit/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps showing the Pay Deposit button while messaging with no confirmed date yet', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: null }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    expect(await screen.findByRole('button', { name: /pay the deposit/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /finalize on whatsapp/i })).not.toBeInTheDocument();
+  });
+});

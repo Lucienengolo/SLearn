@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, Clock, FileText, ExternalLink, Users, BookOpen } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, ExternalLink, Users, BookOpen, MessageCircle } from 'lucide-react';
 import { InstructorCredential } from '../../lib/supabase';
 import {
   ApplicationWithApplicant,
@@ -11,6 +11,7 @@ import {
   getCredentialFileUrl,
 } from '../../lib/instructorApplications';
 import { CourseWithInstructor, decideCourse, fetchDecidedCourses, fetchPendingCourses } from '../../lib/courseModeration';
+import { PendingMatchSettlement, fetchPendingSettlements, settleMatch } from '../../lib/tutorBookingSettlement';
 import { Interview } from '../../lib/supabase';
 import { getCourseCover } from '../../lib/courseCovers';
 import { renderRichText } from '../../lib/richText';
@@ -23,7 +24,7 @@ const STATUS_KEYS: Record<string, TranslationKey> = {
   rejected: 'dashboard.reviewQueue.statusRejected',
 };
 
-type Section = 'applications' | 'courses';
+type Section = 'applications' | 'courses' | 'tutor-bookings';
 type Tab = 'pending' | 'decided';
 
 // Reviewer-only: profiles.is_reviewer gates both the "Review queue" nav
@@ -39,6 +40,7 @@ export default function ReviewQueue() {
   const [decided, setDecided] = useState<ApplicationWithApplicant[]>([]);
   const [pendingCourses, setPendingCourses] = useState<CourseWithInstructor[]>([]);
   const [decidedCourses, setDecidedCourses] = useState<CourseWithInstructor[]>([]);
+  const [pendingSettlements, setPendingSettlements] = useState<PendingMatchSettlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -48,22 +50,33 @@ export default function ReviewQueue() {
 
   const load = async () => {
     setLoading(true);
-    const [p, d, pc, dc] = await Promise.all([
+    const [p, d, pc, dc, ps] = await Promise.all([
       fetchReviewQueue(),
       fetchDecidedApplications(),
       fetchPendingCourses(),
       fetchDecidedCourses(),
+      fetchPendingSettlements(),
     ]);
     setPending(p);
     setDecided(d);
     setPendingCourses(pc);
     setDecidedCourses(dc);
+    setPendingSettlements(ps);
     setLoading(false);
   };
 
   const isApplications = section === 'applications';
-  const list = isApplications ? (tab === 'pending' ? pending : decided) : tab === 'pending' ? pendingCourses : decidedCourses;
-  const pendingCount = isApplications ? pending.length : pendingCourses.length;
+  const isTutorBookings = section === 'tutor-bookings';
+  const list = isApplications
+    ? tab === 'pending'
+      ? pending
+      : decided
+    : isTutorBookings
+    ? pendingSettlements
+    : tab === 'pending'
+    ? pendingCourses
+    : decidedCourses;
+  const pendingCount = isApplications ? pending.length : isTutorBookings ? pendingSettlements.length : pendingCourses.length;
 
   return (
     <div className="max-w-[1000px] mx-auto px-6 py-10">
@@ -74,7 +87,7 @@ export default function ReviewQueue() {
       <p className="text-gray-500 mb-6">{t('dashboard.reviewQueue.subtitle')}</p>
 
       <div className="flex gap-2 mb-4">
-        {(['applications', 'courses'] as const).map((s) => (
+        {(['applications', 'courses', 'tutor-bookings'] as const).map((s) => (
           <button
             key={s}
             onClick={() => {
@@ -92,29 +105,36 @@ export default function ReviewQueue() {
                 <Users size={15} />
                 {t('dashboard.reviewQueue.instructorApplications')} ({pending.length})
               </>
-            ) : (
+            ) : s === 'courses' ? (
               <>
                 <BookOpen size={15} />
                 {t('nav.courses')} ({pendingCourses.length})
+              </>
+            ) : (
+              <>
+                <MessageCircle size={15} />
+                {t('dashboard.reviewQueue.tutorBookings')} ({pendingSettlements.length})
               </>
             )}
           </button>
         ))}
       </div>
 
-      <div className="flex gap-1 mb-6">
-        {(['pending', 'decided'] as const).map((tabOption) => (
-          <button
-            key={tabOption}
-            onClick={() => setTab(tabOption)}
-            className={`text-sm px-3.5 py-2 rounded-[10px] font-medium transition ${
-              tab === tabOption ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            {tabOption === 'pending' ? `${t('dashboard.reviewQueue.pending')} (${pendingCount})` : t('dashboard.reviewQueue.recentlyDecided')}
-          </button>
-        ))}
-      </div>
+      {!isTutorBookings && (
+        <div className="flex gap-1 mb-6">
+          {(['pending', 'decided'] as const).map((tabOption) => (
+            <button
+              key={tabOption}
+              onClick={() => setTab(tabOption)}
+              className={`text-sm px-3.5 py-2 rounded-[10px] font-medium transition ${
+                tab === tabOption ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {tabOption === 'pending' ? `${t('dashboard.reviewQueue.pending')} (${pendingCount})` : t('dashboard.reviewQueue.recentlyDecided')}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-16">
@@ -124,7 +144,13 @@ export default function ReviewQueue() {
         <div className="rounded-[14px] border border-canvas-150 p-12 text-center">
           <Users size={36} className="mx-auto text-gray-300 mb-3" />
           <p className="text-gray-500 text-sm">
-            {tab === 'pending' ? (isApplications ? t('dashboard.reviewQueue.noApplicationsWaiting') : t('dashboard.reviewQueue.noCoursesWaiting')) : t('dashboard.reviewQueue.nothingDecidedYet')}
+            {isTutorBookings
+              ? t('dashboard.reviewQueue.noSettlementsWaiting')
+              : tab === 'pending'
+              ? isApplications
+                ? t('dashboard.reviewQueue.noApplicationsWaiting')
+                : t('dashboard.reviewQueue.noCoursesWaiting')
+              : t('dashboard.reviewQueue.nothingDecidedYet')}
           </p>
         </div>
       ) : isApplications ? (
@@ -137,6 +163,12 @@ export default function ReviewQueue() {
               onToggle={() => setExpandedId(expandedId === app.id ? null : app.id)}
               onDecided={load}
             />
+          ))}
+        </div>
+      ) : isTutorBookings ? (
+        <div className="space-y-3">
+          {(list as PendingMatchSettlement[]).map((settlement) => (
+            <MatchSettlementCard key={settlement.match_id} settlement={settlement} onSettled={load} />
           ))}
         </div>
       ) : (
@@ -268,6 +300,44 @@ function CourseReviewCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function MatchSettlementCard({ settlement, onSettled }: { settlement: PendingMatchSettlement; onSettled: () => void }) {
+  const { t } = useLocale();
+  const [settling, setSettling] = useState(false);
+  const [settleError, setSettleError] = useState('');
+
+  const handleSettle = async () => {
+    setSettling(true);
+    setSettleError('');
+    try {
+      await settleMatch(settlement.match_id);
+      onSettled();
+    } catch {
+      setSettleError(t('dashboard.reviewQueue.couldNotSettle'));
+      setSettling(false);
+    }
+  };
+
+  return (
+    <div className="rounded-[14px] border border-canvas-150 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+        <Field label={t('dashboard.reviewQueue.parentFieldLabel')} value={`${settlement.parent_name ?? '—'} · ${settlement.parent_whatsapp}`} />
+        <Field label={t('dashboard.reviewQueue.tutorFieldLabel')} value={`${settlement.tutor_name ?? '—'} · ${settlement.tutor_whatsapp}`} />
+        <Field label={t('dashboard.reviewQueue.sessionDateFieldLabel')} value={new Date(settlement.confirmed_session_date).toLocaleString()} />
+        <Field label={t('dashboard.reviewQueue.rateFieldLabel')} value={`${settlement.rate_per_session}`} />
+      </div>
+      {settleError && <p className="text-sm text-red-600 mb-2">{settleError}</p>}
+      <button
+        onClick={handleSettle}
+        disabled={settling}
+        className="flex items-center gap-1.5 bg-green-600 text-white h-10 px-4 rounded-[10px] hover:bg-green-700 transition font-medium disabled:opacity-50"
+      >
+        <CheckCircle size={16} />
+        {settling ? t('dashboard.reviewQueue.markingSettledEllipsis') : t('dashboard.reviewQueue.markSettled')}
+      </button>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { fetchPaymentForMatch, createDepositCheckout, confirmBalanceReceived, ca
 import { TutorSessionPayment } from '../../lib/supabase';
 import { useLocale } from '../../contexts/LocaleContext';
 import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
+import { adminWhatsappLink } from '../../lib/adminContact';
 
 type PaymentStatusProps = {
   matchId: string;
@@ -149,7 +150,20 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
         </span>
       </div>
 
-      {match.status === 'messaging' && viewerRole === 'parent' && (
+      {match.status === 'messaging' && match.confirmed_session_date && !PAYMENTS_ENABLED && (
+        <div className="bg-[#F2EEE2] border border-ink-border rounded-lg p-3.5 mb-4">
+          <p className="text-sm mb-3">{t('tutorMarketplace.paymentStatus.finalizeWithTeamNote')}</p>
+          <a
+            href={adminWhatsappLink(`Bonjour, je souhaite finaliser une réservation de tutorat (match ${match.id}, tuteur : ${context.tutorProfile.full_name ?? '—'}).`)}
+            target="_blank"
+            rel="noreferrer"
+            className="min-h-11 flex items-center justify-center whitespace-nowrap px-4 border border-ink-border rounded-lg text-sm font-medium hover:border-warm-gray transition-colors w-full bg-paper"
+          >
+            {t('tutorMarketplace.paymentStatus.finalizeOnWhatsapp')}
+          </a>
+        </div>
+      )}
+      {match.status === 'messaging' && (!match.confirmed_session_date || PAYMENTS_ENABLED) && viewerRole === 'parent' && (
         <button
           onClick={handlePayDeposit}
           disabled={busy}
@@ -158,7 +172,7 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
           {busy ? t('tutorMarketplace.paymentStatus.redirectingEllipsis') : actionError ? t('tutorMarketplace.paymentStatus.paymentFailedRetry') : t('tutorMarketplace.paymentStatus.payDeposit')}
         </button>
       )}
-      {match.status === 'messaging' && viewerRole === 'tutor' && (
+      {match.status === 'messaging' && (!match.confirmed_session_date || PAYMENTS_ENABLED) && viewerRole === 'tutor' && (
         <p className="text-sm text-warm-gray mb-4">{t('tutorMarketplace.paymentStatus.waitingDepositTutorNote')}</p>
       )}
 

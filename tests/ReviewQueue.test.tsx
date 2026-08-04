@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import ReviewQueue from '../components/Dashboard/ReviewQueue';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import * as applicationsLib from '../lib/instructorApplications';
 import * as moderationLib from '../lib/courseModeration';
+import * as settlementLib from '../lib/tutorBookingSettlement';
 
 vi.mock('../lib/instructorApplications');
 vi.mock('../lib/courseModeration');
+vi.mock('../lib/tutorBookingSettlement');
 
 function renderReviewQueue() {
   return render(
@@ -26,6 +29,7 @@ describe('ReviewQueue', () => {
     vi.mocked(applicationsLib.fetchDecidedApplications).mockResolvedValue([]);
     vi.mocked(moderationLib.fetchPendingCourses).mockResolvedValue([]);
     vi.mocked(moderationLib.fetchDecidedCourses).mockResolvedValue([]);
+    vi.mocked(settlementLib.fetchPendingSettlements).mockResolvedValue([]);
   });
 
   it('renders in English by default (jsdom navigator.language)', async () => {
@@ -45,5 +49,47 @@ describe('ReviewQueue', () => {
     expect(screen.getByText(/aucune candidature en attente de décision/i)).toBeInTheDocument();
 
     vi.unstubAllGlobals();
+  });
+});
+
+// Regression: founder report, 2026-08-04 -- tutor bookings had no way to be
+// manually closed out once mutually agreed and finalized on WhatsApp with
+// the admin (see PaymentStatus.whatsappHandoff.test.tsx), short of direct DB
+// access. This "minimal settle action" surface lives here.
+describe('ReviewQueue tutor-bookings settlement section', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(applicationsLib.fetchReviewQueue).mockResolvedValue([]);
+    vi.mocked(applicationsLib.fetchDecidedApplications).mockResolvedValue([]);
+    vi.mocked(moderationLib.fetchPendingCourses).mockResolvedValue([]);
+    vi.mocked(moderationLib.fetchDecidedCourses).mockResolvedValue([]);
+    vi.mocked(settlementLib.fetchPendingSettlements).mockResolvedValue([
+      {
+        match_id: 'match-1',
+        confirmed_session_date: '2026-09-01T10:00:00.000Z',
+        parent_name: 'Parent One',
+        parent_whatsapp: '+237600000000',
+        tutor_name: 'Tutor One',
+        tutor_whatsapp: '+237611111111',
+        rate_per_session: 8000,
+      },
+    ]);
+  });
+
+  it('lists pending settlements and settles one on click', async () => {
+    const user = userEvent.setup();
+    vi.mocked(settlementLib.settleMatch).mockResolvedValue(undefined);
+
+    renderReviewQueue();
+
+    await user.click(await screen.findByRole('button', { name: /tutor bookings/i }));
+
+    expect(await screen.findByText(/parent one/i)).toBeInTheDocument();
+    expect(screen.getByText(/tutor one/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^pending/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /mark as settled/i }));
+
+    expect(settlementLib.settleMatch).toHaveBeenCalledWith('match-1');
   });
 });
