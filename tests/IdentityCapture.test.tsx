@@ -31,8 +31,8 @@ describe('IdentityCapture', () => {
     renderCapture();
 
     expect(screen.getByText('Government-issued ID (required)')).toBeInTheDocument();
-    expect(screen.getByText('Live selfie (required)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open camera' })).toBeInTheDocument();
+    expect(screen.getByText('Selfie (required)')).toBeInTheDocument();
+    expect(screen.getByText('Upload selfie')).toBeInTheDocument();
   });
 
   it('renders in French when the locale is French', () => {
@@ -42,8 +42,8 @@ describe('IdentityCapture', () => {
     renderCapture();
 
     expect(screen.getByText("Pièce d'identité officielle (requise)")).toBeInTheDocument();
-    expect(screen.getByText('Selfie en direct (requis)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ouvrir la caméra' })).toBeInTheDocument();
+    expect(screen.getByText('Selfie (requis)')).toBeInTheDocument();
+    expect(screen.getByText('Envoyer le selfie')).toBeInTheDocument();
 
     vi.unstubAllGlobals();
   });

@@ -625,8 +625,6 @@ export const translations = {
     'dashboard.instructorApplication.couldNotVerifyAuto':
       'Impossible de vérifier le document automatiquement — un réviseur le vérifiera manuellement.',
     'dashboard.instructorApplication.uploadFailed': "Échec de l'envoi",
-    'dashboard.instructorApplication.couldNotAccessCamera':
-      'Impossible d’accéder à votre caméra. Vérifiez les autorisations de votre navigateur et réessayez.',
     'dashboard.instructorApplication.governmentIdRequired': "Pièce d'identité officielle (requise)",
     'dashboard.instructorApplication.replace': 'Remplacer',
     'dashboard.instructorApplication.idHint': "Une carte d'identité nationale, un passeport ou un permis de conduire. JPG ou PNG.",
@@ -635,13 +633,12 @@ export const translations = {
     'dashboard.instructorApplication.automatedCheckNote':
       "Vérification automatisée (ce n'est pas une décision finale — un réviseur confirme) :",
     'dashboard.instructorApplication.nameFieldLabel': 'Nom',
-    'dashboard.instructorApplication.liveSelfieRequired': 'Selfie en direct (requis)',
+    'dashboard.instructorApplication.liveSelfieRequired': 'Selfie (requis)',
     'dashboard.instructorApplication.captured': 'Capturé',
     'dashboard.instructorApplication.selfieHint':
-      'Une photo en direct via votre caméra — les réviseurs la comparent visuellement à votre pièce d’identité.',
-    'dashboard.instructorApplication.capture': 'Capturer',
+      'Une photo claire de votre visage — les réviseurs la comparent visuellement à votre pièce d’identité.',
     'dashboard.instructorApplication.retakeSelfie': 'Reprendre le selfie',
-    'dashboard.instructorApplication.openCamera': 'Ouvrir la caméra',
+    'dashboard.instructorApplication.uploadSelfie': 'Envoyer le selfie',
     'dashboard.instructorApplication.notClearlyVisible':
       "n'est pas clairement visible sur le document — un réviseur confirmera manuellement.",
     'dashboard.instructorApplication.documentShows': 'le document montre',
@@ -655,7 +652,7 @@ export const translations = {
     'dashboard.instructorApplication.stepInterviewScheduling': "Planification de l'entretien",
     'dashboard.instructorApplication.couldNotSaveProgress': 'Impossible d’enregistrer votre progression',
     'dashboard.instructorApplication.govIdRequiredError': "Une pièce d'identité officielle est requise avant de pouvoir soumettre.",
-    'dashboard.instructorApplication.selfieRequiredError': 'Un selfie en direct est requis avant de pouvoir soumettre.',
+    'dashboard.instructorApplication.selfieRequiredError': 'Un selfie est requis avant de pouvoir soumettre.',
     'dashboard.instructorApplication.selectSubjectError':
       "Sélectionnez au moins une matière à enseigner, ou désactivez le tutorat ci-dessus.",
     'dashboard.instructorApplication.addNeighborhoodError':
@@ -699,7 +696,7 @@ export const translations = {
     'dashboard.instructorApplication.proposedCourseTitleLabel': 'Titre du cours proposé',
     'dashboard.instructorApplication.proposedCourseDescLabel': 'Description du cours proposé',
     'dashboard.instructorApplication.credentialsIntro':
-      "Vérifiez votre identité avec un document et un selfie en direct (les deux requis), ainsi que tout diplôme, certificat, CV ou un court exemple de leçon. Les fichiers sont stockés en privé et seuls les réviseurs peuvent y accéder.",
+      "Vérifiez votre identité avec un document et un selfie (les deux requis), ainsi que tout diplôme, certificat, CV ou un court exemple de leçon. Les fichiers sont stockés en privé et seuls les réviseurs peuvent y accéder.",
     'dashboard.instructorApplication.degreeLabel': 'Diplôme',
     'dashboard.instructorApplication.certificateLabel': 'Certificat',
     'dashboard.instructorApplication.cvLabel': 'CV',
@@ -1477,8 +1474,6 @@ export const translations = {
     'dashboard.instructorApplication.couldNotVerifyAuto':
       'Could not verify the document automatically — a reviewer will check it manually.',
     'dashboard.instructorApplication.uploadFailed': 'Upload failed',
-    'dashboard.instructorApplication.couldNotAccessCamera':
-      'Could not access your camera. Check your browser permissions and try again.',
     'dashboard.instructorApplication.governmentIdRequired': 'Government-issued ID (required)',
     'dashboard.instructorApplication.replace': 'Replace',
     'dashboard.instructorApplication.idHint': "A national ID, passport, or driver's license. JPG or PNG.",
@@ -1486,12 +1481,11 @@ export const translations = {
     'dashboard.instructorApplication.checkingDocumentDetails': 'Checking document details…',
     'dashboard.instructorApplication.automatedCheckNote': 'Automated check (not a final decision — a reviewer confirms):',
     'dashboard.instructorApplication.nameFieldLabel': 'Name',
-    'dashboard.instructorApplication.liveSelfieRequired': 'Live selfie (required)',
+    'dashboard.instructorApplication.liveSelfieRequired': 'Selfie (required)',
     'dashboard.instructorApplication.captured': 'Captured',
-    'dashboard.instructorApplication.selfieHint': 'A live photo via your camera — reviewers compare this to your ID visually.',
-    'dashboard.instructorApplication.capture': 'Capture',
+    'dashboard.instructorApplication.selfieHint': 'A clear photo of your face — reviewers compare this to your ID visually.',
     'dashboard.instructorApplication.retakeSelfie': 'Retake selfie',
-    'dashboard.instructorApplication.openCamera': 'Open camera',
+    'dashboard.instructorApplication.uploadSelfie': 'Upload selfie',
     'dashboard.instructorApplication.notClearlyVisible': 'not clearly visible on the document — a reviewer will confirm manually.',
     'dashboard.instructorApplication.documentShows': 'document shows',
     'dashboard.instructorApplication.matches': 'matches',
@@ -1504,7 +1498,7 @@ export const translations = {
     'dashboard.instructorApplication.stepInterviewScheduling': 'Interview scheduling',
     'dashboard.instructorApplication.couldNotSaveProgress': 'Could not save your progress',
     'dashboard.instructorApplication.govIdRequiredError': 'A government-issued ID is required before you can submit.',
-    'dashboard.instructorApplication.selfieRequiredError': 'A live selfie is required before you can submit.',
+    'dashboard.instructorApplication.selfieRequiredError': 'A selfie is required before you can submit.',
     'dashboard.instructorApplication.selectSubjectError': 'Select at least one subject to tutor, or turn off tutoring above.',
     'dashboard.instructorApplication.addNeighborhoodError': 'Add your neighborhood for tutoring, or turn off tutoring above.',
     'dashboard.instructorApplication.addRateError': 'Add your per-session tutoring rate, or turn off tutoring above.',
@@ -1544,7 +1538,7 @@ export const translations = {
     'dashboard.instructorApplication.proposedCourseTitleLabel': 'Proposed course title',
     'dashboard.instructorApplication.proposedCourseDescLabel': 'Proposed course description',
     'dashboard.instructorApplication.credentialsIntro':
-      'Verify your identity with a document and a live selfie (both required), plus any degrees, certificates, a CV or a short sample lesson. Files are stored privately and only reviewers can access them.',
+      'Verify your identity with a document and a selfie (both required), plus any degrees, certificates, a CV or a short sample lesson. Files are stored privately and only reviewers can access them.',
     'dashboard.instructorApplication.degreeLabel': 'Degree',
     'dashboard.instructorApplication.certificateLabel': 'Certificate',
     'dashboard.instructorApplication.cvLabel': 'CV / résumé',

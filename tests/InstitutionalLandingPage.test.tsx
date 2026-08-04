@@ -6,6 +6,14 @@ import InstitutionalLandingPage from '../components/Institutional/InstitutionalL
 import * as inquiriesLib from '../lib/institutionalInquiries';
 import type { InstitutionalInquiry } from '../lib/supabase';
 
+// The real page content (value props, FAQ, inquiry form) is gated behind
+// INSTITUTIONAL_PAGES_ENABLED (see lib/institutionalPagesConfig.ts, false
+// by default as of 2026-08-04 -- founder request to show a maintenance
+// notice on these tracks instead). Mocked true here, same pattern as
+// PaymentStatus.test.tsx mocking PAYMENTS_ENABLED, so this file keeps
+// exercising the underlying page rather than just the gate.
+vi.mock('../lib/institutionalPagesConfig', () => ({ INSTITUTIONAL_PAGES_ENABLED: true }));
+
 const SAMPLE_INQUIRY: InstitutionalInquiry = {
   id: 'inq-1',
   account_type: 'school_university',

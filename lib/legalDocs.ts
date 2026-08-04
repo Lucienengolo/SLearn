@@ -66,7 +66,7 @@ A parent may cancel a still-searching request at any time, which permanently del
 
 # 5. Instructor Verification
 
-Instructors who wish to tutor (not just publish courses) must complete an identity verification step, including a government-issued ID and a live selfie, reviewed by our verification process. Verified status is displayed to parents choosing a tutor. Submitting false identity information is a violation of these Terms and Cameroonian law (Law No. 2010/012 on Cybersecurity and Cybercrime).
+Instructors who wish to tutor (not just publish courses) must complete an identity verification step, including a government-issued ID and a selfie, reviewed by our verification process. Verified status is displayed to parents choosing a tutor. Submitting false identity information is a violation of these Terms and Cameroonian law (Law No. 2010/012 on Cybersecurity and Cybercrime).
 
 # 6. Prohibited Conduct
 
@@ -130,7 +130,7 @@ Un parent peut annuler une demande encore en recherche à tout moment, ce qui su
 
 # 5. Vérification des instructeurs
 
-Les instructeurs souhaitant donner des cours particuliers (et non uniquement publier des cours) doivent effectuer une étape de vérification d'identité, comprenant une pièce d'identité officielle et un selfie en direct, examinés par notre processus de vérification. Le statut vérifié est affiché aux parents lors du choix d'un répétiteur. La soumission de fausses informations d'identité constitue une violation des présentes CGU et du droit camerounais (Loi n° 2010/012 sur la cybersécurité et la cybercriminalité).
+Les instructeurs souhaitant donner des cours particuliers (et non uniquement publier des cours) doivent effectuer une étape de vérification d'identité, comprenant une pièce d'identité officielle et un selfie, examinés par notre processus de vérification. Le statut vérifié est affiché aux parents lors du choix d'un répétiteur. La soumission de fausses informations d'identité constitue une violation des présentes CGU et du droit camerounais (Loi n° 2010/012 sur la cybersécurité et la cybercriminalité).
 
 # 6. Comportements interdits
 
@@ -179,7 +179,7 @@ This Privacy Policy explains what personal data S@Learn collects, why, and what 
 
 - **Account data**: full name, email address, role (student or instructor)
 - **Tutor request data**: subject/category, grade level, general neighborhood, and — only if you choose to share it — a precise device location, submitted by a parent/guardian on behalf of a child. The child does not create their own account.
-- **Instructor verification data**: government-issued ID image and a live selfie, used only for identity verification and never displayed publicly
+- **Instructor verification data**: government-issued ID image and a selfie, used only for identity verification and never displayed publicly
 - **Payment data**: processed by our payment provider, Stripe — S@Learn does not store your card details
 - **Chat messages**: exchanged between matched parents and tutors through the Platform
 - **Profile photo**: if you choose to upload one
@@ -254,7 +254,7 @@ La présente Politique de Confidentialité explique quelles données personnelle
 
 - **Données de compte** : nom complet, adresse e-mail, rôle (étudiant ou instructeur)
 - **Données de demande de répétiteur** : matière/catégorie, niveau scolaire, quartier général et — uniquement si vous choisissez de la partager — une localisation précise de l'appareil, soumises par un parent/tuteur au nom d'un enfant. L'enfant ne crée pas son propre compte.
-- **Données de vérification des instructeurs** : image d'une pièce d'identité officielle et selfie en direct, utilisés uniquement à des fins de vérification d'identité et jamais affichés publiquement
+- **Données de vérification des instructeurs** : image d'une pièce d'identité officielle et selfie, utilisés uniquement à des fins de vérification d'identité et jamais affichés publiquement
 - **Données de paiement** : traitées par notre prestataire de paiement, Stripe — S@Learn ne stocke pas les détails de votre carte
 - **Messages de discussion** : échangés entre parents et répétiteurs mis en relation via la Plateforme
 - **Photo de profil** : si vous choisissez d'en télécharger une
@@ -490,7 +490,7 @@ This MSA supplements the Terms of Service for Instructor accounts and governs th
 
 ## 1. Eligibility and Verification
 
-Publishing a course requires an Instructor account in good standing. Offering tutoring services (appearing in the tutor-matching marketplace) additionally requires completing identity verification (government ID + live selfie), reviewed before verified status is granted.
+Publishing a course requires an Instructor account in good standing. Offering tutoring services (appearing in the tutor-matching marketplace) additionally requires completing identity verification (government ID + selfie), reviewed before verified status is granted.
 
 ## 2. Content Standards
 
@@ -557,7 +557,7 @@ Ce MSA complète les CGU pour les comptes Instructeur et régit la relation entr
 
 ## 1. Éligibilité et vérification
 
-La publication d'un cours nécessite un compte Instructeur en règle. La proposition de services de répétition (apparition sur la place de marché de mise en relation) nécessite en outre l'achèvement de la vérification d'identité (pièce d'identité officielle + selfie en direct), examinée avant l'octroi du statut vérifié.
+La publication d'un cours nécessite un compte Instructeur en règle. La proposition de services de répétition (apparition sur la place de marché de mise en relation) nécessite en outre l'achèvement de la vérification d'identité (pièce d'identité officielle + selfie), examinée avant l'octroi du statut vérifié.
 
 ## 2. Normes de contenu
 

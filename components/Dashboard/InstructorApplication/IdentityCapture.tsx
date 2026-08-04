@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { CheckCircle, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { supabase, InstructorCredential } from '../../../lib/supabase';
 import { uploadCredential } from '../../../lib/instructorApplications';
@@ -21,13 +21,26 @@ type IdentityCaptureProps = {
   onCredentialUploaded: (credential: InstructorCredential) => void;
 };
 
-// Guided document + live-selfie capture for the compulsory identity check,
+// Guided document + selfie upload for the compulsory identity check,
 // replacing the plain file-upload government_id row (inspired by
-// fortnight-space's step structure: document upload, then a live camera
-// selfie -- see verify-identity-document for why the actual verification
-// here is Claude-vision extraction + a name/address cross-check rather
-// than fortnight-space's local ArcFace face-matching, which needs ML
-// infra that doesn't run in a Deno edge function or a browser).
+// fortnight-space's step structure: document upload, then a selfie --
+// see verify-identity-document for why the actual verification here is
+// Claude-vision extraction + a name/address cross-check rather than
+// fortnight-space's local ArcFace face-matching, which needs ML infra
+// that doesn't run in a Deno edge function or a browser).
+//
+// The selfie was originally captured live in-browser via
+// navigator.mediaDevices.getUserMedia(), same as the geolocation feature
+// -- and it hit the same real-world failure mode: getUserMedia is
+// routinely blocked or simply unavailable in in-app WebViews (WhatsApp,
+// Instagram, etc.), which is how a meaningful share of this app's users
+// actually arrive. Switched to a plain file input (2026-08-04) --
+// mirrors the government_id upload below exactly, just with
+// capture="user" (front camera hint) instead of "environment". The
+// selfie itself is still required: verify-identity-document only ever
+// processes government_id, never the selfie -- reviewers compare it to
+// the ID visually, so removing the requirement outright would lose real
+// verification value. Only the unreliable live-camera mechanism is gone.
 export default function IdentityCapture({
   userId,
   applicationId,
@@ -43,21 +56,12 @@ export default function IdentityCapture({
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [docError, setDocError] = useState('');
 
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState('');
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [selfieError, setSelfieError] = useState('');
 
   const [verification, setVerification] = useState<VerificationResult | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
-
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  }, []);
 
   const runVerification = async () => {
     setVerifying(true);
@@ -90,60 +94,14 @@ export default function IdentityCapture({
     }
   };
 
-  const openCamera = async () => {
-    setCameraError('');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      streamRef.current = stream;
-      setCameraOpen(true);
-    } catch {
-      setCameraError(t('dashboard.instructorApplication.couldNotAccessCamera'));
-    }
-  };
-
-  // The <video> element only exists in the DOM once cameraOpen is true (it's
-  // conditionally rendered below) -- a single requestAnimationFrame after
-  // setCameraOpen(true) was a race against React's own commit timing, not a
-  // guarantee, and silently no-op'd whenever the ref wasn't attached yet by
-  // then (permission granted, stream acquired, but nothing ever displayed --
-  // exactly the reported bug). useEffect is the actual guarantee: React only
-  // runs it after the DOM has committed the video element.
-  useEffect(() => {
-    if (cameraOpen && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play().catch(() => {
-        // Autoplay can be interrupted (e.g. a fast cancel click) -- not a
-        // real failure, nothing to surface to the user for that.
-      });
-    }
-  }, [cameraOpen]);
-
-  const closeCamera = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    setCameraOpen(false);
-  };
-
-  const captureSelfie = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-
-    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-    if (!blob) return;
-
-    closeCamera();
+  const handleSelfieUpload = async (file: File) => {
     setUploadingSelfie(true);
+    setSelfieError('');
     try {
-      const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
       const credential = await uploadCredential(userId, applicationId, 'selfie', file);
       onCredentialUploaded(credential);
+    } catch (err) {
+      setSelfieError(err instanceof Error ? err.message : t('dashboard.instructorApplication.uploadFailed'));
     } finally {
       setUploadingSelfie(false);
     }
@@ -228,37 +186,24 @@ export default function IdentityCapture({
           </p>
         )}
 
-        {cameraError && <p className="text-xs text-red-600 mb-2">{cameraError}</p>}
+        {selfieError && <p className="text-xs text-red-600 mb-2">{selfieError}</p>}
 
-        {cameraOpen ? (
-          <div className="space-y-2">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full max-w-xs rounded-[10px] bg-black" />
-            <div className="flex gap-2">
-              <button
-                onClick={captureSelfie}
-                className="flex items-center gap-2 bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] text-sm font-medium"
-              >
-                <Camera size={14} />
-                {t('dashboard.instructorApplication.capture')}
-              </button>
-              <button
-                onClick={closeCamera}
-                className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-[10px] text-sm"
-              >
-                {t('dashboard.courseEditor.cancel')}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={openCamera}
+        <label className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] cursor-pointer font-medium">
+          <Camera size={14} />
+          {uploadingSelfie ? t('dashboard.courseEditor.uploadingEllipsis') : selfie ? t('dashboard.instructorApplication.retakeSelfie') : t('dashboard.instructorApplication.uploadSelfie')}
+          <input
+            type="file"
+            accept="image/*"
+            capture="user"
+            className="hidden"
             disabled={uploadingSelfie}
-            className="inline-flex items-center gap-2 text-sm bg-primary-500 text-gray-900 hover:bg-primary-400 px-4 py-2 rounded-[10px] font-medium disabled:opacity-50"
-          >
-            <Camera size={14} />
-            {uploadingSelfie ? t('dashboard.courseEditor.uploadingEllipsis') : selfie ? t('dashboard.instructorApplication.retakeSelfie') : t('dashboard.instructorApplication.openCamera')}
-          </button>
-        )}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleSelfieUpload(file);
+              e.target.value = '';
+            }}
+          />
+        </label>
       </div>
     </div>
   );

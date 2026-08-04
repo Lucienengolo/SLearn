@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Construction } from 'lucide-react';
 import { useLocale } from '../../contexts/LocaleContext';
 import { InstitutionalAccountType } from '../../lib/supabase';
 import { submitInstitutionalInquiry } from '../../lib/institutionalInquiries';
+import { INSTITUTIONAL_PAGES_ENABLED } from '../../lib/institutionalPagesConfig';
 
 type InstitutionalLandingPageProps = {
   accountType: InstitutionalAccountType;
@@ -173,6 +175,34 @@ const CONTENT: Record<InstitutionalAccountType, { fr: Content; en: Content }> = 
 };
 
 export default function InstitutionalLandingPage({ accountType }: InstitutionalLandingPageProps) {
+  if (!INSTITUTIONAL_PAGES_ENABLED) {
+    return <MaintenanceNotice />;
+  }
+  return <InstitutionalLandingPageContent accountType={accountType} />;
+}
+
+function MaintenanceNotice() {
+  const { locale } = useLocale();
+  return (
+    <div className="bg-paper font-general-sans text-ink min-h-[60vh] flex items-center justify-center px-6 py-24">
+      <div className="max-w-md text-center">
+        <div className="mx-auto mb-5 w-16 h-16 rounded-full bg-white border border-ink-border flex items-center justify-center">
+          <Construction size={28} className="text-oxblood" />
+        </div>
+        <h1 className="font-fraunces text-[26px] font-medium mb-3">
+          {locale === 'fr' ? 'Cette page est en maintenance' : 'This page is under maintenance'}
+        </h1>
+        <p className="text-[15px] text-warm-gray">
+          {locale === 'fr'
+            ? 'Nous mettons à jour cette section. Revenez bientôt, ou explorez le reste de S@Learn en attendant.'
+            : "We're updating this section. Check back soon, or explore the rest of S@Learn in the meantime."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function InstitutionalLandingPageContent({ accountType }: InstitutionalLandingPageProps) {
   const { locale } = useLocale();
   const content = CONTENT[accountType][locale];
 
