@@ -51,6 +51,7 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
     (c) => ['degree', 'certificate', 'cv', 'portfolio'].includes(c.credential_type) && c.verified
   );
   const hasSampleLesson = credentials.some((c) => c.credential_type === 'sample_lesson');
+  const hasQuestionPaper = credentials.some((c) => c.credential_type === 'question_paper');
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -125,6 +126,7 @@ export default function VerificationPipeline({ application, onEdit }: Props) {
           }
         />
         <ChecklistRow label={t('dashboard.instructorApplication.sampleLessonSubmitted')} done={hasSampleLesson} />
+        <ChecklistRow label={t('dashboard.instructorApplication.questionPaperSubmitted')} done={hasQuestionPaper} />
         <ChecklistRow
           label={t('dashboard.instructorApplication.compulsoryInterview')}
           done={interview?.outcome === 'pass'}

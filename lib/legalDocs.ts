@@ -66,7 +66,7 @@ A parent may cancel a still-searching request at any time, which permanently del
 
 # 5. Instructor Verification
 
-Instructors who wish to tutor (not just publish courses) must complete an identity verification step, including a government-issued ID and a selfie, reviewed by our verification process. Verified status is displayed to parents choosing a tutor. Submitting false identity information is a violation of these Terms and Cameroonian law (Law No. 2010/012 on Cybersecurity and Cybercrime).
+Instructors who wish to tutor (not just publish courses) must complete an identity verification step, including a government-issued ID (a selfie is optional but recommended), reviewed by our verification process. Verified status is displayed to parents choosing a tutor. Submitting false identity information is a violation of these Terms and Cameroonian law (Law No. 2010/012 on Cybersecurity and Cybercrime).
 
 # 6. Prohibited Conduct
 
@@ -130,7 +130,7 @@ Un parent peut annuler une demande encore en recherche à tout moment, ce qui su
 
 # 5. Vérification des instructeurs
 
-Les instructeurs souhaitant donner des cours particuliers (et non uniquement publier des cours) doivent effectuer une étape de vérification d'identité, comprenant une pièce d'identité officielle et un selfie, examinés par notre processus de vérification. Le statut vérifié est affiché aux parents lors du choix d'un répétiteur. La soumission de fausses informations d'identité constitue une violation des présentes CGU et du droit camerounais (Loi n° 2010/012 sur la cybersécurité et la cybercriminalité).
+Les instructeurs souhaitant donner des cours particuliers (et non uniquement publier des cours) doivent effectuer une étape de vérification d'identité, comprenant une pièce d'identité officielle (un selfie est optionnel mais recommandé), examinés par notre processus de vérification. Le statut vérifié est affiché aux parents lors du choix d'un répétiteur. La soumission de fausses informations d'identité constitue une violation des présentes CGU et du droit camerounais (Loi n° 2010/012 sur la cybersécurité et la cybercriminalité).
 
 # 6. Comportements interdits
 
@@ -490,7 +490,7 @@ This MSA supplements the Terms of Service for Instructor accounts and governs th
 
 ## 1. Eligibility and Verification
 
-Publishing a course requires an Instructor account in good standing. Offering tutoring services (appearing in the tutor-matching marketplace) additionally requires completing identity verification (government ID + selfie), reviewed before verified status is granted.
+Publishing a course requires an Instructor account in good standing. Offering tutoring services (appearing in the tutor-matching marketplace) additionally requires completing identity verification (government ID; a selfie is optional but recommended), reviewed before verified status is granted.
 
 ## 2. Content Standards
 
@@ -557,7 +557,7 @@ Ce MSA complète les CGU pour les comptes Instructeur et régit la relation entr
 
 ## 1. Éligibilité et vérification
 
-La publication d'un cours nécessite un compte Instructeur en règle. La proposition de services de répétition (apparition sur la place de marché de mise en relation) nécessite en outre l'achèvement de la vérification d'identité (pièce d'identité officielle + selfie), examinée avant l'octroi du statut vérifié.
+La publication d'un cours nécessite un compte Instructeur en règle. La proposition de services de répétition (apparition sur la place de marché de mise en relation) nécessite en outre l'achèvement de la vérification d'identité (pièce d'identité officielle ; un selfie est optionnel mais recommandé), examinée avant l'octroi du statut vérifié.
 
 ## 2. Normes de contenu
 

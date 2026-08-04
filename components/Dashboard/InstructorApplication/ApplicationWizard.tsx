@@ -77,7 +77,9 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
   }, [application?.id]);
 
   const hasGovernmentId = credentials.some((c) => c.credential_type === 'government_id');
-  const hasSelfie = credentials.some((c) => c.credential_type === 'selfie');
+  const hasCV = credentials.some((c) => c.credential_type === 'cv');
+  const hasSampleLesson = credentials.some((c) => c.credential_type === 'sample_lesson');
+  const hasQuestionPaper = credentials.some((c) => c.credential_type === 'question_paper');
 
   const persist = async (): Promise<InstructorApplication | null> => {
     if (!user) return null;
@@ -104,7 +106,10 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
-  const handleUpload = async (type: 'government_id' | 'degree' | 'certificate' | 'cv' | 'sample_lesson', file: File) => {
+  const handleUpload = async (
+    type: 'government_id' | 'degree' | 'certificate' | 'cv' | 'sample_lesson' | 'question_paper',
+    file: File
+  ) => {
     if (!user || !application?.id) return;
     setUploadingType(type);
     setError('');
@@ -124,8 +129,16 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       setError(t('dashboard.instructorApplication.govIdRequiredError'));
       return;
     }
-    if (!hasSelfie) {
-      setError(t('dashboard.instructorApplication.selfieRequiredError'));
+    if (!hasCV) {
+      setError(t('dashboard.instructorApplication.cvRequiredError'));
+      return;
+    }
+    if (!hasSampleLesson) {
+      setError(t('dashboard.instructorApplication.sampleLessonRequiredError'));
+      return;
+    }
+    if (!hasQuestionPaper) {
+      setError(t('dashboard.instructorApplication.questionPaperRequiredError'));
       return;
     }
     if (form.offers_tutoring) {
@@ -457,6 +470,7 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                 ['certificate', 'dashboard.instructorApplication.certificateLabel'],
                 ['cv', 'dashboard.instructorApplication.cvLabel'],
                 ['sample_lesson', 'dashboard.instructorApplication.sampleLessonLabel'],
+                ['question_paper', 'dashboard.instructorApplication.questionPaperLabel'],
               ] as const
             ).map(([type, labelKey]) => {
               const uploaded = credentials.filter((c) => c.credential_type === type);

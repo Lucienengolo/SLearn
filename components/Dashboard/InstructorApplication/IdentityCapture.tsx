@@ -36,11 +36,15 @@ type IdentityCaptureProps = {
 // Instagram, etc.), which is how a meaningful share of this app's users
 // actually arrive. Switched to a plain file input (2026-08-04) --
 // mirrors the government_id upload below exactly, just with
-// capture="user" (front camera hint) instead of "environment". The
-// selfie itself is still required: verify-identity-document only ever
-// processes government_id, never the selfie -- reviewers compare it to
-// the ID visually, so removing the requirement outright would lose real
-// verification value. Only the unreliable live-camera mechanism is gone.
+// capture="user" (front camera hint) instead of "environment".
+//
+// The selfie itself became optional the same day (founder request,
+// alongside making degree/certificate optional and CV/sample-lesson/
+// question-paper compulsory -- see ApplicationWizard.tsx's handleSubmit
+// for the actual enforcement). verify-identity-document only ever
+// processes government_id automatically either way; a submitted selfie
+// still helps a reviewer visually cross-check it against the ID, it's
+// just no longer a submission blocker.
 export default function IdentityCapture({
   userId,
   applicationId,
@@ -175,7 +179,7 @@ export default function IdentityCapture({
       </div>
 
       <div className="border border-canvas-150 rounded-[10px] p-3 sm:p-4">
-        <p className="font-medium text-gray-800 text-sm mb-1">{t('dashboard.instructorApplication.liveSelfieRequired')}</p>
+        <p className="font-medium text-gray-800 text-sm mb-1">{t('dashboard.instructorApplication.selfieLabel')}</p>
         {selfie ? (
           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1 mb-2">
             <CheckCircle size={12} className="text-primary-600" /> {t('dashboard.instructorApplication.captured')}

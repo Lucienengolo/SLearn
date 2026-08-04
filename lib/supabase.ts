@@ -228,6 +228,7 @@ export type InstructorCredentialType =
   | 'portfolio'
   | 'sample_lesson'
   | 'selfie'
+  | 'question_paper'
   | 'other';
 
 export type InstructorCredential = {

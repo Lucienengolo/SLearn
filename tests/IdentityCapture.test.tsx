@@ -31,7 +31,7 @@ describe('IdentityCapture', () => {
     renderCapture();
 
     expect(screen.getByText('Government-issued ID (required)')).toBeInTheDocument();
-    expect(screen.getByText('Selfie (required)')).toBeInTheDocument();
+    expect(screen.getByText('Selfie (optional)')).toBeInTheDocument();
     expect(screen.getByText('Upload selfie')).toBeInTheDocument();
   });
 
@@ -42,7 +42,7 @@ describe('IdentityCapture', () => {
     renderCapture();
 
     expect(screen.getByText("Pièce d'identité officielle (requise)")).toBeInTheDocument();
-    expect(screen.getByText('Selfie (requis)')).toBeInTheDocument();
+    expect(screen.getByText('Selfie (optionnel)')).toBeInTheDocument();
     expect(screen.getByText('Envoyer le selfie')).toBeInTheDocument();
 
     vi.unstubAllGlobals();
