@@ -5,6 +5,7 @@ import { TutorSessionPayment } from '../../lib/supabase';
 import { useLocale } from '../../contexts/LocaleContext';
 import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
 import { adminWhatsappLink } from '../../lib/adminContact';
+import { confirmManualPaymentReceived } from '../../lib/tutorBookingSettlement';
 import type { TranslationKey } from '../../lib/i18n';
 
 type PaymentStatusProps = {
@@ -95,6 +96,19 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
     }
   }
 
+  async function handleConfirmManualPayment() {
+    setActionError('');
+    setBusy(true);
+    try {
+      await confirmManualPaymentReceived(matchId);
+      await load();
+    } catch {
+      setActionError(t('tutorMarketplace.paymentStatus.errorConfirmManualPayment'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCancel() {
     setActionError('');
     setBusy(true);
@@ -180,6 +194,15 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
           >
             {t('tutorMarketplace.paymentStatus.finalizeOnWhatsapp')}
           </a>
+          {viewerRole === 'tutor' && (
+            <button
+              onClick={handleConfirmManualPayment}
+              disabled={busy}
+              className="w-full min-h-11 mt-2 bg-oxblood hover:bg-oxblood-hover disabled:bg-warm-gray-light disabled:text-warm-gray text-white font-semibold text-sm rounded-lg transition-colors"
+            >
+              {busy ? t('tutorMarketplace.paymentStatus.confirmingEllipsis') : t('tutorMarketplace.paymentStatus.confirmPaymentReceived')}
+            </button>
+          )}
         </div>
       )}
       {match.status === 'messaging' && (!match.confirmed_session_date || PAYMENTS_ENABLED) && viewerRole === 'parent' && (

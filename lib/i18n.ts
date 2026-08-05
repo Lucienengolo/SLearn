@@ -800,6 +800,9 @@ export const translations = {
     'tutorMarketplace.paymentStatus.whatsappSessionLabel': 'Séance',
     'tutorMarketplace.paymentStatus.whatsappRateLabel': 'Tarif',
     'tutorMarketplace.paymentStatus.whatsappReferenceLabel': 'Référence',
+    'tutorMarketplace.paymentStatus.confirmPaymentReceived': 'Confirmer le paiement reçu',
+    'tutorMarketplace.paymentStatus.confirmingEllipsis': 'Confirmation…',
+    'tutorMarketplace.paymentStatus.errorConfirmManualPayment': 'Impossible de confirmer le paiement. Réessayez.',
     'tutorMarketplace.paymentStatus.tutorWillConfirmNote': 'Le tuteur confirmera la réception du solde après la séance.',
     'tutorMarketplace.paymentStatus.cancelBooking': 'Annuler la réservation',
     'tutorMarketplace.paymentStatus.refundPolicyNote':
@@ -1663,6 +1666,9 @@ export const translations = {
     'tutorMarketplace.paymentStatus.whatsappSessionLabel': 'Session',
     'tutorMarketplace.paymentStatus.whatsappRateLabel': 'Rate',
     'tutorMarketplace.paymentStatus.whatsappReferenceLabel': 'Reference',
+    'tutorMarketplace.paymentStatus.confirmPaymentReceived': 'Confirm payment received',
+    'tutorMarketplace.paymentStatus.confirmingEllipsis': 'Confirming…',
+    'tutorMarketplace.paymentStatus.errorConfirmManualPayment': 'Could not confirm payment. Try again.',
     'tutorMarketplace.paymentStatus.tutorWillConfirmNote': 'The tutor will confirm balance receipt after the session.',
     'tutorMarketplace.paymentStatus.cancelBooking': 'Cancel the booking',
     'tutorMarketplace.paymentStatus.refundPolicyNote':

@@ -7,6 +7,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Manual registration (lib/serviceWorkerUpdates.ts) instead of the
+      // plugin's auto-injected registerSW.js -- the auto-injected script has
+      // no hook into app code, so a new SW activates (skipWaiting/
+      // clientsClaim already run unconditionally) without ever reloading an
+      // already-open tab. Founder report, 2026-08-05: a deploy went live
+      // (confirmed via curl) but their browser kept serving the old
+      // precached bundle indefinitely.
+      injectRegister: false,
       includeAssets: ['3D_S-Logo-removebg.png'],
       workbox: {
         // Precache the app shell + hashed build assets so repeat visits and

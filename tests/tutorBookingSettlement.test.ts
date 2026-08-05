@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fetchPendingSettlements, settleMatch } from '../lib/tutorBookingSettlement';
+import { fetchPendingSettlements, settleMatch, confirmManualPaymentReceived } from '../lib/tutorBookingSettlement';
 import { supabase } from '../lib/supabase';
 
 vi.mock('../lib/supabase', () => ({
@@ -55,5 +55,23 @@ describe('tutorBookingSettlement', () => {
     vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: { message: 'Match not eligible for manual settlement' } } as never);
 
     await expect(settleMatch('match-1')).rejects.toBeTruthy();
+  });
+
+  // Regression: founder feedback, 2026-08-05 -- the tutor should be able to
+  // close out a booking themselves once payment is finalized on WhatsApp,
+  // not only a reviewer. Backed by confirm_manual_payment_received
+  // (0052_tutor_confirms_manual_payment.sql).
+  it('confirmManualPaymentReceived calls confirm_manual_payment_received with the match id', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as never);
+
+    await confirmManualPaymentReceived('match-1');
+
+    expect(supabase.rpc).toHaveBeenCalledWith('confirm_manual_payment_received', { p_match_id: 'match-1' });
+  });
+
+  it('confirmManualPaymentReceived throws when the RPC rejects (e.g. not the assigned tutor)', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: { message: 'Only the assigned tutor can confirm payment receipt' } } as never);
+
+    await expect(confirmManualPaymentReceived('match-1')).rejects.toBeTruthy();
   });
 });

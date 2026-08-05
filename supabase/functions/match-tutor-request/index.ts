@@ -104,7 +104,19 @@ Deno.serve(async (req: Request) => {
   }
   const busyTutorIds = new Set((busyRows ?? []).map((r) => r.tutor_id));
 
-  const availableSubjectRows = (subjectRows ?? []).filter((r) => !busyTutorIds.has(r.tutor_id));
+  // A tutor already tried for THIS request (declined, expired, or any
+  // other terminal outcome) shouldn't come back on a retry -- without this,
+  // a deterministic score (scoring.ts) means "Retry search" can reassign
+  // the exact same unresponsive/declining tutor indefinitely (founder
+  // report, 2026-08-05).
+  const { data: priorRows, error: priorError } = await admin.from('matches').select('tutor_id').eq('request_id', tutorRequest.id);
+
+  if (priorError) {
+    return json({ error: `Failed to check prior matches for this request: ${priorError.message}` }, 500);
+  }
+  const excludedTutorIds = new Set([...busyTutorIds, ...(priorRows ?? []).map((r) => r.tutor_id)]);
+
+  const availableSubjectRows = (subjectRows ?? []).filter((r) => !excludedTutorIds.has(r.tutor_id));
   if (availableSubjectRows.length === 0) {
     return await handleZeroMatch(admin, tutorRequest);
   }

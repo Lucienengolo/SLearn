@@ -1,8 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import PaymentStatus from '../components/Tutors/PaymentStatus';
 import * as matchesLib from '../lib/matches';
 import * as paymentsLib from '../lib/tutorPayments';
+import * as settlementLib from '../lib/tutorBookingSettlement';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import { ADMIN_WHATSAPP_NUMBER } from '../lib/adminContact';
 import type { Match, TutorRequest, Profile, TutorProfileFields } from '../lib/supabase';
@@ -141,5 +143,34 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
 
     expect(await screen.findByRole('button', { name: /pay the deposit/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /finalize on whatsapp/i })).not.toBeInTheDocument();
+  });
+});
+
+// Regression: founder feedback, 2026-08-05 -- closing a booking required a
+// reviewer to act; the tutor, who actually knows payment was finalized on
+// WhatsApp, should be able to close it themselves.
+describe('PaymentStatus tutor self-confirm (closes the booking directly)', () => {
+  it('shows a "Confirm payment received" button for the tutor only, which closes the booking', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+    vi.spyOn(settlementLib, 'confirmManualPaymentReceived').mockResolvedValue(undefined);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'tutor' });
+
+    const confirmButton = await screen.findByRole('button', { name: /confirm payment received/i });
+    await user.click(confirmButton);
+
+    expect(settlementLib.confirmManualPaymentReceived).toHaveBeenCalledWith('match-1');
+  });
+
+  it('does not show the confirm button to the parent', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    expect(screen.queryByRole('button', { name: /confirm payment received/i })).not.toBeInTheDocument();
   });
 });

@@ -27,3 +27,14 @@ export async function settleMatch(matchId: string): Promise<void> {
   const { error } = await supabase.rpc('settle_match_manually', { p_match_id: matchId });
   if (error) throw error;
 }
+
+// Tutor self-service close-out (founder feedback, 2026-08-05): the tutor
+// confirms payment was finalized with the admin on WhatsApp and this
+// closes the booking directly -- no reviewer step needed for the normal
+// case. Idempotent server-side (confirm_manual_payment_received RPC,
+// 0052_tutor_confirms_manual_payment.sql) -- safe to call again if a
+// tutor double-taps the button.
+export async function confirmManualPaymentReceived(matchId: string): Promise<void> {
+  const { error } = await supabase.rpc('confirm_manual_payment_received', { p_match_id: matchId });
+  if (error) throw error;
+}
