@@ -5,6 +5,8 @@ import * as authContext from '../contexts/AuthContext';
 import * as learnersLib from '../lib/instructorLearners';
 import * as classworkLib from '../lib/classwork';
 import * as leagueLib from '../lib/league';
+import * as tutorProfileLib from '../lib/tutorProfile';
+import * as matchesLib from '../lib/matches';
 import SLearnClassroom from '../components/Dashboard/SLearnClassroom';
 import { ToastProvider } from '../contexts/ToastContext';
 import { LocaleProvider } from '../contexts/LocaleContext';
@@ -13,6 +15,8 @@ import type { LearnerRow } from '../lib/instructorLearners';
 
 vi.mock('../lib/classwork');
 vi.mock('../lib/league');
+vi.mock('../lib/tutorProfile');
+vi.mock('../lib/matches');
 
 function renderClassroom(onBack = vi.fn()) {
   return render(
@@ -86,6 +90,35 @@ describe('SLearnClassroom', () => {
 
     expect(await screen.findByPlaceholderText(/title/i)).toBeInTheDocument();
     await waitFor(() => expect(classworkLib.fetchClassworkPosts).toHaveBeenCalledWith(['course-1']));
+  });
+
+  // Regression: founder report, 2026-08-05 -- clicking a tutor-match
+  // notification landed on a blank screen, because the "tutor-matches"
+  // link value isn't a top-level App.tsx page, it's this internal section
+  // (Stream is always the default otherwise). App.tsx's handleNavigate now
+  // sets window.location.hash = 'tutor-matches' before routing here.
+  it('opens straight to the Tutor Matches section when deep-linked via hash', async () => {
+    window.location.hash = 'tutor-matches';
+    vi.spyOn(learnersLib, 'fetchInstructorLearners').mockResolvedValue({ courses: [COURSE_A], rows: [], totalQuizAttempts: 0 });
+    vi.mocked(tutorProfileLib.fetchMyTutorProfile).mockResolvedValue({
+      tutor_id: 'instructor-1',
+      teaching_mode: 'both',
+      neighborhood: 'Bonamoussadi',
+      languages: ['fr'],
+      rate_per_session: 8000,
+      response_time_minutes: 30,
+      whatsapp_contact: '+237611111111',
+      created_at: '',
+      updated_at: '',
+    });
+    vi.mocked(matchesLib.fetchMyMatchesAsTutor).mockResolvedValue([]);
+
+    renderClassroom();
+
+    expect(await screen.findByText('My matches')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/title/i)).not.toBeInTheDocument();
+
+    window.location.hash = '';
   });
 
   describe('People section', () => {

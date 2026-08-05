@@ -71,7 +71,26 @@ function AppContent() {
   }, []);
 
   const handleNavigate = (page: string) => {
-    setCurrentPage(page);
+    // Notification `link` values aren't all real top-level pages -- some
+    // are internal tabs nested inside the dashboard (tutor-matches), and
+    // some are dead admin/* links with no page at all (cancel-tutor-
+    // booking, mark_stalled_bookings, match-tutor-request's zero-match
+    // alert). Founder report, 2026-08-05: clicking these rendered a blank
+    // screen since no `currentPage === '...'` branch ever matched. Same
+    // window.location.hash deep-link pattern already used for course-/
+    // lesson-/tutor-request- links above -- InstructorDashboard and
+    // SLearnClassroom read it to pick their initial tab/section.
+    if (page === 'tutor-matches') {
+      window.location.hash = 'tutor-matches';
+      setCurrentPage('dashboard');
+    } else if (page.startsWith('admin/matches/')) {
+      window.location.hash = 'tutor-bookings';
+      setCurrentPage('review-queue');
+    } else if (page.startsWith('admin/tutor-requests/')) {
+      setCurrentPage('review-queue');
+    } else {
+      setCurrentPage(page);
+    }
     window.scrollTo(0, 0);
   };
 

@@ -56,7 +56,10 @@ export default function InstructorDashboard() {
   const { t } = useLocale();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [tab, setTab] = useState<DashboardTab>('courses');
+  // Deep-link from a notification (App.tsx's handleNavigate sets this hash
+  // for the tutor-matches link) -- opens straight to the Classroom tab
+  // instead of defaulting to Courses. Founder report, 2026-08-05.
+  const [tab, setTab] = useState<DashboardTab>(window.location.hash.slice(1) === 'tutor-matches' ? 'classroom' : 'courses');
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);

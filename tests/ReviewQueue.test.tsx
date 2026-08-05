@@ -92,4 +92,20 @@ describe('ReviewQueue tutor-bookings settlement section', () => {
 
     expect(settlementLib.settleMatch).toHaveBeenCalledWith('match-1');
   });
+
+  // Regression: founder report, 2026-08-05 -- clicking a "booking
+  // follow-up" notification (admin/matches/* link) landed on a blank
+  // screen; App.tsx's handleNavigate now sets window.location.hash =
+  // 'tutor-bookings' before routing to 'review-queue', so this should open
+  // straight to Tutor Bookings instead of defaulting to Applications.
+  it('opens straight to Tutor Bookings when deep-linked via hash', async () => {
+    window.location.hash = 'tutor-bookings';
+
+    renderReviewQueue();
+
+    expect(await screen.findByText(/parent one/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no applications waiting/i)).not.toBeInTheDocument();
+
+    window.location.hash = '';
+  });
 });

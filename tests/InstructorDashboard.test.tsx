@@ -7,7 +7,7 @@ import { LocaleProvider } from '../contexts/LocaleContext';
 import { supabase } from '../lib/supabase';
 
 vi.mock('../lib/supabase', () => ({
-  supabase: { from: vi.fn() },
+  supabase: { from: vi.fn(), rpc: vi.fn(() => Promise.resolve({ data: [], error: null })) },
 }));
 
 type Builder = { select: unknown; eq: unknown; order: unknown; in: unknown; then: unknown };
@@ -82,6 +82,22 @@ describe('InstructorDashboard', () => {
     expect(await screen.findByText('My courses')).toBeInTheDocument();
     expect(screen.getAllByText('Live').length).toBeGreaterThan(0);
     expect(screen.getByText('Create course')).toBeInTheDocument();
+  });
+
+  // Regression: founder report, 2026-08-05 -- clicking a tutor-match
+  // notification landed on a blank screen. App.tsx's handleNavigate sets
+  // window.location.hash = 'tutor-matches' before routing to 'dashboard';
+  // this is the next hop, opening the Classroom tab instead of Courses.
+  it('opens straight to the Classroom tab when deep-linked via hash', async () => {
+    window.location.hash = 'tutor-matches';
+    mockTables({ courses: [COURSE], statsRows: [] });
+
+    renderDashboard();
+
+    expect(await screen.findByText('S@Learn Classroom')).toBeInTheDocument();
+    expect(screen.queryByText('My courses')).not.toBeInTheDocument();
+
+    window.location.hash = '';
   });
 
   it('renders in French when the locale is French', async () => {

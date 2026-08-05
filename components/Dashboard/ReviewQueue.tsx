@@ -34,7 +34,11 @@ type Tab = 'pending' | 'decided';
 // matching every other privileged action in this app.
 export default function ReviewQueue() {
   const { t } = useLocale();
-  const [section, setSection] = useState<Section>('applications');
+  // Deep-link from a "booking follow-up" notification (App.tsx's
+  // handleNavigate sets this hash for admin/matches/* links) -- opens
+  // straight to Tutor Bookings instead of defaulting to Applications.
+  // Founder report, 2026-08-05.
+  const [section, setSection] = useState<Section>(window.location.hash.slice(1) === 'tutor-bookings' ? 'tutor-bookings' : 'applications');
   const [tab, setTab] = useState<Tab>('pending');
   const [pending, setPending] = useState<ApplicationWithApplicant[]>([]);
   const [decided, setDecided] = useState<ApplicationWithApplicant[]>([]);

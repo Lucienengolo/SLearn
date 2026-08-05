@@ -57,7 +57,10 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   const { t } = useLocale();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [section, setSection] = useState<Section>('stream');
+  // Same notification deep-link as InstructorDashboard's initial tab above
+  // -- opens straight to the Tutor Matches section. Founder report,
+  // 2026-08-05.
+  const [section, setSection] = useState<Section>(window.location.hash.slice(1) === 'tutor-matches' ? 'tutor-matches' : 'stream');
   const [courses, setCourses] = useState<Course[]>([]);
   const [rows, setRows] = useState<LearnerRow[]>([]);
   const [totalQuizAttempts, setTotalQuizAttempts] = useState(0);
