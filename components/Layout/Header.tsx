@@ -130,6 +130,16 @@ export default function Header({
                   {t('nav.reviewQueue')}
                 </button>
               )}
+              {profile?.is_admin && (
+                <button
+                  onClick={() => onNavigate('admin-panel')}
+                  className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
+                    currentPage === 'admin-panel' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {t('nav.adminPanel')}
+                </button>
+              )}
             </nav>
 
             <div className="hidden lg:flex items-center space-x-3">
@@ -261,6 +271,17 @@ export default function Header({
                   className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
                   {t('nav.reviewQueue')}
+                </button>
+              )}
+              {profile?.is_admin && (
+                <button
+                  onClick={() => {
+                    onNavigate('admin-panel');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  {t('nav.adminPanel')}
                 </button>
               )}
               {user && profile ? (

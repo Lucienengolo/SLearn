@@ -21,6 +21,7 @@ function mockProfile(overrides: Partial<{ totem: string | null; role: 'student' 
     role: overrides.role ?? ('student' as const),
     verified: overrides.verified ?? false,
     is_reviewer: false,
+    is_admin: false,
     avatar_url: null,
     bio: null,
     totem: overrides.totem ?? null,

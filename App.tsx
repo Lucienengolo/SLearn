@@ -25,6 +25,7 @@ const AccountSettings = lazy(() => import('./components/Account/AccountSettings'
 const MyProgress = lazy(() => import('./components/Dashboard/MyProgress'));
 const League = lazy(() => import('./components/Dashboard/League'));
 const ReviewQueue = lazy(() => import('./components/Dashboard/ReviewQueue'));
+const AdminPanel = lazy(() => import('./components/Dashboard/AdminPanel'));
 const MyRequests = lazy(() => import('./components/Tutors/MyRequests'));
 const RequestForm = lazy(() => import('./components/Tutors/RequestForm'));
 const MatchStatus = lazy(() => import('./components/Tutors/MatchStatus'));
@@ -339,6 +340,12 @@ function AppContent() {
         {currentPage === 'review-queue' && profile?.is_reviewer && (
           <Suspense fallback={<PageFallback />}>
             <ReviewQueue />
+          </Suspense>
+        )}
+
+        {currentPage === 'admin-panel' && profile?.is_admin && (
+          <Suspense fallback={<PageFallback />}>
+            <AdminPanel />
           </Suspense>
         )}
 

@@ -41,6 +41,7 @@ const TUTOR_PROFILE: Profile = {
   role: 'instructor',
   verified: true,
   is_reviewer: false,
+  is_admin: false,
   avatar_url: null,
   bio: null,
   totem: null,
