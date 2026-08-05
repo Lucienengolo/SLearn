@@ -325,6 +325,7 @@ export type Match = {
   completed_at: string | null;
   cancelled_at: string | null;
   stalled_at: string | null;
+  tutor_dismissed_at: string | null;
   created_at: string;
 };
 

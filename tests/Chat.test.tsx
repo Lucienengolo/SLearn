@@ -80,6 +80,7 @@ function makeMatch(overrides: Partial<Match> = {}): Match {
     completed_at: null,
     cancelled_at: null,
     stalled_at: null,
+    tutor_dismissed_at: null,
     created_at: '',
     ...overrides,
   };

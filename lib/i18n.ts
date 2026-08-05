@@ -754,6 +754,8 @@ export const translations = {
     'tutorMarketplace.tutorMatches.myMatchesHeading': 'Mes mises en relation',
     'tutorMarketplace.tutorMatches.emptyTitle': "Vous apparaîtrez ici dès qu'un parent vous sera mis en relation.",
     'tutorMarketplace.tutorMatches.emptyBody': 'Assurez-vous que votre profil est à jour pour recevoir plus de demandes.',
+    'tutorMarketplace.tutorMatches.clear': 'Effacer',
+    'tutorMarketplace.tutorMatches.errorClear': 'Impossible de retirer cette mise en relation. Réessayez.',
 
     'tutorMarketplace.profileForm.underOneHour': "Moins d'1 heure",
     'tutorMarketplace.profileForm.errorSave': 'Impossible de sauvegarder votre profil.',
@@ -1620,6 +1622,8 @@ export const translations = {
     'tutorMarketplace.tutorMatches.myMatchesHeading': 'My matches',
     'tutorMarketplace.tutorMatches.emptyTitle': "You'll appear here as soon as a parent is matched with you.",
     'tutorMarketplace.tutorMatches.emptyBody': 'Make sure your profile is up to date to receive more requests.',
+    'tutorMarketplace.tutorMatches.clear': 'Clear',
+    'tutorMarketplace.tutorMatches.errorClear': 'Could not remove this match. Try again.',
 
     'tutorMarketplace.profileForm.underOneHour': 'Under 1 hour',
     'tutorMarketplace.profileForm.errorSave': 'Could not save your profile.',

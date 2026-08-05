@@ -6,7 +6,7 @@ import { supabase, Match, ChatMessage, TutorRequest, TutorProfileFields, Profile
 export const DECLINE_REASONS = ['Trop loin', "Conflit d'horaire", 'Pas ma matière', 'Autre'] as const;
 export type DeclineReason = (typeof DECLINE_REASONS)[number];
 
-const TERMINAL_MATCH_STATUSES = ['expired', 'declined', 'cancelled_refunded', 'completed'] as const;
+export const TERMINAL_MATCH_STATUSES = ['expired', 'declined', 'cancelled_refunded', 'completed'] as const;
 const ACTIVE_MATCH_STATUSES = ['matched', 'messaging', 'deposit_paid', 'in_progress', 'stalled', 'dispute_review'];
 
 export type RequestMatchState = {
@@ -46,15 +46,30 @@ export type TutorMatchListItem = Match & {
 
 // Backs the tutor "Matches" tab (Design Review D1: new tab on the existing
 // instructor dashboard). Ordered most-recent-first, same convention as
-// fetchRequestMatchState.
+// fetchRequestMatchState. Excludes matches the tutor has cleared
+// (dismissMatch below) -- founder feedback, 2026-08-05: finished matches
+// piled up here forever with no way to remove them.
 export async function fetchMyMatchesAsTutor(tutorId: string): Promise<TutorMatchListItem[]> {
   const { data, error } = await supabase
     .from('matches')
     .select('*, tutor_requests(*, categories(name))')
     .eq('tutor_id', tutorId)
+    .is('tutor_dismissed_at', null)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as TutorMatchListItem[];
+}
+
+// Hides a finished match from the tutor's own "My Matches" list -- never
+// deletes the row, which stays intact for payment history and reviewer
+// settlement records. RLS ("tutors dismiss their own terminal matches",
+// 0053_tutor_dismisses_own_matches.sql) only allows this for the tutor's
+// own matches already in a terminal status (TERMINAL_MATCH_STATUSES
+// above) -- a plain client update is safe here, same reasoning as
+// acceptMatch/declineMatch.
+export async function dismissMatch(matchId: string): Promise<void> {
+  const { error } = await supabase.from('matches').update({ tutor_dismissed_at: new Date().toISOString() }).eq('id', matchId);
+  if (error) throw error;
 }
 
 export type MatchContext = {

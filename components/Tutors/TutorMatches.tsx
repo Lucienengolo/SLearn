@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMyTutorProfile } from '../../lib/tutorProfile';
-import { fetchMyMatchesAsTutor, TutorMatchListItem } from '../../lib/matches';
+import { fetchMyMatchesAsTutor, dismissMatch, TERMINAL_MATCH_STATUSES, TutorMatchListItem } from '../../lib/matches';
 import { TutorProfileFields } from '../../lib/supabase';
 import TutorProfileForm from './TutorProfileForm';
 import { useLocale } from '../../contexts/LocaleContext';
@@ -36,6 +36,8 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
   const [error, setError] = useState('');
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [dismissError, setDismissError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,6 +59,19 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
   useEffect(() => {
     load();
   }, [load]);
+
+  async function handleDismiss(matchId: string) {
+    setDismissError('');
+    setDismissingId(matchId);
+    try {
+      await dismissMatch(matchId);
+      setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    } catch {
+      setDismissError(t('tutorMarketplace.tutorMatches.errorClear'));
+    } finally {
+      setDismissingId(null);
+    }
+  }
 
   if (loading) return <p className="text-sm text-warm-gray">{t('common.loadingEllipsis')}</p>;
   if (error) return <p className="text-sm text-oxblood font-medium">{error}</p>;
@@ -108,20 +123,31 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
         </div>
       ) : (
         <div className="flex flex-col gap-2">
+          {dismissError && <p className="text-[13px] text-oxblood font-medium">{dismissError}</p>}
           {matches.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => onSelectMatch(m.id)}
-              className="text-left border border-ink-border rounded-lg p-4 hover:border-warm-gray transition-colors"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">
-                  {m.tutor_requests?.categories?.name ?? t('tutorMarketplace.subjectFallback')} · {m.tutor_requests?.grade}
-                </span>
-                <span className="text-[12px] font-plex-mono text-warm-gray">{t(STATUS_KEYS[m.status] ?? 'tutorMarketplace.tutorMatches.statusMatched')}</span>
-              </div>
-              <p className="text-[13px] text-warm-gray">{m.tutor_requests?.neighborhood}</p>
-            </button>
+            <div key={m.id} className="flex items-stretch gap-2 border border-ink-border rounded-lg hover:border-warm-gray transition-colors">
+              <button onClick={() => onSelectMatch(m.id)} className="flex-1 text-left p-4 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-semibold">
+                    {m.tutor_requests?.categories?.name ?? t('tutorMarketplace.subjectFallback')} · {m.tutor_requests?.grade}
+                  </span>
+                  <span className="text-[12px] font-plex-mono text-warm-gray">{t(STATUS_KEYS[m.status] ?? 'tutorMarketplace.tutorMatches.statusMatched')}</span>
+                </div>
+                <p className="text-[13px] text-warm-gray">{m.tutor_requests?.neighborhood}</p>
+              </button>
+              {(TERMINAL_MATCH_STATUSES as readonly string[]).includes(m.status) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDismiss(m.id);
+                  }}
+                  disabled={dismissingId === m.id}
+                  className="px-3 text-[12px] font-medium text-warm-gray hover:text-oxblood transition-colors flex-shrink-0"
+                >
+                  {t('tutorMarketplace.tutorMatches.clear')}
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
