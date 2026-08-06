@@ -24,8 +24,7 @@ const CertificatesPage = lazy(() => import('./components/Certificates/Certificat
 const AccountSettings = lazy(() => import('./components/Account/AccountSettings'));
 const MyProgress = lazy(() => import('./components/Dashboard/MyProgress'));
 const League = lazy(() => import('./components/Dashboard/League'));
-const ReviewQueue = lazy(() => import('./components/Dashboard/ReviewQueue'));
-const AdminPanel = lazy(() => import('./components/Dashboard/AdminPanel'));
+const AdminDashboard = lazy(() => import('./components/Dashboard/AdminDashboard'));
 const MyRequests = lazy(() => import('./components/Tutors/MyRequests'));
 const RequestForm = lazy(() => import('./components/Tutors/RequestForm'));
 const MatchStatus = lazy(() => import('./components/Tutors/MatchStatus'));
@@ -79,16 +78,19 @@ function AppContent() {
     // alert). Founder report, 2026-08-05: clicking these rendered a blank
     // screen since no `currentPage === '...'` branch ever matched. Same
     // window.location.hash deep-link pattern already used for course-/
-    // lesson-/tutor-request- links above -- InstructorDashboard and
-    // SLearnClassroom read it to pick their initial tab/section.
+    // lesson-/tutor-request- links above -- InstructorDashboard,
+    // SLearnClassroom, and AdminDashboard each read it to pick their
+    // initial tab/section. Review Queue and Admin Panel merged into one
+    // page (2026-08-06, founder feedback) -- both admin/* links now land
+    // there too.
     if (page === 'tutor-matches') {
       window.location.hash = 'tutor-matches';
       setCurrentPage('dashboard');
     } else if (page.startsWith('admin/matches/')) {
       window.location.hash = 'tutor-bookings';
-      setCurrentPage('review-queue');
+      setCurrentPage('admin-dashboard');
     } else if (page.startsWith('admin/tutor-requests/')) {
-      setCurrentPage('review-queue');
+      setCurrentPage('admin-dashboard');
     } else {
       setCurrentPage(page);
     }
@@ -337,15 +339,9 @@ function AppContent() {
           </Suspense>
         )}
 
-        {currentPage === 'review-queue' && profile?.is_reviewer && (
+        {currentPage === 'admin-dashboard' && (profile?.is_reviewer || profile?.is_admin) && (
           <Suspense fallback={<PageFallback />}>
-            <ReviewQueue />
-          </Suspense>
-        )}
-
-        {currentPage === 'admin-panel' && profile?.is_admin && (
-          <Suspense fallback={<PageFallback />}>
-            <AdminPanel />
+            <AdminDashboard />
           </Suspense>
         )}
 

@@ -120,24 +120,14 @@ export default function Header({
                   {t('nav.tutors')}
                 </button>
               )}
-              {profile?.is_reviewer && (
+              {(profile?.is_reviewer || profile?.is_admin) && (
                 <button
-                  onClick={() => onNavigate('review-queue')}
+                  onClick={() => onNavigate('admin-dashboard')}
                   className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
-                    currentPage === 'review-queue' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    currentPage === 'admin-dashboard' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  {t('nav.reviewQueue')}
-                </button>
-              )}
-              {profile?.is_admin && (
-                <button
-                  onClick={() => onNavigate('admin-panel')}
-                  className={`text-md px-3 py-2 rounded-full transition whitespace-nowrap ${
-                    currentPage === 'admin-panel' ? 'font-semibold text-gray-900 bg-primary-50' : 'font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  {t('nav.adminPanel')}
+                  {t('nav.adminDashboard')}
                 </button>
               )}
             </nav>
@@ -262,26 +252,15 @@ export default function Header({
                   {t('nav.tutors')}
                 </button>
               )}
-              {profile?.is_reviewer && (
+              {(profile?.is_reviewer || profile?.is_admin) && (
                 <button
                   onClick={() => {
-                    onNavigate('review-queue');
+                    onNavigate('admin-dashboard');
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
-                  {t('nav.reviewQueue')}
-                </button>
-              )}
-              {profile?.is_admin && (
-                <button
-                  onClick={() => {
-                    onNavigate('admin-panel');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  {t('nav.adminPanel')}
+                  {t('nav.adminDashboard')}
                 </button>
               )}
               {user && profile ? (
