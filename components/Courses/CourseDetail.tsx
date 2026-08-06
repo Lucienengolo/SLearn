@@ -180,7 +180,7 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
 
     if (course && course.price > 0) {
       if (!PAYMENTS_ENABLED) {
-        showToast(t('courseDetail.paymentsComingSoon'), 'info');
+        showToast(t('courseDetail.paymentsComingSoon'), 'error');
         return;
       }
 
