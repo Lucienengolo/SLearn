@@ -110,7 +110,7 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
     expect(screen.queryByRole('button', { name: /pay the deposit/i })).not.toBeInTheDocument();
   });
 
-  it('prefills the WhatsApp message with tutor name, grade, neighborhood, date, rate and a reference', async () => {
+  it('prefills the WhatsApp message with tutor name, grade, neighborhood, frequency, date, rate and a reference', async () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
 
@@ -123,9 +123,40 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
     expect(decodedText).toContain('Aïcha Mbarga');
     expect(decodedText).toContain('3ème');
     expect(decodedText).toContain('Bonamoussadi');
+    expect(decodedText).toContain('2x/week');
     expect(decodedText).toContain('8');
     expect(decodedText).toContain('000');
     expect(decodedText).toContain('match-1');
+  });
+
+  // Founder request, 2026-08-06: the admin should get a Google Maps link
+  // straight to the family's home when one was shared, same link built by
+  // lib/tutorRequests.ts's googleMapsLinkFor already used elsewhere.
+  it('includes a Google Maps link in the WhatsApp message when the parent shared a location', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue({
+      ...mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }),
+      request: { ...REQUEST, location_lat: 4.05, location_lng: 9.7 },
+    });
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    const link = await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    const decodedText = decodeURIComponent((link.getAttribute('href') ?? '').split('text=')[1] ?? '');
+
+    expect(decodedText).toContain('https://www.google.com/maps?q=4.05,9.7');
+  });
+
+  it('omits the location line when no location was shared', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    const link = await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    const decodedText = decodeURIComponent((link.getAttribute('href') ?? '').split('text=')[1] ?? '');
+
+    expect(decodedText).not.toContain('google.com/maps');
   });
 
   it('shows the same WhatsApp handoff CTA for the tutor, not the passive waiting note', async () => {

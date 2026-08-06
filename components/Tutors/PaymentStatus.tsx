@@ -6,6 +6,7 @@ import { useLocale } from '../../contexts/LocaleContext';
 import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
 import { adminWhatsappLink } from '../../lib/adminContact';
 import { confirmManualPaymentReceived } from '../../lib/tutorBookingSettlement';
+import { googleMapsLinkFor } from '../../lib/tutorRequests';
 import type { TranslationKey } from '../../lib/i18n';
 
 type PaymentStatusProps = {
@@ -23,12 +24,15 @@ const FCFA = new Intl.NumberFormat('fr-FR');
 function buildWhatsappContext(context: MatchContext, t: (key: TranslationKey) => string): string {
   const { match, request, tutorProfile, tutorFields } = context;
   const sessionDate = match.confirmed_session_date ? new Date(match.confirmed_session_date).toLocaleString('fr-FR') : '—';
+  const mapsLink = googleMapsLinkFor(request);
   return [
     t('tutorMarketplace.paymentStatus.whatsappGreeting'),
     `${t('tutorMarketplace.paymentStatus.whatsappTutorLabel')} : ${tutorProfile.full_name ?? '—'}`,
     `${t('tutorMarketplace.chat.requestLabel')} ${request.grade}, ${request.neighborhood}`,
+    `${t('tutorMarketplace.paymentStatus.whatsappFrequencyLabel')} : ${request.sessions_per_week}${t('tutorMarketplace.common.perWeekSuffix')}`,
     `${t('tutorMarketplace.paymentStatus.whatsappSessionLabel')} : ${sessionDate}`,
     `${t('tutorMarketplace.paymentStatus.whatsappRateLabel')} : ${FCFA.format(tutorFields.rate_per_session)} FCFA`,
+    ...(mapsLink ? [`${t('tutorMarketplace.paymentStatus.whatsappLocationLabel')} : ${mapsLink}`] : []),
     `${t('tutorMarketplace.paymentStatus.whatsappReferenceLabel')} : ${match.id}`,
   ].join('\n');
 }
