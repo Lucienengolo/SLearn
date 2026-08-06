@@ -38,3 +38,37 @@ export async function setAdminAccess(targetEmail: string, isAdmin: boolean): Pro
   const { error } = await supabase.rpc('set_admin_access', { p_target_email: targetEmail, p_is_admin: isAdmin });
   if (error) throw error;
 }
+
+// Admin capabilities batch, 2026-08-06 (0056_admin_capabilities_batch.sql):
+// notify/warn an instructor and keep private notes on them, so a
+// deactivation isn't the first and only signal they ever get.
+export async function notifyInstructor(instructorId: string, title: string, body: string): Promise<void> {
+  const { error } = await supabase.rpc('notify_instructor', { p_instructor_id: instructorId, p_title: title, p_body: body });
+  if (error) throw error;
+}
+
+export type InstructorAdminNote = {
+  id: string;
+  instructor_id: string;
+  admin_id: string;
+  note: string;
+  created_at: string;
+};
+
+// instructor_admin_notes has no dedicated RPC -- it's gated by a direct
+// is_admin-scoped RLS policy (simple enough not to need one, same
+// reasoning as 0004_reviewer_and_notifications.sql's is_reviewer policies).
+export async function fetchInstructorNotes(instructorId: string): Promise<InstructorAdminNote[]> {
+  const { data, error } = await supabase
+    .from('instructor_admin_notes')
+    .select('*')
+    .eq('instructor_id', instructorId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addInstructorNote(instructorId: string, adminId: string, note: string): Promise<void> {
+  const { error } = await supabase.from('instructor_admin_notes').insert({ instructor_id: instructorId, admin_id: adminId, note });
+  if (error) throw error;
+}
