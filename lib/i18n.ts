@@ -215,6 +215,7 @@ export const translations = {
     'courseDetail.checkoutError': 'Impossible de démarrer le paiement. Veuillez réessayer.',
     'courseDetail.paymentsComingSoon':
       "Le paiement en ligne n'est pas encore disponible pour le moment — nous travaillons à l'intégration de moyens de paiement locaux (Mobile Money). Revenez bientôt !",
+    'courseDetail.paymentsComingSoonShort': 'Paiement bientôt disponible',
     'courseDetail.enrollError': "Échec de l'inscription au cours",
 
     'dashboard.sidebar.myProgress': 'Mes progrès',
@@ -1140,6 +1141,7 @@ export const translations = {
     'courseDetail.checkoutError': 'Could not start checkout. Please try again.',
     'courseDetail.paymentsComingSoon':
       "Online payment isn't available yet — we're working on local payment options (Mobile Money). Check back soon!",
+    'courseDetail.paymentsComingSoonShort': 'Payment coming soon',
     'courseDetail.enrollError': 'Failed to enroll in course',
 
     'dashboard.sidebar.myProgress': 'My Progress',

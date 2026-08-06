@@ -147,7 +147,7 @@ describe('CourseDetail', () => {
       profile: { id: 'student-1', role: 'student' },
     } as never);
     mockTables({ price: 5000 });
-    const { findAllByRole, findByText } = render(
+    const { findAllByRole, findAllByText } = render(
       <LocaleProvider>
         <ToastProvider>
           <CourseDetail courseId="course-1" onBack={vi.fn()} onStartLesson={vi.fn()} />
@@ -160,7 +160,30 @@ describe('CourseDetail', () => {
     const [enrollButton] = await findAllByRole('button', { name: /enroll now/i });
     fireEvent.click(enrollButton);
 
-    expect(await findByText(/isn't available yet/i)).toBeInTheDocument();
+    // Founder feedback, 2026-08-06: this message shouldn't only appear
+    // reactively after clicking -- a persistent banner (desktop sidebar)
+    // now shows it upfront too, so it's expected to match more than once
+    // once the toast also fires on click.
+    expect((await findAllByText(/isn't available yet/i)).length).toBeGreaterThan(0);
     expect(supabase.functions.invoke).not.toHaveBeenCalledWith('create-checkout-session', expect.anything());
+  });
+
+  // Founder request, 2026-08-06: inform the user upfront, not just after
+  // they click, that payment for a paid course isn't available yet.
+  it('shows a persistent payments-unavailable notice for a paid course before any click', async () => {
+    mockTables({ price: 5000 });
+
+    renderCourseDetail();
+
+    expect(await screen.findByText(/isn't available yet/i)).toBeInTheDocument();
+  });
+
+  it('does not show the payments-unavailable notice for a free course', async () => {
+    mockTables({ price: 0 });
+
+    renderCourseDetail();
+
+    await screen.findByText('About this course');
+    expect(screen.queryByText(/isn't available yet/i)).not.toBeInTheDocument();
   });
 });

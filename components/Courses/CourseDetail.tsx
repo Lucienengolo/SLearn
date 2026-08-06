@@ -524,6 +524,11 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                   {t('courseDetail.checkoutCancelled')}
                 </div>
               )}
+              {course.price > 0 && !PAYMENTS_ENABLED && !isEnrolled && !isInstructor && (
+                <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-[10px]">
+                  {t('courseDetail.paymentsComingSoon')}
+                </div>
+              )}
 
               <p className="font-display text-4xl text-gray-900 mb-4">
                 {course.price > 0 ? formatFCFA(course.price) : t('common.free')}
@@ -624,9 +629,14 @@ export default function CourseDetail({ courseId, onBack, onStartLesson }: Course
                 <div className="font-bold text-gray-900">{finalExamPending ? t('courseDetail.takeFinalExam') : t('courseDetail.continueLearning')}</div>
               </>
             ) : (
-              <div className="font-bold text-lg text-gray-900">
-                {course.price > 0 ? formatFCFA(course.price) : t('common.free')}
-              </div>
+              <>
+                {course.price > 0 && !PAYMENTS_ENABLED && (
+                  <div className="text-2xs text-gray-500 truncate">{t('courseDetail.paymentsComingSoonShort')}</div>
+                )}
+                <div className="font-bold text-lg text-gray-900">
+                  {course.price > 0 ? formatFCFA(course.price) : t('common.free')}
+                </div>
+              </>
             )}
           </div>
           {isEnrolled ? (
