@@ -167,7 +167,7 @@ export default function Chat({ matchId, currentUserId, viewerRole }: ChatProps) 
       {isTutorAwaitingResponse ? (
         <div className="border border-ink-border rounded-lg p-3 sm:p-4 mb-4">
           <p className="text-sm mb-3">
-            {t('tutorMarketplace.chat.requestLabel')} {request.grade}, {request.neighborhood}
+            {t('tutorMarketplace.chat.requestLabel')} {request.grade}, {request.neighborhood} — {request.sessions_per_week}{t('tutorMarketplace.common.perWeekSuffix')}
           </p>
           <div className="flex gap-2 mb-3">
             <button

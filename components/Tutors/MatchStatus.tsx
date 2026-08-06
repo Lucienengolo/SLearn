@@ -105,7 +105,8 @@ export default function MatchStatus({ requestId, currentUserId, onCancelled }: M
         </svg>
         <p className="text-[13px] text-[#14342C]">
           {t('tutorMarketplace.matchStatus.receivedPrefix')} {state.request.grade}
-          {' '}{t('tutorMarketplace.matchStatus.receivedSuffix')} {state.request.neighborhood}.
+          {' '}{t('tutorMarketplace.matchStatus.receivedSuffix')} {state.request.neighborhood}
+          {' — '}{state.request.sessions_per_week}{t('tutorMarketplace.common.perWeekSuffix')}.
         </p>
       </div>
 
@@ -175,6 +176,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
   const [budgetMax, setBudgetMax] = useState(request.budget_max?.toString() ?? '');
   const [whatsappContact, setWhatsappContact] = useState(request.whatsapp_contact);
   const [childIdentifier, setChildIdentifier] = useState(request.child_identifier ?? '');
+  const [sessionsPerWeek, setSessionsPerWeek] = useState(String(request.sessions_per_week));
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     request.location_lat != null && request.location_lng != null
       ? { lat: request.location_lat, lng: request.location_lng }
@@ -230,6 +232,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
         childIdentifier: childIdentifier.trim() || null,
         locationLat: location?.lat ?? null,
         locationLng: location?.lng ?? null,
+        sessionsPerWeek: Number(sessionsPerWeek),
       });
       onSaved();
     } catch (err) {
@@ -301,6 +304,24 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
           onChange={(e) => setNeighborhood(e.target.value)}
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
         />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-[13px] font-medium mb-1.5" htmlFor="edit-request-frequency">
+          {t('tutorMarketplace.common.sessionsPerWeekLabel')}
+        </label>
+        <select
+          id="edit-request-frequency"
+          value={sessionsPerWeek}
+          onChange={(e) => setSessionsPerWeek(e.target.value)}
+          className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm bg-white focus:outline-none focus:border-ink"
+        >
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            <option key={n} value={n}>
+              {n}{t('tutorMarketplace.common.perWeekSuffix')}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="mb-4">

@@ -60,6 +60,7 @@ function makeRequest(overrides: Partial<TutorRequest> = {}): TutorRequest {
     status: 'searching',
     location_lat: null,
     location_lng: null,
+    sessions_per_week: 2,
     created_at: '',
     ...overrides,
   };
@@ -275,6 +276,23 @@ describe('RequestForm', () => {
     await waitFor(() =>
       expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ locationLat: 4.05, locationLng: 9.7 }))
     );
+  });
+
+  // Founder request, 2026-08-06: how many times per week a tutor will
+  // teach, applied to the whole submission like neighborhood/whatsapp.
+  it('defaults sessionsPerWeek to 2 and sends the selected frequency on submit', async () => {
+    const user = userEvent.setup();
+    const createSpy = vi.spyOn(tutorRequestsLib, 'createTutorRequest').mockResolvedValue(makeRequest());
+    vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
+
+    renderRequestForm({ onSubmitted: vi.fn() });
+    await fillChild(user, /^Mathématiques$/);
+    await fillSharedFields(user);
+
+    await user.selectOptions(screen.getByLabelText(/session frequency/i), '4');
+    await user.click(screen.getByRole('button', { name: /find a tutor/i }));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ sessionsPerWeek: 4 })));
   });
 
   it('shows an error and does not block submission if location sharing fails', async () => {

@@ -39,6 +39,7 @@ const REQUEST: TutorRequest = {
   status: 'matched',
   location_lat: null,
   location_lng: null,
+  sessions_per_week: 2,
   created_at: '',
 };
 

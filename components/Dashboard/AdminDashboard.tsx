@@ -436,6 +436,7 @@ function MatchSettlementCard({ settlement, onSettled }: { settlement: PendingMat
         <Field label={t('dashboard.reviewQueue.tutorFieldLabel')} value={`${settlement.tutor_name ?? '—'} · ${settlement.tutor_whatsapp}`} />
         <Field label={t('dashboard.reviewQueue.sessionDateFieldLabel')} value={new Date(settlement.confirmed_session_date).toLocaleString()} />
         <Field label={t('dashboard.reviewQueue.rateFieldLabel')} value={`${settlement.rate_per_session}`} />
+        <Field label={t('dashboard.reviewQueue.frequencyFieldLabel')} value={`${settlement.sessions_per_week}${t('tutorMarketplace.common.perWeekSuffix')}`} />
       </div>
       {settleError && <p className="text-sm text-red-600 mb-2">{settleError}</p>}
       <button
@@ -1020,7 +1021,10 @@ function AllMatchesSection() {
             </p>
             <span className="text-2xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 flex-shrink-0">{m.status}</span>
           </div>
-          <p className="text-sm text-gray-500">{m.confirmed_session_date ? new Date(m.confirmed_session_date).toLocaleString() : '—'}</p>
+          <p className="text-sm text-gray-500">
+            {m.confirmed_session_date ? new Date(m.confirmed_session_date).toLocaleString() : '—'}
+            {' · '}{m.sessions_per_week}{t('tutorMarketplace.common.perWeekSuffix')}
+          </p>
           {m.status === 'dispute_review' && (
             <div className="flex gap-2 mt-3 pt-3 border-t border-canvas-150">
               <button

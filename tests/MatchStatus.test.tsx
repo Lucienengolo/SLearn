@@ -39,6 +39,7 @@ const SAMPLE_REQUEST: TutorRequest = {
   status: 'searching',
   location_lat: null,
   location_lng: null,
+  sessions_per_week: 2,
   created_at: '',
 };
 
@@ -148,10 +149,15 @@ describe('MatchStatus', () => {
     await user.clear(gradeInput);
     await user.type(gradeInput, '4ème');
 
+    // Founder request, 2026-08-06: session frequency is editable here too,
+    // pre-filled from the existing request.
+    expect(screen.getByLabelText(/session frequency/i)).toHaveValue('2');
+    await user.selectOptions(screen.getByLabelText(/session frequency/i), '5');
+
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() =>
-      expect(updateSpy).toHaveBeenCalledWith('req-1', expect.objectContaining({ grade: '4ème' }))
+      expect(updateSpy).toHaveBeenCalledWith('req-1', expect.objectContaining({ grade: '4ème', sessionsPerWeek: 5 }))
     );
   });
 

@@ -11,6 +11,7 @@ export type CreateTutorRequestInput = {
   preferredLanguage: 'fr' | 'en';
   locationLat?: number | null;
   locationLng?: number | null;
+  sessionsPerWeek: number;
 };
 
 // Cameroon mobile format: +237 6XX XXX XXX (MTN/Orange/Camtel ranges all
@@ -45,6 +46,7 @@ export async function createTutorRequest(input: CreateTutorRequestInput): Promis
     p_preferred_language: input.preferredLanguage,
     p_location_lat: input.locationLat ?? null,
     p_location_lng: input.locationLng ?? null,
+    p_sessions_per_week: input.sessionsPerWeek,
   });
 
   if (error) throw error;
@@ -70,6 +72,7 @@ export type UpdateTutorRequestInput = {
   childIdentifier: string | null;
   locationLat?: number | null;
   locationLng?: number | null;
+  sessionsPerWeek: number;
 };
 
 // Only reaches rows the "parents edit or cancel their own still-searching
@@ -95,6 +98,7 @@ export async function updateTutorRequest(requestId: string, input: UpdateTutorRe
       child_identifier: input.childIdentifier,
       location_lat: input.locationLat ?? null,
       location_lng: input.locationLng ?? null,
+      sessions_per_week: input.sessionsPerWeek,
     })
     .eq('id', requestId);
 

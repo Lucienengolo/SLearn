@@ -15,6 +15,7 @@ export type PendingMatchSettlement = {
   tutor_name: string | null;
   tutor_whatsapp: string;
   rate_per_session: number;
+  sessions_per_week: number;
 };
 
 export async function fetchPendingSettlements(): Promise<PendingMatchSettlement[]> {

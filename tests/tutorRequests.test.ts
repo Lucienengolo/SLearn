@@ -57,6 +57,7 @@ describe('updateTutorRequest', () => {
         budgetMax: null,
         whatsappContact: '0650123456',
         childIdentifier: null,
+        sessionsPerWeek: 2,
       })
     ).rejects.toThrow(/invalid whatsapp/i);
     expect(supabase.from).not.toHaveBeenCalled();
@@ -76,6 +77,7 @@ describe('updateTutorRequest', () => {
       childIdentifier: 'Junior',
       locationLat: 4.05,
       locationLng: 9.7,
+      sessionsPerWeek: 3,
     });
 
     expect(builder.update).toHaveBeenCalledWith(

@@ -47,6 +47,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [children, setChildren] = useState<ChildEntry[]>([emptyChild()]);
   const [neighborhood, setNeighborhood] = useState('');
+  const [sessionsPerWeek, setSessionsPerWeek] = useState('2');
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
   const [whatsappContact, setWhatsappContact] = useState('');
@@ -219,6 +220,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
               preferredLanguage: 'fr',
               locationLat: location?.lat ?? null,
               locationLng: location?.lng ?? null,
+              sessionsPerWeek: Number(sessionsPerWeek),
             })
           );
         }
@@ -395,6 +397,24 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
           className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm focus:outline-none focus:border-ink"
         />
         {sharedErrors.neighborhood && <p className="text-[12px] text-oxblood font-medium mt-1">{sharedErrors.neighborhood}</p>}
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-request-frequency">
+          {t('tutorMarketplace.common.sessionsPerWeekLabel')}
+        </label>
+        <select
+          id="tutor-request-frequency"
+          value={sessionsPerWeek}
+          onChange={(e) => setSessionsPerWeek(e.target.value)}
+          className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm bg-white focus:outline-none focus:border-ink"
+        >
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            <option key={n} value={n}>
+              {n}{t('tutorMarketplace.common.perWeekSuffix')}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="mb-4">

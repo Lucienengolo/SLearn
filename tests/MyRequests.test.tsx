@@ -30,6 +30,7 @@ function makeRequest(overrides: Partial<TutorRequestListItem> = {}): TutorReques
     status: 'searching',
     location_lat: null,
     location_lng: null,
+    sessions_per_week: 2,
     created_at: '',
     categories: { name: 'Maths' },
     ...overrides,
@@ -65,7 +66,7 @@ describe('MyRequests', () => {
     expect(screen.getByText('Child not specified')).toBeInTheDocument();
     expect(screen.getByText('Search in progress')).toBeInTheDocument();
     expect(screen.getByText('Tutor found')).toBeInTheDocument();
-    expect(screen.getAllByText(/maths · 3ème · bonamoussadi/i)).toHaveLength(2);
+    expect(screen.getAllByText(/maths · 3ème · bonamoussadi · 2x\/week/i)).toHaveLength(2);
   });
 
   it('calls onSelectRequest with the right id when a request row is clicked', async () => {

@@ -294,6 +294,7 @@ export type TutorRequest = {
   status: TutorRequestStatus;
   location_lat: number | null;
   location_lng: number | null;
+  sessions_per_week: number;
   created_at: string;
 };
 

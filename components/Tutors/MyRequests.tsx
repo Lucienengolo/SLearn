@@ -80,7 +80,7 @@ export default function MyRequests({ parentId, onSelectRequest, onNewRequest }: 
                 <span className="text-[12px] font-plex-mono text-warm-gray">{t(STATUS_KEYS[r.status] ?? 'tutorMarketplace.myRequests.statusSearching')}</span>
               </div>
               <p className="text-[13px] text-warm-gray">
-                {r.categories?.name ?? t('tutorMarketplace.subjectFallback')} · {r.grade} · {r.neighborhood}
+                {r.categories?.name ?? t('tutorMarketplace.subjectFallback')} · {r.grade} · {r.neighborhood} · {r.sessions_per_week}{t('tutorMarketplace.common.perWeekSuffix')}
               </p>
             </button>
           ))}

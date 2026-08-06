@@ -11,6 +11,7 @@ export type AdminMatchListItem = {
   parent_name: string | null;
   tutor_name: string | null;
   created_at: string;
+  sessions_per_week: number;
 };
 
 export async function fetchAllMatchesAdmin(): Promise<AdminMatchListItem[]> {

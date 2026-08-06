@@ -133,7 +133,10 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
                   </span>
                   <span className="text-[12px] font-plex-mono text-warm-gray">{t(STATUS_KEYS[m.status] ?? 'tutorMarketplace.tutorMatches.statusMatched')}</span>
                 </div>
-                <p className="text-[13px] text-warm-gray">{m.tutor_requests?.neighborhood}</p>
+                <p className="text-[13px] text-warm-gray">
+                  {m.tutor_requests?.neighborhood}
+                  {m.tutor_requests && ` · ${m.tutor_requests.sessions_per_week}${t('tutorMarketplace.common.perWeekSuffix')}`}
+                </p>
               </button>
               {(TERMINAL_MATCH_STATUSES as readonly string[]).includes(m.status) && (
                 <button
