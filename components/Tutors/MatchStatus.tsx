@@ -174,6 +174,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
   const [neighborhood, setNeighborhood] = useState(request.neighborhood);
   const [budgetMin, setBudgetMin] = useState(request.budget_min?.toString() ?? '');
   const [budgetMax, setBudgetMax] = useState(request.budget_max?.toString() ?? '');
+  const [budgetPeriod, setBudgetPeriod] = useState<'weekly' | 'monthly'>(request.budget_period ?? 'monthly');
   const [whatsappContact, setWhatsappContact] = useState(request.whatsapp_contact);
   const [childIdentifier, setChildIdentifier] = useState(request.child_identifier ?? '');
   const [sessionsPerWeek, setSessionsPerWeek] = useState(String(request.sessions_per_week));
@@ -228,6 +229,7 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
         neighborhood: neighborhood.trim(),
         budgetMin: budgetMin ? Number(budgetMin) : null,
         budgetMax: budgetMax ? Number(budgetMax) : null,
+        budgetPeriod: budgetMin || budgetMax ? budgetPeriod : null,
         whatsappContact,
         childIdentifier: childIdentifier.trim() || null,
         locationLat: location?.lat ?? null,
@@ -357,6 +359,21 @@ function EditRequestPanel({ request, onSaved, onCancel }: EditRequestPanelProps)
             onChange={(e) => setBudgetMax(e.target.value)}
             className="w-full min-w-0 px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
           />
+        </div>
+        <div className="flex gap-1.5 mt-2" role="group" aria-label={t('tutorMarketplace.common.budgetPeriodLabel')}>
+          {(['weekly', 'monthly'] as const).map((period) => (
+            <button
+              key={period}
+              type="button"
+              onClick={() => setBudgetPeriod(period)}
+              aria-pressed={budgetPeriod === period}
+              className={`text-[13px] px-3 py-1.5 rounded-full border transition ${
+                budgetPeriod === period ? 'bg-ink text-paper border-ink' : 'border-ink-border hover:border-warm-gray'
+              }`}
+            >
+              {period === 'weekly' ? t('tutorMarketplace.common.weekly') : t('tutorMarketplace.common.monthly')}
+            </button>
+          ))}
         </div>
       </div>
 

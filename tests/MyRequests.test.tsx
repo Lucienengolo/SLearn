@@ -24,6 +24,7 @@ function makeRequest(overrides: Partial<TutorRequestListItem> = {}): TutorReques
     neighborhood: 'Bonamoussadi',
     budget_min: null,
     budget_max: null,
+    budget_period: null,
     whatsapp_contact: '+237600000000',
     child_identifier: 'Junior',
     preferred_language: 'fr',

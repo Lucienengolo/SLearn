@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isValidWhatsappContact, googleMapsLinkFor, updateTutorRequest, cancelTutorRequest } from '../lib/tutorRequests';
+import { isValidWhatsappContact, googleMapsLinkFor, formatBudgetRange, updateTutorRequest, cancelTutorRequest } from '../lib/tutorRequests';
 import { supabase } from '../lib/supabase';
 
 vi.mock('../lib/supabase', () => ({
@@ -44,6 +44,31 @@ describe('googleMapsLinkFor', () => {
   });
 });
 
+// fr-FR's Intl.NumberFormat uses a narrow no-break space (U+202F) as the
+// thousands separator, not a plain space -- matching lib/tutorRequests.ts's
+// own BUDGET_FCFA formatter here rather than hardcoding a literal space.
+const FCFA = new Intl.NumberFormat('fr-FR');
+
+describe('formatBudgetRange', () => {
+  it('shows a min-max range with the period when both are set', () => {
+    expect(formatBudgetRange(8000, 12000, 'Par mois', 'À négocier')).toBe(
+      `${FCFA.format(8000)}–${FCFA.format(12000)} FCFA / Par mois`
+    );
+  });
+
+  it('shows a single value when min and max are the same', () => {
+    expect(formatBudgetRange(10000, 10000, 'Par semaine', 'À négocier')).toBe(`${FCFA.format(10000)} FCFA / Par semaine`);
+  });
+
+  it('omits the period suffix when no period is given', () => {
+    expect(formatBudgetRange(8000, 12000, null, 'À négocier')).toBe(`${FCFA.format(8000)}–${FCFA.format(12000)} FCFA`);
+  });
+
+  it('falls back to the negotiable label when both min and max are null', () => {
+    expect(formatBudgetRange(null, null, 'Par mois', 'À négocier')).toBe('À négocier');
+  });
+});
+
 describe('updateTutorRequest', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -55,6 +80,7 @@ describe('updateTutorRequest', () => {
         neighborhood: 'Akwa',
         budgetMin: null,
         budgetMax: null,
+        budgetPeriod: null,
         whatsappContact: '0650123456',
         childIdentifier: null,
         sessionsPerWeek: 2,
@@ -73,6 +99,7 @@ describe('updateTutorRequest', () => {
       neighborhood: 'Akwa',
       budgetMin: 5000,
       budgetMax: 10000,
+      budgetPeriod: 'monthly',
       whatsappContact: '+237 650 123 456',
       childIdentifier: 'Junior',
       locationLat: 4.05,
@@ -81,7 +108,7 @@ describe('updateTutorRequest', () => {
     });
 
     expect(builder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ grade: '4ème', location_lat: 4.05, location_lng: 9.7 })
+      expect.objectContaining({ grade: '4ème', location_lat: 4.05, location_lng: 9.7, budget_period: 'monthly' })
     );
     expect(builder.eq).toHaveBeenCalledWith('id', 'req-1');
   });

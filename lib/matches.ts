@@ -107,6 +107,17 @@ export async function fetchMatchContext(matchId: string): Promise<MatchContext> 
   };
 }
 
+// public_profiles (0046_restrict_profile_email.sql) deliberately excludes
+// email, so the WhatsApp handoff message (PaymentStatus.tsx) needs this
+// narrow RPC (get_match_tutor_email, 0058) instead -- security definer,
+// gated by is_match_participant() so only the two people on the match can
+// read the tutor's email.
+export async function fetchMatchTutorEmail(matchId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_match_tutor_email', { p_match_id: matchId });
+  if (error) throw error;
+  return data;
+}
+
 const PARENT_RESPONSE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 // Tutor-only actions -- covered by the "tutors respond to or decline their
@@ -184,10 +195,4 @@ export async function sendMessage(matchId: string, senderId: string, body: strin
     .single();
   if (error) throw error;
   return data;
-}
-
-// wa.me deep link -- the actual "Continue on WhatsApp" handoff target.
-export function whatsappLink(phone: string): string {
-  const digitsOnly = phone.replace(/[^\d]/g, '');
-  return `https://wa.me/${digitsOnly}`;
 }

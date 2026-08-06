@@ -44,6 +44,7 @@ import {
 } from '../../lib/instructors';
 import { AdminCourseListItem, fetchAllCoursesAdmin, setCoursePublished } from '../../lib/adminCourses';
 import { AdminMatchListItem, fetchAllMatchesAdmin, resolveDispute, DisputeResolution } from '../../lib/adminDisputes';
+import { formatBudgetRange } from '../../lib/tutorRequests';
 import { BroadcastAudience, broadcastAnnouncement } from '../../lib/adminBroadcast';
 import { AdminActionLogEntry, fetchAdminActionLog } from '../../lib/adminAuditLog';
 import { useLocale } from '../../contexts/LocaleContext';
@@ -412,6 +413,12 @@ function CourseReviewCard({
   );
 }
 
+function periodLabel(period: 'weekly' | 'monthly' | null, t: (key: TranslationKey) => string): string | null {
+  if (period === 'weekly') return t('tutorMarketplace.common.weekly');
+  if (period === 'monthly') return t('tutorMarketplace.common.monthly');
+  return null;
+}
+
 function MatchSettlementCard({ settlement, onSettled }: { settlement: PendingMatchSettlement; onSettled: () => void }) {
   const { t } = useLocale();
   const [settling, setSettling] = useState(false);
@@ -435,7 +442,10 @@ function MatchSettlementCard({ settlement, onSettled }: { settlement: PendingMat
         <Field label={t('dashboard.reviewQueue.parentFieldLabel')} value={`${settlement.parent_name ?? '—'} · ${settlement.parent_whatsapp}`} />
         <Field label={t('dashboard.reviewQueue.tutorFieldLabel')} value={`${settlement.tutor_name ?? '—'} · ${settlement.tutor_whatsapp}`} />
         <Field label={t('dashboard.reviewQueue.sessionDateFieldLabel')} value={new Date(settlement.confirmed_session_date).toLocaleString()} />
-        <Field label={t('dashboard.reviewQueue.rateFieldLabel')} value={`${settlement.rate_per_session}`} />
+        <Field
+          label={t('dashboard.reviewQueue.rateFieldLabel')}
+          value={formatBudgetRange(settlement.budget_min, settlement.budget_max, periodLabel(settlement.budget_period, t), t('tutorMarketplace.common.toBeNegotiated'))}
+        />
         <Field label={t('dashboard.reviewQueue.frequencyFieldLabel')} value={`${settlement.sessions_per_week}${t('tutorMarketplace.common.perWeekSuffix')}`} />
       </div>
       {settleError && <p className="text-sm text-red-600 mb-2">{settleError}</p>}
@@ -1024,6 +1034,7 @@ function AllMatchesSection() {
           <p className="text-sm text-gray-500">
             {m.confirmed_session_date ? new Date(m.confirmed_session_date).toLocaleString() : '—'}
             {' · '}{m.sessions_per_week}{t('tutorMarketplace.common.perWeekSuffix')}
+            {' · '}{formatBudgetRange(m.budget_min, m.budget_max, periodLabel(m.budget_period, t), t('tutorMarketplace.common.toBeNegotiated'))}
           </p>
           {m.status === 'dispute_review' && (
             <div className="flex gap-2 mt-3 pt-3 border-t border-canvas-150">

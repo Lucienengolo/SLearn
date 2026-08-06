@@ -130,7 +130,9 @@ describe('AdminDashboard', () => {
         parent_whatsapp: '+237600000000',
         tutor_name: 'Tutor One',
         tutor_whatsapp: '+237611111111',
-        rate_per_session: 8000,
+        budget_min: 8000,
+        budget_max: 12000,
+        budget_period: 'monthly',
         sessions_per_week: 2,
       },
     ]);
@@ -162,7 +164,9 @@ describe('AdminDashboard', () => {
         parent_whatsapp: '+237600000000',
         tutor_name: 'Tutor One',
         tutor_whatsapp: '+237611111111',
-        rate_per_session: 8000,
+        budget_min: 8000,
+        budget_max: 12000,
+        budget_period: 'monthly',
         sessions_per_week: 2,
       },
     ]);
@@ -231,8 +235,8 @@ describe('AdminDashboard', () => {
     const user = userEvent.setup();
     mockAuth({ isAdmin: true });
     vi.mocked(adminDisputesLib.fetchAllMatchesAdmin).mockResolvedValue([
-      { match_id: 'm-1', status: 'dispute_review', confirmed_session_date: '2026-08-10T10:00:00Z', parent_name: 'Parent X', tutor_name: 'Tutor X', created_at: '', sessions_per_week: 3 },
-      { match_id: 'm-2', status: 'completed', confirmed_session_date: null, parent_name: 'Parent Y', tutor_name: 'Tutor Y', created_at: '', sessions_per_week: 1 },
+      { match_id: 'm-1', status: 'dispute_review', confirmed_session_date: '2026-08-10T10:00:00Z', parent_name: 'Parent X', tutor_name: 'Tutor X', created_at: '', sessions_per_week: 3, budget_min: 8000, budget_max: 12000, budget_period: 'monthly' },
+      { match_id: 'm-2', status: 'completed', confirmed_session_date: null, parent_name: 'Parent Y', tutor_name: 'Tutor Y', created_at: '', sessions_per_week: 1, budget_min: null, budget_max: null, budget_period: null },
     ]);
     vi.mocked(adminDisputesLib.resolveDispute).mockResolvedValue(undefined);
 

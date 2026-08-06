@@ -50,6 +50,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const [sessionsPerWeek, setSessionsPerWeek] = useState('2');
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
+  const [budgetPeriod, setBudgetPeriod] = useState<'weekly' | 'monthly'>('monthly');
   const [whatsappContact, setWhatsappContact] = useState('');
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'granted' | 'error'>('idle');
@@ -212,6 +213,7 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
               neighborhood: neighborhood.trim(),
               budgetMin: budgetMin ? Number(budgetMin) : null,
               budgetMax: budgetMax ? Number(budgetMax) : null,
+              budgetPeriod: budgetMin || budgetMax ? budgetPeriod : null,
               whatsappContact,
               childIdentifier: child.identifier.trim() || null,
               // T9 (bilingual UI toggle) isn't built yet -- defaults to
@@ -467,6 +469,21 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
             placeholder="10000"
             className="w-full min-w-0 px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
           />
+        </div>
+        <div className="flex gap-1.5 mt-2" role="group" aria-label={t('tutorMarketplace.common.budgetPeriodLabel')}>
+          {(['weekly', 'monthly'] as const).map((period) => (
+            <button
+              key={period}
+              type="button"
+              onClick={() => setBudgetPeriod(period)}
+              aria-pressed={budgetPeriod === period}
+              className={`text-[13px] px-3 py-1.5 rounded-full border transition ${
+                budgetPeriod === period ? 'bg-ink text-paper border-ink' : 'border-ink-border hover:border-warm-gray'
+              }`}
+            >
+              {period === 'weekly' ? t('tutorMarketplace.common.weekly') : t('tutorMarketplace.common.monthly')}
+            </button>
+          ))}
         </div>
         {sharedErrors.budget && <p className="text-[12px] text-oxblood font-medium mt-1">{sharedErrors.budget}</p>}
       </div>

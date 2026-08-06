@@ -50,7 +50,6 @@ describe('TutorProfileForm', () => {
 
     expect(await screen.findByText('Edit your tutor profile')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Akwa')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('5000')).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Language: English' })).toHaveAttribute('aria-pressed', 'true')
     );
@@ -76,7 +75,6 @@ describe('TutorProfileForm', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Maths' }));
     await user.type(screen.getByLabelText(/neighborhood/i), 'Bonamoussadi');
-    await user.type(screen.getByLabelText(/rate per session/i), '7000');
     await user.type(screen.getByLabelText(/whatsapp/i), '+237650123456');
     await user.click(screen.getByRole('button', { name: /save my profile/i }));
 
@@ -85,7 +83,6 @@ describe('TutorProfileForm', () => {
         'tutor-1',
         expect.objectContaining({
           neighborhood: 'Bonamoussadi',
-          ratePerSession: 7000,
           whatsappContact: '+237650123456',
           categoryIds: ['cat-1'],
         })

@@ -288,6 +288,7 @@ export type TutorRequest = {
   neighborhood: string;
   budget_min: number | null;
   budget_max: number | null;
+  budget_period: 'weekly' | 'monthly' | null;
   whatsapp_contact: string;
   child_identifier: string | null;
   preferred_language: 'fr' | 'en';
@@ -336,7 +337,7 @@ export type TutorProfileFields = {
   teaching_mode: 'online' | 'in_person' | 'both';
   neighborhood: string;
   languages: string[];
-  rate_per_session: number;
+  rate_per_session: number | null;
   response_time_minutes: number | null;
   whatsapp_contact: string;
   created_at: string;

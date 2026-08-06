@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PaymentStatus from '../components/Tutors/PaymentStatus';
@@ -25,6 +25,7 @@ const REQUEST: TutorRequest = {
   neighborhood: 'Bonamoussadi',
   budget_min: null,
   budget_max: null,
+  budget_period: null,
   whatsapp_contact: '+237600000000',
   child_identifier: null,
   preferred_language: 'fr',
@@ -96,6 +97,10 @@ function mockContext(status: Match['status']): MatchContext {
 // visually" instruction, but clicking it must show an informational
 // message instead of ever reaching Stripe.
 describe('PaymentStatus payments-disabled gate (V1 default)', () => {
+  beforeEach(() => {
+    vi.spyOn(matchesLib, 'fetchMatchTutorEmail').mockResolvedValue('tutor@example.com');
+  });
+
   it('shows a "coming soon" message instead of starting checkout when clicked', async () => {
     const user = userEvent.setup();
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext('messaging'));

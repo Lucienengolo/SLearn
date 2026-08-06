@@ -149,7 +149,6 @@ describe('ApplicationWizard tutoring section', () => {
       offers_tutoring: true,
       tutoring_category_ids: ['cat-1'],
       tutoring_neighborhood: 'Akwa',
-      tutoring_rate_per_session: 5000,
     });
 
     renderWizard({ initialApplication: existing, onSubmitted: vi.fn() });
@@ -157,7 +156,6 @@ describe('ApplicationWizard tutoring section', () => {
 
     expect(screen.getByRole('checkbox', { name: /1-on-1 tutoring/i })).toBeChecked();
     expect(screen.getByDisplayValue('Akwa')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('5000')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Maths' })).toHaveAttribute('aria-pressed', 'true');
   });
 

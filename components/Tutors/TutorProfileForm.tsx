@@ -27,7 +27,6 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
   const [teachingMode, setTeachingMode] = useState<'online' | 'in_person' | 'both'>(existingProfile?.teaching_mode ?? 'both');
   const [neighborhood, setNeighborhood] = useState(existingProfile?.neighborhood ?? '');
   const [languages, setLanguages] = useState<Set<'fr' | 'en'>>(new Set(existingProfile?.languages as ('fr' | 'en')[] ?? ['fr']));
-  const [ratePerSession, setRatePerSession] = useState(existingProfile?.rate_per_session?.toString() ?? '');
   const [responseTimeMinutes, setResponseTimeMinutes] = useState<string>(
     existingProfile?.response_time_minutes?.toString() ?? ''
   );
@@ -75,7 +74,6 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
         teachingMode,
         neighborhood: neighborhood.trim(),
         languages: Array.from(languages),
-        ratePerSession: Number(ratePerSession),
         responseTimeMinutes: responseTimeMinutes ? Number(responseTimeMinutes) : null,
         whatsappContact,
         categoryIds: Array.from(selectedCategoryIds),
@@ -168,22 +166,6 @@ export default function TutorProfileForm({ tutorId, existingProfile, onSaved }: 
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-[13px] font-medium mb-1.5" htmlFor="tutor-profile-rate">
-          {t('tutorMarketplace.profileForm.rateLabel')}
-        </label>
-        <input
-          id="tutor-profile-rate"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={ratePerSession}
-          onChange={(e) => setRatePerSession(e.target.value)}
-          placeholder="8000"
-          className="w-full px-3 py-2.5 border border-ink-border rounded-lg text-sm font-plex-mono focus:outline-none focus:border-ink"
-        />
       </div>
 
       <div className="mb-4">

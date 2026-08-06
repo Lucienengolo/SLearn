@@ -54,6 +54,7 @@ function makeRequest(overrides: Partial<TutorRequest> = {}): TutorRequest {
     neighborhood: 'Bonamoussadi',
     budget_min: null,
     budget_max: null,
+    budget_period: null,
     whatsapp_contact: '+237650123456',
     child_identifier: null,
     preferred_language: 'fr',

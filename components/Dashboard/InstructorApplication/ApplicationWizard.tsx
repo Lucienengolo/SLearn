@@ -105,7 +105,6 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
     tutoring_neighborhood: initialApplication?.tutoring_neighborhood ?? '',
     tutoring_teaching_mode: initialApplication?.tutoring_teaching_mode ?? 'both',
     tutoring_languages: initialApplication?.tutoring_languages ?? ['fr'],
-    tutoring_rate_per_session: initialApplication?.tutoring_rate_per_session ?? undefined,
     tutoring_response_time_minutes: initialApplication?.tutoring_response_time_minutes ?? undefined,
     tutoring_whatsapp: initialApplication?.tutoring_whatsapp ?? '',
   });
@@ -200,10 +199,6 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
       }
       if (!form.tutoring_neighborhood?.trim()) {
         setError(t('dashboard.instructorApplication.addNeighborhoodError'));
-        return;
-      }
-      if (!form.tutoring_rate_per_session || form.tutoring_rate_per_session <= 0) {
-        setError(t('dashboard.instructorApplication.addRateError'));
         return;
       }
       if (!form.tutoring_whatsapp || !isValidWhatsappContact(form.tutoring_whatsapp)) {
@@ -424,16 +419,6 @@ export default function ApplicationWizard({ initialApplication, onSubmitted }: P
                       );
                     })}
                   </div>
-                </Field>
-                <Field label={t('dashboard.instructorApplication.ratePerSessionLabel')}>
-                  <input
-                    type="number"
-                    min={0}
-                    className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-                    value={form.tutoring_rate_per_session ?? ''}
-                    onChange={(e) => setForm({ ...form, tutoring_rate_per_session: Number(e.target.value) })}
-                    placeholder="8000"
-                  />
                 </Field>
                 <Field label={t('dashboard.instructorApplication.responseTimeLabel')}>
                   <select

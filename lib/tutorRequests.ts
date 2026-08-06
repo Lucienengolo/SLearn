@@ -6,6 +6,7 @@ export type CreateTutorRequestInput = {
   neighborhood: string;
   budgetMin: number | null;
   budgetMax: number | null;
+  budgetPeriod: 'weekly' | 'monthly' | null;
   whatsappContact: string;
   childIdentifier: string | null;
   preferredLanguage: 'fr' | 'en';
@@ -47,6 +48,7 @@ export async function createTutorRequest(input: CreateTutorRequestInput): Promis
     p_location_lat: input.locationLat ?? null,
     p_location_lng: input.locationLng ?? null,
     p_sessions_per_week: input.sessionsPerWeek,
+    p_budget_period: input.budgetPeriod,
   });
 
   if (error) throw error;
@@ -62,12 +64,36 @@ export function googleMapsLinkFor(request: Pick<TutorRequest, 'location_lat' | '
   return `https://www.google.com/maps?q=${request.location_lat},${request.location_lng}`;
 }
 
+const BUDGET_FCFA = new Intl.NumberFormat('fr-FR');
+
+// Founder request, 2026-08-06/07: the requester's own budget replaces the
+// tutor's quoted rate everywhere it's shown (admin dashboard, WhatsApp
+// handoff) now that tutors no longer set a rate at all. periodLabel is
+// pre-translated by the caller (weekly/monthly) since this is a plain
+// lib function, not a component with access to useLocale(); negotiableLabel
+// is the fallback shown when the parent left budget blank -- an optional
+// field on tutor_requests.
+export function formatBudgetRange(
+  budgetMin: number | null,
+  budgetMax: number | null,
+  periodLabel: string | null,
+  negotiableLabel: string
+): string {
+  if (budgetMin == null && budgetMax == null) return negotiableLabel;
+  const range =
+    budgetMin != null && budgetMax != null && budgetMin !== budgetMax
+      ? `${BUDGET_FCFA.format(budgetMin)}–${BUDGET_FCFA.format(budgetMax)} FCFA`
+      : `${BUDGET_FCFA.format(budgetMin ?? budgetMax ?? 0)} FCFA`;
+  return periodLabel ? `${range} / ${periodLabel}` : range;
+}
+
 export type UpdateTutorRequestInput = {
   categoryId: string;
   grade: string;
   neighborhood: string;
   budgetMin: number | null;
   budgetMax: number | null;
+  budgetPeriod: 'weekly' | 'monthly' | null;
   whatsappContact: string;
   childIdentifier: string | null;
   locationLat?: number | null;
@@ -94,6 +120,7 @@ export async function updateTutorRequest(requestId: string, input: UpdateTutorRe
       neighborhood: input.neighborhood,
       budget_min: input.budgetMin,
       budget_max: input.budgetMax,
+      budget_period: input.budgetPeriod,
       whatsapp_contact: normalizedWhatsapp,
       child_identifier: input.childIdentifier,
       location_lat: input.locationLat ?? null,

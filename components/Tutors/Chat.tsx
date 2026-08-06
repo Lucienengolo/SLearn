@@ -6,7 +6,6 @@ import {
   acceptMatch,
   declineMatch,
   confirmSessionDate,
-  whatsappLink,
   DECLINE_REASONS,
   MatchContext,
 } from '../../lib/matches';
@@ -155,7 +154,6 @@ export default function Chat({ matchId, currentUserId, viewerRole }: ChatProps) 
   }
 
   const { match, request, tutorProfile } = context;
-  const counterpartWhatsapp = viewerRole === 'parent' ? context.tutorFields.whatsapp_contact : request.whatsapp_contact;
   const isTutorAwaitingResponse = viewerRole === 'tutor' && match.status === 'matched';
 
   return (
@@ -285,14 +283,6 @@ export default function Chat({ matchId, currentUserId, viewerRole }: ChatProps) 
               {t('tutorMarketplace.chat.send')}
             </button>
           </form>
-          <a
-            href={whatsappLink(counterpartWhatsapp)}
-            target="_blank"
-            rel="noreferrer"
-            className="min-h-11 flex items-center justify-center whitespace-nowrap px-4 border border-ink-border rounded-lg text-sm font-medium hover:border-warm-gray transition-colors w-full"
-          >
-            {t('tutorMarketplace.chat.continueOnWhatsapp')}
-          </a>
         </>
       )}
     </div>

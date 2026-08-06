@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
     .from('instructor_applications')
     .select(
       `id, applicant_id, status, full_name, offers_tutoring, tutoring_category_ids, tutoring_neighborhood,
-       tutoring_teaching_mode, tutoring_languages, tutoring_rate_per_session, tutoring_response_time_minutes, tutoring_whatsapp`
+       tutoring_teaching_mode, tutoring_languages, tutoring_response_time_minutes, tutoring_whatsapp`
     )
     .eq('id', body.applicationId)
     .maybeSingle();
@@ -129,7 +129,6 @@ Deno.serve(async (req: Request) => {
           teaching_mode: application.tutoring_teaching_mode ?? 'both',
           neighborhood: application.tutoring_neighborhood ?? '',
           languages: application.tutoring_languages ?? [],
-          rate_per_session: application.tutoring_rate_per_session ?? 0,
           response_time_minutes: application.tutoring_response_time_minutes ?? null,
           whatsapp_contact: application.tutoring_whatsapp ?? '',
         },

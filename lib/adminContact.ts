@@ -9,9 +9,8 @@
 // out-of-band instead of hitting the disabled Stripe checkout.
 export const ADMIN_WHATSAPP_NUMBER = '+237659802679';
 
-// Same wa.me construction as whatsappLink() in lib/matches.ts, with a
-// prefilled message so the admin has context immediately instead of an
-// unexplained "hi".
+// wa.me deep link with a prefilled message so the admin has context
+// immediately instead of an unexplained "hi".
 export function adminWhatsappLink(context: string): string {
   const digitsOnly = ADMIN_WHATSAPP_NUMBER.replace(/[^\d]/g, '');
   return `https://wa.me/${digitsOnly}?text=${encodeURIComponent(context)}`;

@@ -27,6 +27,7 @@ const REQUEST: TutorRequest = {
   neighborhood: 'Bonamoussadi',
   budget_min: null,
   budget_max: null,
+  budget_period: null,
   whatsapp_contact: '+237600000000',
   child_identifier: null,
   preferred_language: 'fr',
@@ -246,26 +247,6 @@ describe('Chat', () => {
     expect(screen.getByText(/session confirmed/i)).toBeInTheDocument();
   });
 
-  it("links to the tutor's WhatsApp number when the viewer is the parent", async () => {
-    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
-    vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
-
-    renderChat({ matchId: "match-1", currentUserId: "parent-1", viewerRole: "parent" });
-
-    const link = await screen.findByRole('link', { name: /continue on whatsapp/i });
-    expect(link).toHaveAttribute('href', 'https://wa.me/237611111111');
-  });
-
-  it("links to the parent's WhatsApp number when the viewer is the tutor", async () => {
-    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext(makeMatch()));
-    vi.spyOn(matchesLib, 'fetchMessages').mockResolvedValue([]);
-
-    renderChat({ matchId: "match-1", currentUserId: "tutor-1", viewerRole: "tutor" });
-
-    const link = await screen.findByRole('link', { name: /continue on whatsapp/i });
-    expect(link).toHaveAttribute('href', 'https://wa.me/237600000000');
-  });
-
   it('renders in French when the locale is French', async () => {
     vi.stubGlobal('navigator', { language: 'fr-FR' });
     localStorage.clear();
@@ -275,7 +256,6 @@ describe('Chat', () => {
     renderChat({ matchId: 'match-1', currentUserId: 'parent-1', viewerRole: 'parent' });
 
     expect(await screen.findByText(/envoyez le premier message/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /continuer sur whatsapp/i })).toBeInTheDocument();
 
     vi.unstubAllGlobals();
   });

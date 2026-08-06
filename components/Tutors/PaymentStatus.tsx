@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchMatchContext, MatchContext } from '../../lib/matches';
+import { fetchMatchContext, fetchMatchTutorEmail, MatchContext } from '../../lib/matches';
 import { fetchPaymentForMatch, createDepositCheckout, confirmBalanceReceived, cancelBooking } from '../../lib/tutorPayments';
 import { TutorSessionPayment } from '../../lib/supabase';
 import { useLocale } from '../../contexts/LocaleContext';
 import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
 import { adminWhatsappLink } from '../../lib/adminContact';
 import { confirmManualPaymentReceived } from '../../lib/tutorBookingSettlement';
-import { googleMapsLinkFor } from '../../lib/tutorRequests';
+import { googleMapsLinkFor, formatBudgetRange } from '../../lib/tutorRequests';
 import type { TranslationKey } from '../../lib/i18n';
 
 type PaymentStatusProps = {
@@ -17,21 +17,29 @@ type PaymentStatusProps = {
 const FCFA = new Intl.NumberFormat('fr-FR');
 
 // Everything the admin needs to act on the handoff without opening the app:
-// who the tutor is, what/where the request was for, when the session is,
-// and the rate -- founder feedback, 2026-08-05, the original one-line
-// message ("je souhaite finaliser une réservation...") made them go look
-// the match up manually every time.
-function buildWhatsappContext(context: MatchContext, t: (key: TranslationKey) => string): string {
+// who the tutor is (name + phone + email, so the admin can reach them by
+// either channel), what/where the request was for, the frequency, when the
+// session is, and the requester's desired rate (never the tutor's own --
+// founder feedback, 2026-08-06/07: rate is negotiated from what the parent
+// asks for, tutors no longer quote one at all).
+function buildWhatsappContext(context: MatchContext, tutorEmail: string | null, t: (key: TranslationKey) => string): string {
   const { match, request, tutorProfile, tutorFields } = context;
   const sessionDate = match.confirmed_session_date ? new Date(match.confirmed_session_date).toLocaleString('fr-FR') : '—';
   const mapsLink = googleMapsLinkFor(request);
+  const periodLabel =
+    request.budget_period === 'weekly'
+      ? t('tutorMarketplace.common.weekly')
+      : request.budget_period === 'monthly'
+        ? t('tutorMarketplace.common.monthly')
+        : null;
+  const budgetLine = formatBudgetRange(request.budget_min, request.budget_max, periodLabel, t('tutorMarketplace.common.toBeNegotiated'));
   return [
     t('tutorMarketplace.paymentStatus.whatsappGreeting'),
-    `${t('tutorMarketplace.paymentStatus.whatsappTutorLabel')} : ${tutorProfile.full_name ?? '—'}`,
+    `${t('tutorMarketplace.paymentStatus.whatsappTutorLabel')} : ${tutorProfile.full_name ?? '—'} — ${tutorFields.whatsapp_contact} — ${tutorEmail ?? '—'}`,
     `${t('tutorMarketplace.chat.requestLabel')} ${request.grade}, ${request.neighborhood}`,
     `${t('tutorMarketplace.paymentStatus.whatsappFrequencyLabel')} : ${request.sessions_per_week}${t('tutorMarketplace.common.perWeekSuffix')}`,
     `${t('tutorMarketplace.paymentStatus.whatsappSessionLabel')} : ${sessionDate}`,
-    `${t('tutorMarketplace.paymentStatus.whatsappRateLabel')} : ${FCFA.format(tutorFields.rate_per_session)} FCFA`,
+    `${t('tutorMarketplace.paymentStatus.whatsappDesiredRateLabel')} : ${budgetLine}`,
     ...(mapsLink ? [`${t('tutorMarketplace.paymentStatus.whatsappLocationLabel')} : ${mapsLink}`] : []),
     `${t('tutorMarketplace.paymentStatus.whatsappReferenceLabel')} : ${match.id}`,
   ].join('\n');
@@ -53,15 +61,21 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
   const { t } = useLocale();
   const [context, setContext] = useState<MatchContext | null>(null);
   const [payment, setPayment] = useState<TutorSessionPayment | null>(null);
+  const [tutorEmail, setTutorEmail] = useState<string | null>(null);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [ctx, pay] = await Promise.all([fetchMatchContext(matchId), fetchPaymentForMatch(matchId)]);
+      const [ctx, pay, email] = await Promise.all([
+        fetchMatchContext(matchId),
+        fetchPaymentForMatch(matchId),
+        fetchMatchTutorEmail(matchId),
+      ]);
       setContext(ctx);
       setPayment(pay);
+      setTutorEmail(email);
     } catch {
       setLoadError(t('tutorMarketplace.paymentStatus.errorLoad'));
     }
@@ -131,8 +145,14 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
 
   const { match, tutorFields } = context;
   const [step1, step2, step3] = stepStates(match.status);
-  const depositAmount = payment?.deposit_amount ?? Math.round(tutorFields.rate_per_session * 0.2);
-  const balanceAmount = payment?.balance_amount ?? tutorFields.rate_per_session - depositAmount;
+  // tutorFields.rate_per_session is null for every tutor now (rate is no
+  // longer collected -- see 0058_requester_rate_and_tutor_email.sql) except
+  // legacy rows from before that change. This tracker is unreachable in the
+  // current WhatsApp-handoff flow anyway (matches never reach
+  // deposit_paid/in_progress today), so a "—" placeholder is enough.
+  const depositAmount = payment?.deposit_amount ?? (tutorFields.rate_per_session != null ? Math.round(tutorFields.rate_per_session * 0.2) : null);
+  const balanceAmount =
+    payment?.balance_amount ?? (tutorFields.rate_per_session != null && depositAmount != null ? tutorFields.rate_per_session - depositAmount : null);
 
   const dotClass = (s: StepState) => (s === 'done' ? 'bg-forest text-white' : s === 'active' ? 'bg-oxblood text-white' : 'bg-warm-gray-light text-white');
 
@@ -177,13 +197,13 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
       <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 text-sm mb-1.5">
         <span>{t('tutorMarketplace.paymentStatus.depositLabel')}</span>
         <span className="font-plex-mono">
-          {FCFA.format(depositAmount)} FCFA — {payment?.deposit_status === 'paid' ? t('tutorMarketplace.paymentStatus.paidWord') : t('tutorMarketplace.paymentStatus.pendingWord')}
+          {depositAmount != null ? `${FCFA.format(depositAmount)} FCFA` : '—'} — {payment?.deposit_status === 'paid' ? t('tutorMarketplace.paymentStatus.paidWord') : t('tutorMarketplace.paymentStatus.pendingWord')}
         </span>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 text-sm mb-4">
         <span>{t('tutorMarketplace.paymentStatus.balanceLabel')}</span>
         <span className="font-plex-mono">
-          {FCFA.format(balanceAmount)} FCFA — {payment?.balance_status === 'confirmed' ? t('tutorMarketplace.paymentStatus.receivedWord') : t('tutorMarketplace.paymentStatus.pendingWord')}
+          {balanceAmount != null ? `${FCFA.format(balanceAmount)} FCFA` : '—'} — {payment?.balance_status === 'confirmed' ? t('tutorMarketplace.paymentStatus.receivedWord') : t('tutorMarketplace.paymentStatus.pendingWord')}
         </span>
       </div>
 
@@ -191,7 +211,7 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
         <div className="bg-[#F2EEE2] border border-ink-border rounded-lg p-3.5 mb-4">
           <p className="text-sm mb-3">{t('tutorMarketplace.paymentStatus.finalizeWithTeamNote')}</p>
           <a
-            href={adminWhatsappLink(buildWhatsappContext(context, t))}
+            href={adminWhatsappLink(buildWhatsappContext(context, tutorEmail, t))}
             target="_blank"
             rel="noreferrer"
             className="min-h-11 flex items-center justify-center whitespace-nowrap px-4 border border-ink-border rounded-lg text-sm font-medium hover:border-warm-gray transition-colors w-full bg-paper"

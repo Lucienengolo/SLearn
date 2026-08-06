@@ -12,6 +12,9 @@ export type AdminMatchListItem = {
   tutor_name: string | null;
   created_at: string;
   sessions_per_week: number;
+  budget_min: number | null;
+  budget_max: number | null;
+  budget_period: 'weekly' | 'monthly' | null;
 };
 
 export async function fetchAllMatchesAdmin(): Promise<AdminMatchListItem[]> {

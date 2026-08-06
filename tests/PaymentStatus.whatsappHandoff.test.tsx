@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PaymentStatus from '../components/Tutors/PaymentStatus';
@@ -27,6 +27,7 @@ const REQUEST: TutorRequest = {
   neighborhood: 'Bonamoussadi',
   budget_min: null,
   budget_max: null,
+  budget_period: null,
   whatsapp_contact: '+237600000000',
   child_identifier: null,
   preferred_language: 'fr',
@@ -57,7 +58,7 @@ const TUTOR_FIELDS: TutorProfileFields = {
   teaching_mode: 'both',
   neighborhood: 'Bonamoussadi',
   languages: ['fr'],
-  rate_per_session: 8000,
+  rate_per_session: null,
   response_time_minutes: 30,
   whatsapp_contact: '+237611111111',
   created_at: '',
@@ -88,8 +89,13 @@ function makeMatch(overrides: Partial<Match>): Match {
   };
 }
 
-function mockContext(overrides: Partial<Match>): MatchContext {
-  return { match: makeMatch(overrides), request: REQUEST, tutorProfile: TUTOR_PROFILE, tutorFields: TUTOR_FIELDS };
+function mockContext(overrides: Partial<Match>, requestOverrides: Partial<TutorRequest> = {}): MatchContext {
+  return {
+    match: makeMatch(overrides),
+    request: { ...REQUEST, ...requestOverrides },
+    tutorProfile: TUTOR_PROFILE,
+    tutorFields: TUTOR_FIELDS,
+  };
 }
 
 // Regression: founder report, 2026-08-04 -- "tutor matching don't end...
@@ -99,6 +105,10 @@ function mockContext(overrides: Partial<Match>): MatchContext {
 // action was a "Pay deposit" button that always errors. Fix: once both
 // parties have mutually agreed, hand off to the admin on WhatsApp instead.
 describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', () => {
+  beforeEach(() => {
+    vi.spyOn(matchesLib, 'fetchMatchTutorEmail').mockResolvedValue('tutor@example.com');
+  });
+
   it('shows the WhatsApp handoff CTA instead of Pay Deposit once a session date is confirmed', async () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
@@ -110,7 +120,11 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
     expect(screen.queryByRole('button', { name: /pay the deposit/i })).not.toBeInTheDocument();
   });
 
-  it('prefills the WhatsApp message with tutor name, grade, neighborhood, frequency, date, rate and a reference', async () => {
+  // Founder request, 2026-08-06/07: the message the admin gets is exactly
+  // tutor (name + phone + email combined), level, frequency, in-person
+  // meetup session, the requester's own desired rate (never the tutor's
+  // rate -- tutors no longer quote one), location if provided, reference.
+  it('prefills the WhatsApp message with tutor name, phone and email, grade, neighborhood, frequency, date and a reference', async () => {
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
 
@@ -121,22 +135,50 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
     const decodedText = decodeURIComponent(href.split('text=')[1] ?? '');
 
     expect(decodedText).toContain('Aïcha Mbarga');
+    expect(decodedText).toContain('+237611111111');
+    expect(decodedText).toContain('tutor@example.com');
     expect(decodedText).toContain('3ème');
     expect(decodedText).toContain('Bonamoussadi');
     expect(decodedText).toContain('2x/week');
+    expect(decodedText).toContain('match-1');
+  });
+
+  it("shows the requester's desired rate with its period, never the tutor's own rate", async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(
+      mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }, { budget_min: 8000, budget_max: 12000, budget_period: 'monthly' })
+    );
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    const link = await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    const decodedText = decodeURIComponent((link.getAttribute('href') ?? '').split('text=')[1] ?? '');
+
     expect(decodedText).toContain('8');
     expect(decodedText).toContain('000');
-    expect(decodedText).toContain('match-1');
+    expect(decodedText).toContain('12');
+    expect(decodedText).toMatch(/month/i);
+  });
+
+  it('falls back to a "to be negotiated" rate line when the parent left budget blank', async () => {
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    const link = await screen.findByRole('link', { name: /finalize on whatsapp/i });
+    const decodedText = decodeURIComponent((link.getAttribute('href') ?? '').split('text=')[1] ?? '');
+
+    expect(decodedText).toMatch(/to be negotiated/i);
   });
 
   // Founder request, 2026-08-06: the admin should get a Google Maps link
   // straight to the family's home when one was shared, same link built by
   // lib/tutorRequests.ts's googleMapsLinkFor already used elsewhere.
   it('includes a Google Maps link in the WhatsApp message when the parent shared a location', async () => {
-    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue({
-      ...mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }),
-      request: { ...REQUEST, location_lat: 4.05, location_lng: 9.7 },
-    });
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(
+      mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }, { location_lat: 4.05, location_lng: 9.7 })
+    );
     vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
 
     renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
@@ -184,6 +226,10 @@ describe('PaymentStatus WhatsApp-to-admin handoff (mutual agreement reached)', (
 // reviewer to act; the tutor, who actually knows payment was finalized on
 // WhatsApp, should be able to close it themselves.
 describe('PaymentStatus tutor self-confirm (closes the booking directly)', () => {
+  beforeEach(() => {
+    vi.spyOn(matchesLib, 'fetchMatchTutorEmail').mockResolvedValue('tutor@example.com');
+  });
+
   it('shows a "Confirm payment received" button for the tutor only, which closes the booking', async () => {
     const user = userEvent.setup();
     vi.spyOn(matchesLib, 'fetchMatchContext').mockResolvedValue(mockContext({ confirmed_session_date: '2026-09-01T10:00:00.000Z' }));

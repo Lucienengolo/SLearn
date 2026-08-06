@@ -5,7 +5,6 @@ export type TutorProfileInput = {
   teachingMode: 'online' | 'in_person' | 'both';
   neighborhood: string;
   languages: ('fr' | 'en')[];
-  ratePerSession: number;
   responseTimeMinutes: number | null;
   whatsappContact: string;
   categoryIds: string[];
@@ -40,9 +39,6 @@ export async function saveTutorProfile(tutorId: string, input: TutorProfileInput
   if (input.categoryIds.length === 0) {
     throw new Error('Choisissez au moins une matière');
   }
-  if (input.ratePerSession <= 0) {
-    throw new Error('Le tarif doit être supérieur à 0');
-  }
 
   const { error: upsertError } = await supabase.from('tutor_profile_fields').upsert(
     {
@@ -50,7 +46,6 @@ export async function saveTutorProfile(tutorId: string, input: TutorProfileInput
       teaching_mode: input.teachingMode,
       neighborhood: input.neighborhood,
       languages: input.languages,
-      rate_per_session: input.ratePerSession,
       response_time_minutes: input.responseTimeMinutes,
       whatsapp_contact: input.whatsappContact.replace(/\s+/g, ''),
     },

@@ -14,7 +14,9 @@ export type PendingMatchSettlement = {
   parent_whatsapp: string;
   tutor_name: string | null;
   tutor_whatsapp: string;
-  rate_per_session: number;
+  budget_min: number | null;
+  budget_max: number | null;
+  budget_period: 'weekly' | 'monthly' | null;
   sessions_per_week: number;
 };
 

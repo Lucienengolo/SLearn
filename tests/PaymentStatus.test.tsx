@@ -33,6 +33,7 @@ const REQUEST: TutorRequest = {
   neighborhood: 'Bonamoussadi',
   budget_min: null,
   budget_max: null,
+  budget_period: null,
   whatsapp_contact: '+237600000000',
   child_identifier: null,
   preferred_language: 'fr',
@@ -121,6 +122,7 @@ function makePayment(overrides: Partial<TutorSessionPayment> = {}): TutorSession
 describe('PaymentStatus', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(matchesLib, 'fetchMatchTutorEmail').mockResolvedValue('tutor@example.com');
   });
 
   it('shows the "Payer l\'acompte" action for the parent when unpaid', async () => {

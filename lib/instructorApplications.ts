@@ -24,7 +24,6 @@ export type ApplicationDraft = Partial<
     | 'tutoring_neighborhood'
     | 'tutoring_teaching_mode'
     | 'tutoring_languages'
-    | 'tutoring_rate_per_session'
     | 'tutoring_response_time_minutes'
     | 'tutoring_whatsapp'
   >

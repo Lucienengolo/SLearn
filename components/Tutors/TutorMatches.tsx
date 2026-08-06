@@ -94,7 +94,10 @@ export default function TutorMatches({ tutorId, onSelectMatch }: TutorMatchesPro
       <div className="bg-paper border border-ink-border rounded-xl p-5 mb-5 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">
-            {profile.neighborhood} · {profile.rate_per_session.toLocaleString('fr-FR')} {t('tutorMarketplace.tutorMatches.ratePerSessionSuffix')}
+            {profile.neighborhood}
+            {profile.rate_per_session != null
+              ? ` · ${profile.rate_per_session.toLocaleString('fr-FR')} ${t('tutorMarketplace.tutorMatches.ratePerSessionSuffix')}`
+              : ''}
           </p>
           <p className="text-[12px] text-warm-gray">
             {profile.teaching_mode === 'both'
