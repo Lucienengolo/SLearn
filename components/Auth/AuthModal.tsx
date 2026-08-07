@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../contexts/LocaleContext';
+import { isValidWhatsappContact } from '../../lib/tutorRequests';
 import IconBadge from '../UI/IconBadge';
 
 type Mode = 'login' | 'signup' | 'forgot';
@@ -18,6 +19,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [whatsappContact, setWhatsappContact] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,7 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
     setMode('login');
     setError('');
     setAgreedToTerms(false);
+    setWhatsappContact('');
     onClose();
   };
 
@@ -79,7 +82,15 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
         await signIn(email, password);
         onClose();
       } else {
-        const { needsEmailConfirmation } = await signUp(email, password, fullName);
+        // Optional field (founder decision, 2026-08-07) -- only validated
+        // when the parent actually typed something, same "empty stays
+        // valid" pattern as every other optional field in this form.
+        if (whatsappContact.trim() && !isValidWhatsappContact(whatsappContact)) {
+          setError(t('tutorMarketplace.common.whatsappFormatError'));
+          setLoading(false);
+          return;
+        }
+        const { needsEmailConfirmation } = await signUp(email, password, fullName, whatsappContact.trim() || undefined);
         if (needsEmailConfirmation) {
           setConfirmationPending(true);
         } else {
@@ -173,6 +184,22 @@ export default function AuthModal({ isOpen, onClose, onNavigate, initialMode = '
                   required
                 />
               </div>
+
+              {mode === 'signup' && (
+                <div>
+                  <label htmlFor="auth-whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('auth.whatsappLabel')}
+                  </label>
+                  <input
+                    id="auth-whatsapp"
+                    type="tel"
+                    value={whatsappContact}
+                    onChange={(e) => setWhatsappContact(e.target.value)}
+                    placeholder="+237 6XX XXX XXX"
+                    className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+                  />
+                </div>
+              )}
 
               {mode !== 'forgot' && (
                 <div>

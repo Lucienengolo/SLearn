@@ -16,7 +16,7 @@ type AuthContextType = {
   profile: Profile | null;
   loading: boolean;
   isPasswordRecovery: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ needsEmailConfirmation: boolean }>;
+  signUp: (email: string, password: string, fullName: string, whatsappContact?: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -144,12 +144,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // or not email confirmation is required. When confirmation is on, signUp()
   // returns with no active session, so a client-side insert would run as
   // `anon` and get rejected by RLS.
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, whatsappContact?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        // whatsapp_contact is optional at signup (founder decision,
+        // 2026-08-07) -- reused by the on_auth_user_created trigger
+        // (0059_profile_whatsapp_contact.sql), same mechanism as full_name.
+        // undefined is simply omitted from the stored raw_user_meta_data,
+        // so the trigger's `->> 'whatsapp_contact'` reads null.
+        data: { full_name: fullName, whatsapp_contact: whatsappContact || undefined },
       },
     });
 

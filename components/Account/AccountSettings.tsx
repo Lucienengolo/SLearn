@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/storage';
 import { TOTEMS, totemByName } from '../../lib/totems';
 import { fetchStudentProgress, StudentProgressTier } from '../../lib/gamification';
+import { fetchMyWhatsappContact } from '../../lib/profile';
+import { isValidWhatsappContact } from '../../lib/tutorRequests';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 import ConfirmDialog from '../UI/ConfirmDialog';
 import IconBadge from '../UI/IconBadge';
@@ -28,6 +30,10 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
   const { offlineModeEnabled, setOfflineModeEnabled } = useOfflineStatus();
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
+  // Not sourced from `profile` -- that comes from public_profiles, which
+  // deliberately excludes whatsapp_contact (same treatment as email, see
+  // lib/profile.ts). Loaded separately via the owner-only RPC below.
+  const [whatsappContact, setWhatsappContact] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
@@ -63,6 +69,12 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
     }
   }, [user, isStudent]);
 
+  useEffect(() => {
+    if (user) {
+      fetchMyWhatsappContact().then((contact) => setWhatsappContact(contact ?? ''));
+    }
+  }, [user]);
+
   if (!user || !profile) return null;
 
   const handleAvatarChange = async (file: File) => {
@@ -90,9 +102,15 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
     setProfileMessage('');
     setProfileError('');
     try {
+      // Optional field -- only format-checked when non-empty, same "empty
+      // stays valid" pattern used at signup (AuthModal.tsx).
+      if (whatsappContact.trim() && !isValidWhatsappContact(whatsappContact)) {
+        setProfileError('Expected format: +237 6XX XXX XXX');
+        return;
+      }
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName.trim() || null, bio: bio.trim() || null })
+        .update({ full_name: fullName.trim() || null, bio: bio.trim() || null, whatsapp_contact: whatsappContact.trim() || null })
         .eq('id', user.id);
 
       if (error) {
@@ -285,6 +303,22 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
                 onChange={(e) => setBio(e.target.value)}
                 className="w-full px-3.5 py-2 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
               />
+            </div>
+            <div>
+              <label htmlFor="settings-whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
+                WhatsApp number
+              </label>
+              <input
+                id="settings-whatsapp"
+                type="tel"
+                value={whatsappContact}
+                onChange={(e) => setWhatsappContact(e.target.value)}
+                placeholder="+237 6XX XXX XXX"
+                className="w-full px-3.5 h-11 border border-gray-200 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
+              />
+              <p className="text-2xs text-gray-500 mt-1">
+                Used to prefill tutor requests so you don't have to retype it every time.
+              </p>
             </div>
             {profileMessage && <p className="text-sm text-primary-700">{profileMessage}</p>}
             {profileError && <p className="text-sm text-red-600">{profileError}</p>}

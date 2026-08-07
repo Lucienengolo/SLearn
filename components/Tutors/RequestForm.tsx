@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { MapPin, Plus } from 'lucide-react';
 import { supabase, Category, TutorRequest } from '../../lib/supabase';
 import { createTutorRequest, matchTutorRequest, isValidWhatsappContact } from '../../lib/tutorRequests';
+import { fetchMyWhatsappContact } from '../../lib/profile';
 import { getCurrentLocation } from '../../lib/geolocation';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../contexts/LocaleContext';
 import { useOfflineStatus } from '../../contexts/OfflineContext';
 
@@ -43,6 +45,7 @@ type SharedErrors = Partial<{
 // one sitting instead of repeating the whole form.
 export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const { t } = useLocale();
+  const { user } = useAuth();
   const { isOnline, offlineModeEnabled } = useOfflineStatus();
   const [categories, setCategories] = useState<Category[]>([]);
   const [children, setChildren] = useState<ChildEntry[]>([emptyChild()]);
@@ -52,6 +55,12 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const [budgetMax, setBudgetMax] = useState('');
   const [budgetPeriod, setBudgetPeriod] = useState<'weekly' | 'monthly'>('monthly');
   const [whatsappContact, setWhatsappContact] = useState('');
+  // Founder observation, 2026-08-07: the WhatsApp number was retyped from
+  // scratch on every request with no guarantee it's the requester's own.
+  // Prefilled from the profile below when available; tracked separately so
+  // a first-time entry here can be written back to the profile once, not
+  // silently overwritten on every later request.
+  const [hadStoredWhatsapp, setHadStoredWhatsapp] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'granted' | 'error'>('idle');
   const [locationError, setLocationError] = useState('');
@@ -62,6 +71,18 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
   const [addingSubjectForChild, setAddingSubjectForChild] = useState<string | null>(null);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [creatingSubject, setCreatingSubject] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchMyWhatsappContact().then((contact) => {
+      if (cancelled || !contact) return;
+      setWhatsappContact(contact);
+      setHadStoredWhatsapp(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,6 +246,23 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
               sessionsPerWeek: Number(sessionsPerWeek),
             })
           );
+        }
+      }
+
+      // First time this parent has ever given a number (nothing was on
+      // file at mount) -- save it back to their profile so it's never
+      // retyped again. Best-effort: a failure here must not look like the
+      // request submission itself failed.
+      if (!hadStoredWhatsapp && user) {
+        try {
+          const { error: whatsappSaveError } = await supabase
+            .from('profiles')
+            .update({ whatsapp_contact: whatsappContact.replace(/\s+/g, '') })
+            .eq('id', user.id);
+          if (!whatsappSaveError) setHadStoredWhatsapp(true);
+        } catch {
+          // Non-critical -- the request itself already succeeded; the
+          // parent just retypes the number again on their next request.
         }
       }
 

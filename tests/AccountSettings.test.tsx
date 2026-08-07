@@ -10,7 +10,7 @@ import { LocaleProvider } from '../contexts/LocaleContext';
 import { OfflineProvider } from '../contexts/OfflineContext';
 
 vi.mock('../lib/supabase', () => ({
-  supabase: { from: vi.fn(), functions: { invoke: vi.fn() } },
+  supabase: { from: vi.fn(), functions: { invoke: vi.fn() }, rpc: vi.fn() },
 }));
 
 function mockProfile(overrides: Partial<{ totem: string | null; role: 'student' | 'instructor'; verified: boolean }> = {}) {
@@ -65,6 +65,10 @@ describe('AccountSettings', () => {
       xpToNextTier: 100,
       tierProgressPct: 0,
     });
+    // Same reasoning -- get_my_whatsapp_contact fires in a useEffect on
+    // every mount (0059_profile_whatsapp_contact.sql), so it needs a
+    // default resolved value even for tests that don't care about it.
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as never);
   });
 
   describe('totem picker', () => {
@@ -180,6 +184,68 @@ describe('AccountSettings', () => {
 
       expect(await screen.findByText(/failed to delete account/i)).toBeInTheDocument();
       expect(signOut).not.toHaveBeenCalled();
+    });
+  });
+
+  // Founder decision, 2026-08-07: a parent's WhatsApp number is captured
+  // once and reused (RequestForm.tsx), rather than retyped from scratch
+  // every time. Editable here too, loaded via the owner-only RPC since it's
+  // deliberately excluded from public_profiles (same treatment as email).
+  describe('WhatsApp number', () => {
+    it('loads and displays the stored value', async () => {
+      mockAuth();
+      vi.mocked(supabase.rpc).mockResolvedValue({ data: '+237650123456', error: null } as never);
+
+      renderAccountSettings();
+
+      expect(await screen.findByDisplayValue('+237650123456')).toBeInTheDocument();
+      expect(supabase.rpc).toHaveBeenCalledWith('get_my_whatsapp_contact');
+    });
+
+    it('starts blank when nothing is stored yet', async () => {
+      mockAuth();
+      vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as never);
+
+      renderAccountSettings();
+
+      await screen.findByLabelText(/whatsapp number/i);
+      expect(screen.getByLabelText(/whatsapp number/i)).toHaveValue('');
+    });
+
+    it('saves an edited number as part of the profile save', async () => {
+      const user = userEvent.setup();
+      const refreshProfile = vi.fn().mockResolvedValue(undefined);
+      const updateSpy = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) }));
+
+      mockAuth({}, { refreshProfile });
+      vi.mocked(supabase.from).mockReturnValue({ update: updateSpy } as unknown as ReturnType<typeof supabase.from>);
+
+      renderAccountSettings();
+      await screen.findByLabelText(/whatsapp number/i);
+
+      await user.type(screen.getByLabelText(/whatsapp number/i), '+237650123456');
+      await user.click(screen.getByRole('button', { name: /save profile/i }));
+
+      await vi.waitFor(() =>
+        expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ whatsapp_contact: '+237650123456' }))
+      );
+    });
+
+    it('rejects a malformed number without saving', async () => {
+      const user = userEvent.setup();
+      const updateSpy = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) }));
+
+      mockAuth();
+      vi.mocked(supabase.from).mockReturnValue({ update: updateSpy } as unknown as ReturnType<typeof supabase.from>);
+
+      renderAccountSettings();
+      await screen.findByLabelText(/whatsapp number/i);
+
+      await user.type(screen.getByLabelText(/whatsapp number/i), '0650123456');
+      await user.click(screen.getByRole('button', { name: /save profile/i }));
+
+      expect(await screen.findByText(/expected format/i)).toBeInTheDocument();
+      expect(updateSpy).not.toHaveBeenCalled();
     });
   });
 

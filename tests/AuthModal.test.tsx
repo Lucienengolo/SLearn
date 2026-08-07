@@ -112,6 +112,73 @@ describe('AuthModal signup consent', () => {
   });
 });
 
+// Founder decision, 2026-08-07: capture a parent's WhatsApp number once,
+// optionally, at signup -- reused later to prefill tutor requests instead
+// of being retyped from scratch every time (RequestForm.tsx).
+describe('AuthModal optional WhatsApp field at signup', () => {
+  function mockAuth(signUp = vi.fn().mockResolvedValue({ needsEmailConfirmation: false })) {
+    vi.spyOn(authContext, 'useAuth').mockReturnValue({
+      signIn: vi.fn(),
+      signUp,
+      requestPasswordReset: vi.fn(),
+    } as never);
+    return signUp;
+  }
+
+  it('is not shown in login mode', () => {
+    mockAuth();
+    renderAuthModal({ initialMode: 'login' });
+    expect(screen.queryByLabelText(/whatsapp/i)).not.toBeInTheDocument();
+  });
+
+  it('is optional -- signup succeeds with it left blank', async () => {
+    const signUp = mockAuth();
+    renderAuthModal({ initialMode: 'signup' });
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/full name/i), 'Parent One');
+    await user.type(screen.getByLabelText(/email/i), 'parent@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+    await vi.waitFor(() => expect(signUp).toHaveBeenCalledWith('parent@example.com', 'password123', 'Parent One', undefined));
+  });
+
+  it('passes a well-formed number through to signUp', async () => {
+    const signUp = mockAuth();
+    renderAuthModal({ initialMode: 'signup' });
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/full name/i), 'Parent One');
+    await user.type(screen.getByLabelText(/email/i), 'parent@example.com');
+    await user.type(screen.getByLabelText(/whatsapp/i), '+237650123456');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+    await vi.waitFor(() =>
+      expect(signUp).toHaveBeenCalledWith('parent@example.com', 'password123', 'Parent One', '+237650123456')
+    );
+  });
+
+  it('rejects a malformed number without calling signUp', async () => {
+    const signUp = mockAuth();
+    renderAuthModal({ initialMode: 'signup' });
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/full name/i), 'Parent One');
+    await user.type(screen.getByLabelText(/email/i), 'parent@example.com');
+    await user.type(screen.getByLabelText(/whatsapp/i), '0650123456');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+    expect(await screen.findByText(/expected format/i)).toBeInTheDocument();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+});
+
 // Regression: AuthModal was entirely hardcoded English until 2026-08-01 --
 // the whole modal now follows the FR/EN toggle like the rest of the app.
 describe('AuthModal locale', () => {

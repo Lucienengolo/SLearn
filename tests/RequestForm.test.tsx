@@ -4,8 +4,11 @@ import userEvent from '@testing-library/user-event';
 import RequestForm from '../components/Tutors/RequestForm';
 import * as tutorRequestsLib from '../lib/tutorRequests';
 import * as geolocationLib from '../lib/geolocation';
+import * as profileLib from '../lib/profile';
+import * as authContext from '../contexts/AuthContext';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import { OfflineProvider } from '../contexts/OfflineContext';
+import { supabase } from '../lib/supabase';
 import type { TutorRequest } from '../lib/supabase';
 import type { ComponentProps } from 'react';
 
@@ -21,27 +24,38 @@ function renderRequestForm(props: ComponentProps<typeof RequestForm>) {
 
 vi.mock('../lib/supabase', () => ({
   supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        order: vi.fn(() =>
-          Promise.resolve({
-            data: [
-              { id: 'cat-1', name: 'Mathématiques', description: null, created_at: '' },
-              { id: 'cat-2', name: 'Anglais', description: null, created_at: '' },
-            ],
-          })
-        ),
-      })),
-      // .insert().select().single() -- mirrors CourseEditor's own inline
-      // category creation, returning the newly created row.
-      insert: vi.fn((payload: { name: string }) => ({
+    from: vi.fn((table: string) => {
+      // Best-effort write-back of a first-time WhatsApp number
+      // (RequestForm.tsx, 0059_profile_whatsapp_contact.sql) -- separate
+      // shape from the categories mock below since it hits a different
+      // table with a different method (`update`, not `select`/`insert`).
+      if (table === 'profiles') {
+        return {
+          update: vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) })),
+        };
+      }
+      return {
         select: vi.fn(() => ({
-          single: vi.fn(() =>
-            Promise.resolve({ data: { id: 'cat-new', name: payload.name, description: null, created_at: '' }, error: null })
+          order: vi.fn(() =>
+            Promise.resolve({
+              data: [
+                { id: 'cat-1', name: 'Mathématiques', description: null, created_at: '' },
+                { id: 'cat-2', name: 'Anglais', description: null, created_at: '' },
+              ],
+            })
           ),
         })),
-      })),
-    })),
+        // .insert().select().single() -- mirrors CourseEditor's own inline
+        // category creation, returning the newly created row.
+        insert: vi.fn((payload: { name: string }) => ({
+          select: vi.fn(() => ({
+            single: vi.fn(() =>
+              Promise.resolve({ data: { id: 'cat-new', name: payload.name, description: null, created_at: '' }, error: null })
+            ),
+          })),
+        })),
+      };
+    }),
   },
 }));
 
@@ -82,6 +96,10 @@ describe('RequestForm', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+    vi.spyOn(authContext, 'useAuth').mockReturnValue({ user: { id: 'parent-1' } } as never);
+    // No stored number by default -- existing tests that type a fresh
+    // number into a blank field aren't affected by the new prefill.
+    vi.spyOn(profileLib, 'fetchMyWhatsappContact').mockResolvedValue(null);
   });
 
   it('shows validation errors and does not submit when required fields are empty', async () => {
@@ -344,5 +362,80 @@ describe('RequestForm', () => {
     const englishChip = await screen.findByRole('button', { name: /^Anglais$/ });
     expect(englishChip).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getAllByRole('button', { name: /^Anglais$/ })).toHaveLength(1);
+  });
+
+  // Founder observation, 2026-08-07: the WhatsApp number was retyped from
+  // scratch on every request with no guarantee it's the requester's own --
+  // now prefilled from (and, the first time, written back to) the profile.
+  describe('WhatsApp number prefill and write-back', () => {
+    it("prefills from the parent's stored number, still editable", async () => {
+      vi.spyOn(profileLib, 'fetchMyWhatsappContact').mockResolvedValue('+237650123456');
+
+      renderRequestForm({ onSubmitted: vi.fn() });
+
+      const input = await screen.findByLabelText(/whatsapp/i);
+      await waitFor(() => expect(input).toHaveValue('+237650123456'));
+      expect(input).not.toBeDisabled();
+    });
+
+    it('writes the number back to the profile after a successful submission when nothing was stored', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(profileLib, 'fetchMyWhatsappContact').mockResolvedValue(null);
+      vi.spyOn(tutorRequestsLib, 'createTutorRequest').mockResolvedValue(makeRequest());
+      vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
+      const updateSpy = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) }));
+      vi.mocked(supabase.from).mockImplementation((table: string) =>
+        table === 'profiles'
+          ? ({ update: updateSpy } as unknown as ReturnType<typeof supabase.from>)
+          : ({
+              select: vi.fn(() => ({
+                order: vi.fn(() =>
+                  Promise.resolve({
+                    data: [{ id: 'cat-1', name: 'Mathématiques', description: null, created_at: '' }],
+                  })
+                ),
+              })),
+            } as unknown as ReturnType<typeof supabase.from>)
+      );
+
+      renderRequestForm({ onSubmitted: vi.fn() });
+
+      await fillChild(user, /^Mathématiques$/);
+      await fillSharedFields(user);
+      await user.click(screen.getByRole('button', { name: /find a tutor/i }));
+
+      await waitFor(() => expect(updateSpy).toHaveBeenCalledWith({ whatsapp_contact: '+237650123456' }));
+    });
+
+    it('does not write back when the parent already had a number on file', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(profileLib, 'fetchMyWhatsappContact').mockResolvedValue('+237699999999');
+      vi.spyOn(tutorRequestsLib, 'createTutorRequest').mockResolvedValue(makeRequest());
+      vi.spyOn(tutorRequestsLib, 'matchTutorRequest').mockResolvedValue({ matched: false });
+      const updateSpy = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) }));
+      vi.mocked(supabase.from).mockImplementation((table: string) =>
+        table === 'profiles'
+          ? ({ update: updateSpy } as unknown as ReturnType<typeof supabase.from>)
+          : ({
+              select: vi.fn(() => ({
+                order: vi.fn(() =>
+                  Promise.resolve({
+                    data: [{ id: 'cat-1', name: 'Mathématiques', description: null, created_at: '' }],
+                  })
+                ),
+              })),
+            } as unknown as ReturnType<typeof supabase.from>)
+      );
+
+      renderRequestForm({ onSubmitted: vi.fn() });
+
+      await waitFor(() => expect(screen.getByLabelText(/whatsapp/i)).toHaveValue('+237699999999'));
+      await fillChild(user, /^Mathématiques$/);
+      await user.type(screen.getByLabelText(/neighborhood/i), 'Bonamoussadi');
+      await user.click(screen.getByRole('button', { name: /find a tutor/i }));
+
+      await waitFor(() => expect(tutorRequestsLib.createTutorRequest).toHaveBeenCalled());
+      expect(updateSpy).not.toHaveBeenCalled();
+    });
   });
 });
