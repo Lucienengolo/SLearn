@@ -268,6 +268,19 @@ export default function Header({
                   <div className="px-4 py-2 text-sm text-gray-600">
                     {profile.full_name || user?.email}
                   </div>
+                  {/* Founder report, 2026-08-07: the bell was only ever
+                      rendered in the desktop nav (`hidden lg:flex` below),
+                      so notifications were completely unreachable on
+                      mobile -- not hidden, just never mounted at all. */}
+                  <div className="flex items-center justify-between px-4 py-2">
+                    <span className="text-gray-600">{t('nav.notifications')}</span>
+                    <NotificationBell
+                      onNavigate={(page) => {
+                        onNavigate(page);
+                        setMobileMenuOpen(false);
+                      }}
+                    />
+                  </div>
                   <button
                     onClick={() => {
                       onNavigate('account-settings');

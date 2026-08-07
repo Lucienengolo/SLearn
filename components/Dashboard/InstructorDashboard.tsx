@@ -59,7 +59,10 @@ export default function InstructorDashboard() {
   // Deep-link from a notification (App.tsx's handleNavigate sets this hash
   // for the tutor-matches link) -- opens straight to the Classroom tab
   // instead of defaulting to Courses. Founder report, 2026-08-05.
-  const [tab, setTab] = useState<DashboardTab>(window.location.hash.slice(1) === 'tutor-matches' ? 'classroom' : 'courses');
+  // startsWith, not ===, since the hash may also carry a specific match id
+  // (tutor-matches/<id>, founder report 2026-08-07) that SLearnClassroom.tsx
+  // reads back out to open straight into that match's detail view.
+  const [tab, setTab] = useState<DashboardTab>(window.location.hash.slice(1).startsWith('tutor-matches') ? 'classroom' : 'courses');
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);

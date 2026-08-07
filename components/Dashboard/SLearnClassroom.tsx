@@ -18,6 +18,7 @@ import GradingPanel from './GradingPanel';
 import InstructorLeague from './InstructorLeague';
 import TutorMatches from '../Tutors/TutorMatches';
 import Chat from '../Tutors/Chat';
+import PaymentStatus from '../Tutors/PaymentStatus';
 import { useLocale } from '../../contexts/LocaleContext';
 import type { TranslationKey } from '../../lib/i18n';
 
@@ -59,8 +60,10 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   const { showToast } = useToast();
   // Same notification deep-link as InstructorDashboard's initial tab above
   // -- opens straight to the Tutor Matches section. Founder report,
-  // 2026-08-05.
-  const [section, setSection] = useState<Section>(window.location.hash.slice(1) === 'tutor-matches' ? 'tutor-matches' : 'stream');
+  // 2026-08-05. startsWith, not ===, since the hash may carry a specific
+  // match id too (tutor-matches/<id>, founder report 2026-08-07).
+  const initialHash = window.location.hash.slice(1);
+  const [section, setSection] = useState<Section>(initialHash.startsWith('tutor-matches') ? 'tutor-matches' : 'stream');
   const [courses, setCourses] = useState<Course[]>([]);
   const [rows, setRows] = useState<LearnerRow[]>([]);
   const [totalQuizAttempts, setTotalQuizAttempts] = useState(0);
@@ -101,7 +104,12 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
   const [postsLoading, setPostsLoading] = useState(true);
   const [courseFilter, setCourseFilter] = useState<'all' | string>('all');
   const [gradingPost, setGradingPost] = useState<ClassworkPostWithCourse | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  // Opens straight into the specific match's detail (skipping the list)
+  // when the hash carries an id -- e.g. clicking a "Booking settled"
+  // notification. Founder report, 2026-08-07.
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(
+    initialHash.startsWith('tutor-matches/') ? initialHash.slice('tutor-matches/'.length) : null
+  );
 
   useEffect(() => {
     fetchData();
@@ -331,14 +339,19 @@ export default function SLearnClassroom({ onBack }: SLearnClassroomProps) {
           {section === 'tutor-matches' && user && (
             <div>
               {selectedMatchId ? (
-                <div>
+                <div className="space-y-5">
                   <button
                     onClick={() => setSelectedMatchId(null)}
-                    className="text-sm text-gray-500 hover:text-gray-800 transition mb-4"
+                    className="text-sm text-gray-500 hover:text-gray-800 transition"
                   >
                     ← {t('dashboard.classroom.backToMatches')}
                   </button>
                   <Chat matchId={selectedMatchId} currentUserId={user.id} viewerRole="tutor" />
+                  {/* Founder report, 2026-08-07: clicking into a match from
+                      a notification showed only the message thread, no
+                      booking/settlement status -- the parent-side
+                      equivalent (MatchStatus.tsx) already shows both. */}
+                  <PaymentStatus matchId={selectedMatchId} viewerRole="tutor" />
                 </div>
               ) : (
                 <TutorMatches tutorId={user.id} onSelectMatch={setSelectedMatchId} />

@@ -83,8 +83,14 @@ function AppContent() {
     // initial tab/section. Review Queue and Admin Panel merged into one
     // page (2026-08-06, founder feedback) -- both admin/* links now land
     // there too.
-    if (page === 'tutor-matches') {
-      window.location.hash = 'tutor-matches';
+    if (page === 'tutor-matches' || page.startsWith('tutor-matches/')) {
+      // Founder report, 2026-08-07: the match id (when the link carries
+      // one, e.g. from a "Booking settled" notification) used to be
+      // thrown away here, always landing on the generic Matches list
+      // instead of the specific booking. Preserved verbatim now --
+      // SLearnClassroom.tsx reads it back out to open straight into that
+      // match's detail view.
+      window.location.hash = page;
       setCurrentPage('dashboard');
     } else if (page.startsWith('admin/matches/')) {
       window.location.hash = 'tutor-bookings';

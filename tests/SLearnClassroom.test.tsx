@@ -17,6 +17,12 @@ vi.mock('../lib/classwork');
 vi.mock('../lib/league');
 vi.mock('../lib/tutorProfile');
 vi.mock('../lib/matches');
+vi.mock('../components/Tutors/Chat', () => ({
+  default: ({ matchId }: { matchId: string }) => <div data-testid="chat-mock">Chat for {matchId}</div>,
+}));
+vi.mock('../components/Tutors/PaymentStatus', () => ({
+  default: ({ matchId }: { matchId: string }) => <div data-testid="payment-status-mock">Payment for {matchId}</div>,
+}));
 
 function renderClassroom(onBack = vi.fn()) {
   return render(
@@ -117,6 +123,24 @@ describe('SLearnClassroom', () => {
 
     expect(await screen.findByText('My matches')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/title/i)).not.toBeInTheDocument();
+
+    window.location.hash = '';
+  });
+
+  // Founder report, 2026-08-07: a match-specific notification (e.g.
+  // "Booking settled") only ever opened the generic Matches list, never
+  // the specific booking. App.tsx's handleNavigate now preserves the match
+  // id in the hash (tutor-matches/<id>) instead of collapsing it to the
+  // bare section name.
+  it('opens straight into a specific match, skipping the list, when the hash carries a match id', async () => {
+    window.location.hash = 'tutor-matches/match-42';
+    vi.spyOn(learnersLib, 'fetchInstructorLearners').mockResolvedValue({ courses: [COURSE_A], rows: [], totalQuizAttempts: 0 });
+
+    renderClassroom();
+
+    expect(await screen.findByText('Chat for match-42')).toBeInTheDocument();
+    expect(screen.getByText('Payment for match-42')).toBeInTheDocument();
+    expect(screen.queryByText('My matches')).not.toBeInTheDocument();
 
     window.location.hash = '';
   });

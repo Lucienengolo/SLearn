@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
       user_id: outcome.result.tutor_id,
       title: 'Nouvelle demande de tutorat',
       body: `Vous avez été mis en relation pour un cours de ${tutorRequest.grade} à ${tutorRequest.neighborhood}. Répondez sous 48h.`,
-      link: `tutor-matches`,
+      link: `tutor-matches/${outcome.result.id}`,
     });
     if (tutorNotifyError) {
       console.error('Failed to notify tutor of new match:', tutorNotifyError.message);

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as authContext from '../contexts/AuthContext';
+import * as notificationsLib from '../lib/notifications';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import Header from '../components/Layout/Header';
 
@@ -70,5 +72,40 @@ describe('Header', () => {
     expect(container.querySelector('nav.hidden.md\\:flex')).not.toBeInTheDocument();
     expect(container.querySelector('button.lg\\:hidden[aria-label]')).toBeInTheDocument();
     expect(container.querySelector('button.md\\:hidden[aria-label]')).not.toBeInTheDocument();
+  });
+
+  // Regression: founder report, 2026-08-07 -- the notification bell was
+  // only ever rendered inside the desktop nav (`hidden lg:flex`), so it
+  // was completely unreachable on mobile, not just visually hidden.
+  describe('notification bell on mobile', () => {
+    beforeEach(() => {
+      vi.spyOn(authContext, 'useAuth').mockReturnValue({
+        user: { id: 'user-1', email: 'jane@example.com' },
+        profile: { id: 'user-1', full_name: 'Jane Doe', role: 'student', verified: false, avatar_url: null },
+        signOut: vi.fn(),
+      } as never);
+      vi.spyOn(notificationsLib, 'fetchNotifications').mockResolvedValue([]);
+    });
+
+    // The desktop bell (inside the `hidden lg:flex` container) is always
+    // present in the DOM regardless of viewport -- Tailwind's responsive
+    // classes are CSS-only and inert under jsdom -- so "reachable on
+    // mobile" is checked via the "Notifications" text label, which only
+    // exists in the mobile-menu row, not the desktop one.
+    it('has no "Notifications" label before the hamburger menu is opened', () => {
+      renderHeader('home');
+      expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+    });
+
+    it('shows a second, labeled bell once the mobile menu is opened', async () => {
+      const user = userEvent.setup();
+      renderHeader('home');
+
+      const bellsBefore = screen.getAllByLabelText(/^notifications/i);
+      await user.click(screen.getByRole('button', { name: /open menu/i }));
+
+      expect(screen.getByText('Notifications')).toBeInTheDocument();
+      expect(screen.getAllByLabelText(/^notifications/i)).toHaveLength(bellsBefore.length + 1);
+    });
   });
 });
