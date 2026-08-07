@@ -21,7 +21,14 @@ export function initErrorTracking(): void {
   });
 }
 
-function reportError(error: unknown): void {
+// Exported for call sites whose own failure handling already covers the
+// user-facing side (a local error state, a silently-caught background
+// write) but would otherwise leave the underlying error invisible in
+// production -- e.g. the WhatsApp-contact/tutor-email RPCs added
+// 2026-08-06/07, whose errors previously vanished with no monitoring
+// signal at all. A no-op when Sentry isn't configured, same as the error
+// boundary's own use of this.
+export function reportError(error: unknown): void {
   sentryModule?.captureException(error);
 }
 

@@ -9,6 +9,7 @@ import { TOTEMS, totemByName } from '../../lib/totems';
 import { fetchStudentProgress, StudentProgressTier } from '../../lib/gamification';
 import { fetchMyWhatsappContact } from '../../lib/profile';
 import { isValidWhatsappContact } from '../../lib/tutorRequests';
+import { reportError } from '../../lib/errorTracking';
 import DashboardSidebar from '../Dashboard/DashboardSidebar';
 import ConfirmDialog from '../UI/ConfirmDialog';
 import IconBadge from '../UI/IconBadge';
@@ -71,7 +72,12 @@ export default function AccountSettings({ onBack, onNavigate }: AccountSettingsP
 
   useEffect(() => {
     if (user) {
-      fetchMyWhatsappContact().then((contact) => setWhatsappContact(contact ?? ''));
+      fetchMyWhatsappContact()
+        .then((contact) => setWhatsappContact(contact ?? ''))
+        // Non-critical -- the field just starts blank instead of prefilled.
+        // Previously unhandled entirely (a silent promise rejection) with
+        // no monitoring signal.
+        .catch(reportError);
     }
   }, [user]);
 

@@ -89,7 +89,7 @@ export default function NotificationBell({ onNavigate }: NotificationBellProps) 
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-[14px] border border-canvas-150 shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-white rounded-[14px] border border-canvas-150 shadow-lg z-50">
           <div className="flex items-center justify-between p-3.5 border-b border-canvas-150">
             <span className="font-semibold text-sm text-gray-900">Notifications</span>
             {unreadCount > 0 && (

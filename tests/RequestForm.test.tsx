@@ -5,6 +5,7 @@ import RequestForm from '../components/Tutors/RequestForm';
 import * as tutorRequestsLib from '../lib/tutorRequests';
 import * as geolocationLib from '../lib/geolocation';
 import * as profileLib from '../lib/profile';
+import * as errorTrackingLib from '../lib/errorTracking';
 import * as authContext from '../contexts/AuthContext';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import { OfflineProvider } from '../contexts/OfflineContext';
@@ -376,6 +377,19 @@ describe('RequestForm', () => {
       const input = await screen.findByLabelText(/whatsapp/i);
       await waitFor(() => expect(input).toHaveValue('+237650123456'));
       expect(input).not.toBeDisabled();
+    });
+
+    // Regression: this fetch previously had no .catch at all, an unhandled
+    // promise rejection with no monitoring signal (2026-08-07 audit).
+    it('reports and swallows a prefill failure instead of leaving it unhandled', async () => {
+      const reportSpy = vi.spyOn(errorTrackingLib, 'reportError').mockImplementation(() => {});
+      vi.spyOn(profileLib, 'fetchMyWhatsappContact').mockRejectedValue(new Error('rpc unreachable'));
+
+      renderRequestForm({ onSubmitted: vi.fn() });
+
+      const input = await screen.findByLabelText(/whatsapp/i);
+      await waitFor(() => expect(reportSpy).toHaveBeenCalledWith(expect.any(Error)));
+      expect(input).toHaveValue('');
     });
 
     it('writes the number back to the profile after a successful submission when nothing was stored', async () => {

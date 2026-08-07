@@ -7,6 +7,7 @@ import { PAYMENTS_ENABLED } from '../../lib/paymentsConfig';
 import { adminWhatsappLink } from '../../lib/adminContact';
 import { confirmManualPaymentReceived } from '../../lib/tutorBookingSettlement';
 import { googleMapsLinkFor, formatBudgetRange } from '../../lib/tutorRequests';
+import { reportError } from '../../lib/errorTracking';
 import type { TranslationKey } from '../../lib/i18n';
 
 type PaymentStatusProps = {
@@ -76,7 +77,8 @@ export default function PaymentStatus({ matchId, viewerRole }: PaymentStatusProp
       setContext(ctx);
       setPayment(pay);
       setTutorEmail(email);
-    } catch {
+    } catch (err) {
+      reportError(err);
       setLoadError(t('tutorMarketplace.paymentStatus.errorLoad'));
     }
   }, [matchId, t]);

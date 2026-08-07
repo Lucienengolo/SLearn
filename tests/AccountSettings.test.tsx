@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as authContext from '../contexts/AuthContext';
 import * as gamificationLib from '../lib/gamification';
+import * as errorTrackingLib from '../lib/errorTracking';
 import AccountSettings from '../components/Account/AccountSettings';
 import { supabase } from '../lib/supabase';
 import { ToastProvider } from '../contexts/ToastContext';
@@ -209,6 +210,20 @@ describe('AccountSettings', () => {
       renderAccountSettings();
 
       await screen.findByLabelText(/whatsapp number/i);
+      expect(screen.getByLabelText(/whatsapp number/i)).toHaveValue('');
+    });
+
+    // Regression: this fetch previously had no .catch at all, an unhandled
+    // promise rejection with no monitoring signal (2026-08-07 audit).
+    it('reports and swallows a load failure instead of leaving it unhandled', async () => {
+      const reportSpy = vi.spyOn(errorTrackingLib, 'reportError').mockImplementation(() => {});
+      mockAuth();
+      vi.mocked(supabase.rpc).mockRejectedValue(new Error('rpc unreachable'));
+
+      renderAccountSettings();
+
+      await screen.findByLabelText(/whatsapp number/i);
+      await vi.waitFor(() => expect(reportSpy).toHaveBeenCalledWith(expect.any(Error)));
       expect(screen.getByLabelText(/whatsapp number/i)).toHaveValue('');
     });
 

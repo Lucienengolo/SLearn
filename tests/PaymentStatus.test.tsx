@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import PaymentStatus from '../components/Tutors/PaymentStatus';
 import * as matchesLib from '../lib/matches';
 import * as paymentsLib from '../lib/tutorPayments';
+import * as errorTrackingLib from '../lib/errorTracking';
 import { LocaleProvider } from '../contexts/LocaleContext';
 import type { Match, TutorRequest, Profile, TutorProfileFields, TutorSessionPayment } from '../lib/supabase';
 import type { MatchContext } from '../lib/matches';
@@ -282,5 +283,19 @@ describe('PaymentStatus', () => {
     expect(screen.getByRole('button', { name: /payer l'acompte/i })).toBeInTheDocument();
 
     vi.unstubAllGlobals();
+  });
+
+  // Regression: a load() failure was previously silent beyond the
+  // user-facing error message -- no monitoring signal at all (2026-08-07
+  // audit).
+  it('reports a load failure for monitoring, in addition to the user-facing error message', async () => {
+    const reportSpy = vi.spyOn(errorTrackingLib, 'reportError').mockImplementation(() => {});
+    vi.spyOn(matchesLib, 'fetchMatchContext').mockRejectedValue(new Error('network unreachable'));
+    vi.spyOn(paymentsLib, 'fetchPaymentForMatch').mockResolvedValue(null);
+
+    renderPaymentStatus({ matchId: 'match-1', viewerRole: 'parent' });
+
+    expect(await screen.findByText(/could not load/i)).toBeInTheDocument();
+    expect(reportSpy).toHaveBeenCalledWith(expect.any(Error));
   });
 });

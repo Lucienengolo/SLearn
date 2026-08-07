@@ -5,7 +5,7 @@
 -- actually the requester's own number. Fix: capture it once at the profile
 -- level -- optionally at signup, or the first time a parent submits a
 -- request without one on file -- and reuse it everywhere after that.
-alter table profiles add column whatsapp_contact text;
+alter table profiles add column if not exists whatsapp_contact text;
 
 -- Optional at signup (raw_user_meta_data ->> 'whatsapp_contact' is simply
 -- null when the signup form left it blank -- no branching needed), same

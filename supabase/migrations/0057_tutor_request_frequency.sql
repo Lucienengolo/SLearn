@@ -7,7 +7,7 @@
 -- and building one isn't part of this ask. Rides along as informational
 -- metadata everywhere the existing grade/neighborhood summary already
 -- appears; doesn't affect matching/scoring.
-alter table tutor_requests add column sessions_per_week integer not null default 1 check (sessions_per_week between 1 and 7);
+alter table tutor_requests add column if not exists sessions_per_week integer not null default 1 check (sessions_per_week between 1 and 7);
 
 -- Pre-existing bug found while touching this function: 0040 widened
 -- create_tutor_request with two new trailing parameters via CREATE OR

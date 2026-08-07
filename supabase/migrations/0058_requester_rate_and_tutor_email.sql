@@ -8,7 +8,7 @@ alter table tutor_profile_fields alter column rate_per_session drop not null;
 -- Companion to budget_min/budget_max: a bare number range doesn't say
 -- per-what. Nullable -- only meaningful once a parent actually enters a
 -- budget, same optionality as budget_min/budget_max themselves.
-alter table tutor_requests add column budget_period text check (budget_period in ('weekly', 'monthly'));
+alter table tutor_requests add column if not exists budget_period text check (budget_period in ('weekly', 'monthly'));
 
 -- The WhatsApp handoff message (PaymentStatus.tsx) now needs the tutor's
 -- email alongside their name/phone. public_profiles deliberately excludes

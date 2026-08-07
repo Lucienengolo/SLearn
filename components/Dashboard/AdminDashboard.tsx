@@ -443,7 +443,7 @@ function MatchSettlementCard({ settlement, onSettled }: { settlement: PendingMat
         <Field label={t('dashboard.reviewQueue.tutorFieldLabel')} value={`${settlement.tutor_name ?? '—'} · ${settlement.tutor_whatsapp}`} />
         <Field label={t('dashboard.reviewQueue.sessionDateFieldLabel')} value={new Date(settlement.confirmed_session_date).toLocaleString()} />
         <Field
-          label={t('dashboard.reviewQueue.rateFieldLabel')}
+          label={t('dashboard.reviewQueue.budgetFieldLabel')}
           value={formatBudgetRange(settlement.budget_min, settlement.budget_max, periodLabel(settlement.budget_period, t), t('tutorMarketplace.common.toBeNegotiated'))}
         />
         <Field label={t('dashboard.reviewQueue.frequencyFieldLabel')} value={`${settlement.sessions_per_week}${t('tutorMarketplace.common.perWeekSuffix')}`} />

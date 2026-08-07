@@ -79,9 +79,14 @@ export type MatchContext = {
   tutorFields: TutorProfileFields;
 };
 
-// Everything Chat.tsx needs to render its header and the "Continue on
-// WhatsApp" handoff regardless of which side (parent or tutor) is viewing.
-export async function fetchMatchContext(matchId: string): Promise<MatchContext> {
+// Everything Chat.tsx and PaymentStatus.tsx need to render, regardless of
+// which side (parent or tutor) is viewing -- both mount side by side in a
+// match's detail view (MatchStatus.tsx for parents, SLearnClassroom.tsx for
+// tutors) and each call this independently. In-flight calls for the same
+// matchId are deduped below so that pairing doesn't double every one of
+// these four queries -- found during a 2026-08-07 performance audit after
+// SLearnClassroom.tsx started rendering both together.
+async function fetchMatchContextUncached(matchId: string): Promise<MatchContext> {
   const { data: match, error: matchError } = await supabase.from('matches').select('*').eq('id', matchId).single();
   if (matchError) throw matchError;
 
@@ -105,6 +110,19 @@ export async function fetchMatchContext(matchId: string): Promise<MatchContext> 
     tutorProfile: tutorProfile as Profile,
     tutorFields: tutorFields as TutorProfileFields,
   };
+}
+
+const inFlightMatchContext = new Map<string, Promise<MatchContext>>();
+
+export function fetchMatchContext(matchId: string): Promise<MatchContext> {
+  const existing = inFlightMatchContext.get(matchId);
+  if (existing) return existing;
+
+  const promise = fetchMatchContextUncached(matchId).finally(() => {
+    inFlightMatchContext.delete(matchId);
+  });
+  inFlightMatchContext.set(matchId, promise);
+  return promise;
 }
 
 // public_profiles (0046_restrict_profile_email.sql) deliberately excludes

@@ -4,6 +4,7 @@ import { supabase, Category, TutorRequest } from '../../lib/supabase';
 import { createTutorRequest, matchTutorRequest, isValidWhatsappContact } from '../../lib/tutorRequests';
 import { fetchMyWhatsappContact } from '../../lib/profile';
 import { getCurrentLocation } from '../../lib/geolocation';
+import { reportError } from '../../lib/errorTracking';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../contexts/LocaleContext';
 import { useOfflineStatus } from '../../contexts/OfflineContext';
@@ -74,11 +75,16 @@ export default function RequestForm({ onSubmitted }: RequestFormProps) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchMyWhatsappContact().then((contact) => {
-      if (cancelled || !contact) return;
-      setWhatsappContact(contact);
-      setHadStoredWhatsapp(true);
-    });
+    fetchMyWhatsappContact()
+      .then((contact) => {
+        if (cancelled || !contact) return;
+        setWhatsappContact(contact);
+        setHadStoredWhatsapp(true);
+      })
+      // Non-critical -- the form just falls back to a blank, retypeable
+      // field, same as before this prefill existed. Previously unhandled
+      // entirely (a silent promise rejection) with no monitoring signal.
+      .catch(reportError);
     return () => {
       cancelled = true;
     };
