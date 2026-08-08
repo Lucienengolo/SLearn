@@ -16,6 +16,7 @@ Key routing rules:
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
+- CI health/dependency vulnerabilities/git hygiene pass → invoke /harden
 
 ## Design System
 Always read DESIGN.md before making any visual or UI decisions.
