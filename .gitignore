@@ -29,3 +29,9 @@ SLearn/
 playwright-report/
 test-results/
 coverage/
+
+# Supabase CLI's local scratch/cache dir (version checks, pooler URL,
+# project ref) -- machine-local, regenerated on every CLI invocation,
+# was accidentally tracked in the initial commit and kept showing up
+# as "modified" after every single supabase command.
+supabase/.temp/
