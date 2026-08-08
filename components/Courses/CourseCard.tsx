@@ -76,9 +76,9 @@ export default function CourseCard({ course, onClick, isSaved, onToggleSave }: C
           )}
           <span className="text-2xs text-gray-500">{levelKey ? t(levelKey) : course.level}</span>
         </div>
-        <h3 className="font-semibold text-lg text-gray-900 mb-1.5 line-clamp-2">
+        <h2 className="font-semibold text-lg text-gray-900 mb-1.5 line-clamp-2">
           {course.title}
-        </h3>
+        </h2>
         <p className="text-gray-500 text-sm mb-3 line-clamp-2">
           {course.description}
         </p>

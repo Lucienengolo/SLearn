@@ -121,7 +121,7 @@ export default function Footer({ onNavigate }: FooterProps) {
           ))}
         </div>
 
-        <div className="pt-6 border-t border-white/10 text-2xs text-gray-500 space-y-3">
+        <div className="pt-6 border-t border-white/10 text-2xs text-gray-400 space-y-3">
           <p>{t('footer.disclaimer')}</p>
           <p>&copy; {new Date().getFullYear()} {t('footer.copyrightSuffix')}</p>
         </div>
