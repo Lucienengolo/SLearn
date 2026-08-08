@@ -8,6 +8,9 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   backup:
     name: pg_dump and upload
