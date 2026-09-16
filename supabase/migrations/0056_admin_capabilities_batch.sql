@@ -6,9 +6,13 @@
 -- building: nothing anywhere ever transitions a match OUT of
 -- 'dispute_review' today -- resolve_dispute() below is a real gap-fill,
 -- not just a nice-to-have.
+-- Deploy-time drift found 2026-09-15: this whole migration was already
+-- applied live out-of-band before this file existed -- every table/index/
+-- policy/table-returning-function statement below is made idempotent
+-- rather than assumed to be a first application.
 
 -- Audit log -------------------------------------------------------------
-create table admin_action_log (
+create table if not exists admin_action_log (
   id uuid primary key default gen_random_uuid(),
   admin_id uuid not null references profiles(id),
   action text not null,
@@ -18,9 +22,11 @@ create table admin_action_log (
   created_at timestamptz not null default now()
 );
 
-create index admin_action_log_created_idx on admin_action_log(created_at desc);
+create index if not exists admin_action_log_created_idx on admin_action_log(created_at desc);
 
 alter table admin_action_log enable row level security;
+
+drop policy if exists "admins view the action log" on admin_action_log;
 
 create policy "admins view the action log"
   on admin_action_log for select
@@ -153,7 +159,7 @@ grant execute on function notify_instructor(uuid, text, text) to authenticated;
 -- #2 -- Private admin notes on an instructor -------------------------------
 -- Simple enough to gate with a direct RLS policy rather than an RPC
 -- round-trip, same pattern as 0004's is_reviewer-scoped policies.
-create table instructor_admin_notes (
+create table if not exists instructor_admin_notes (
   id uuid primary key default gen_random_uuid(),
   instructor_id uuid not null references profiles(id) on delete cascade,
   admin_id uuid not null references profiles(id),
@@ -161,13 +167,17 @@ create table instructor_admin_notes (
   created_at timestamptz not null default now()
 );
 
-create index instructor_admin_notes_instructor_idx on instructor_admin_notes(instructor_id, created_at desc);
+create index if not exists instructor_admin_notes_instructor_idx on instructor_admin_notes(instructor_id, created_at desc);
 
 alter table instructor_admin_notes enable row level security;
+
+drop policy if exists "admins view instructor notes" on instructor_admin_notes;
 
 create policy "admins view instructor notes"
   on instructor_admin_notes for select
   using (exists (select 1 from profiles p where p.id = (select auth.uid()) and p.is_admin = true));
+
+drop policy if exists "admins add instructor notes" on instructor_admin_notes;
 
 create policy "admins add instructor notes"
   on instructor_admin_notes for insert
@@ -263,6 +273,8 @@ grant execute on function admin_set_course_published(uuid, boolean) to authentic
 -- from is_admin; an admin who isn't also a reviewer couldn't use them.
 -- Scoped to currently-published courses, since "manage/unpublish" only
 -- cares about what's actually live.
+drop function if exists get_all_courses_admin();
+
 create or replace function get_all_courses_admin()
 returns table(
   id uuid,
@@ -374,6 +386,8 @@ $$;
 
 grant execute on function resolve_dispute(uuid, text) to authenticated;
 
+drop function if exists get_all_matches_admin();
+
 create or replace function get_all_matches_admin()
 returns table(
   match_id uuid,
@@ -406,6 +420,8 @@ $$;
 grant execute on function get_all_matches_admin() to authenticated;
 
 -- Read side of the audit log -- admin-only, most recent first.
+drop function if exists get_admin_action_log();
+
 create or replace function get_admin_action_log()
 returns table(
   id uuid,

@@ -108,6 +108,14 @@ $$;
 -- security-definer so no new broad RLS grant is needed on matches/
 -- tutor_requests/tutor_profile_fields for reviewers (same pattern as
 -- get_course_instructor_email, 0046_restrict_profile_email.sql).
+--
+-- Deploy-time drift found 2026-09-15: a function with this name already
+-- existed live (out-of-band, never captured in a migration), with a
+-- different OUT-parameter shape -- `create or replace` can't change a
+-- table-returning function's column signature, so the drop below is
+-- required. Confirmed with the project owner before adding it.
+drop function if exists get_pending_match_settlements() cascade;
+
 create or replace function get_pending_match_settlements()
 returns table(
   match_id uuid,
