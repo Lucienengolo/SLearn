@@ -7,7 +7,12 @@
 // applied the change -- so our state can never drift ahead of Spekooh's.
 //
 // Call with: POST { spekooh_request_id, action: 'respond', decision: 'ACCEPTED' | 'REJECTED' }
-//         or POST { spekooh_request_id, action: 'submit_guide', content: [...] }
+//         or POST { spekooh_request_id, action: 'submit_guide', content: [...], storage_path?: '<uid>/...' }
+//
+// content is always required for submit_guide, even when storage_path is
+// also present: in file mode it's just a {question_type} tally (real
+// text/answer omitted) so Spekooh's credit calculator still has something
+// to count -- the real guide content lives in the file at storage_path.
 import { corsHeaders } from '../_shared/cors.ts';
 import { createAdminClient, createCallerClient } from '../_shared/supabaseAdmin.ts';
 
@@ -15,11 +20,16 @@ const SPEKOOH_WEBHOOK_URL = Deno.env.get('SPEKOOH_WEBHOOK_URL');
 const SPEKOOH_WEBHOOK_SECRET = Deno.env.get('SPEKOOH_WEBHOOK_SECRET');
 const SPEKOOH_PARTNER_ID = Deno.env.get('SPEKOOH_PARTNER_ID') ?? 's-learn';
 
+// How long Spekooh has to actually fetch the file after we sign the URL --
+// generous given it downloads it synchronously within the same webhook call.
+const GUIDE_FILE_SIGNED_URL_TTL_SECONDS = 3600;
+
 type RespondBody = { spekooh_request_id: number; action: 'respond'; decision: 'ACCEPTED' | 'REJECTED' };
 type SubmitGuideBody = {
   spekooh_request_id: number;
   action: 'submit_guide';
   content: { question_type: string; text?: string; answer?: string }[];
+  storage_path?: string;
 };
 type RequestBody = RespondBody | SubmitGuideBody;
 
@@ -28,7 +38,9 @@ function isRequestBody(value: unknown): value is RequestBody {
   const v = value as Record<string, unknown>;
   if (typeof v.spekooh_request_id !== 'number') return false;
   if (v.action === 'respond') return v.decision === 'ACCEPTED' || v.decision === 'REJECTED';
-  if (v.action === 'submit_guide') return Array.isArray(v.content);
+  if (v.action === 'submit_guide') {
+    return Array.isArray(v.content) && (v.storage_path === undefined || typeof v.storage_path === 'string');
+  }
   return false;
 }
 
@@ -80,11 +92,36 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'No matching marking request for this account' }, 404);
   }
 
+  // Defense in depth: the client upload is already RLS-scoped to the
+  // caller's own folder (0062_spekooh_marking_guide_file_upload.sql), but
+  // this function uses the admin client below, which bypasses RLS -- a
+  // storage_path outside the caller's own folder is rejected here too,
+  // rather than trusted just because the row-ownership check above passed.
+  if (body.action === 'submit_guide' && body.storage_path && !body.storage_path.startsWith(`${userData.user.id}/`)) {
+    return json({ error: 'storage_path does not belong to this account' }, 403);
+  }
+
+  let guideFileUrl: string | null = null;
+  if (body.action === 'submit_guide' && body.storage_path) {
+    const { data: signed, error: signError } = await admin.storage
+      .from('marking-guides')
+      .createSignedUrl(body.storage_path, GUIDE_FILE_SIGNED_URL_TTL_SECONDS);
+    if (signError || !signed) {
+      return json({ error: `Could not sign the uploaded guide file: ${signError?.message ?? 'unknown error'}` }, 500);
+    }
+    guideFileUrl = signed.signedUrl;
+  }
+
   const eventType = body.action === 'respond' ? 'instructor_response' : 'marking_guide_submission';
   const payload =
     body.action === 'respond'
       ? { event_type: eventType, instructor_request_id: body.spekooh_request_id, decision: body.decision }
-      : { event_type: eventType, instructor_request_id: body.spekooh_request_id, content: body.content };
+      : {
+          event_type: eventType,
+          instructor_request_id: body.spekooh_request_id,
+          content: body.content,
+          guide_file_url: guideFileUrl,
+        };
 
   const rawBody = JSON.stringify(payload);
   const timestamp = String(Math.floor(Date.now() / 1000));
@@ -114,7 +151,7 @@ Deno.serve(async (req: Request) => {
   const update =
     body.action === 'respond'
       ? { status: body.decision === 'ACCEPTED' ? 'accepted' : 'rejected' }
-      : { status: 'submitted', content: body.content };
+      : { status: 'submitted', content: body.content, guide_storage_path: body.storage_path ?? null };
 
   const { error: updateError } = await admin.from('spekooh_marking_requests').update(update).eq('id', row.id);
   if (updateError) {
