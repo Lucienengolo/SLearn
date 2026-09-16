@@ -18,6 +18,7 @@ type NewRequestPayload = {
   instructor_id: string;
   paper_id: number;
   subject: string | null;
+  paper_file_url: string | null;
   sent_at: string;
   responds_by: string;
 };
@@ -78,6 +79,7 @@ Deno.serve(async (req: Request) => {
         spekooh_paper_id: body.paper_id,
         instructor_id: body.instructor_id,
         subject: body.subject,
+        paper_file_url: body.paper_file_url,
         status: 'pending',
         sent_at: body.sent_at,
         responds_by: body.responds_by,

@@ -16,6 +16,11 @@ export type MarkingGuideQuestion = {
   answer: string;
 };
 
+// File mode's content is only ever this shape server-side too (real
+// text/answer omitted) -- Spekooh's credit calculator only ever reads
+// question_type off each entry regardless of which form this took.
+export type MarkingGuideQuestionTally = { question_type: MarkingGuideQuestionType };
+
 export type SpekoohMarkingRequest = {
   id: string;
   spekooh_request_id: number;
@@ -27,6 +32,8 @@ export type SpekoohMarkingRequest = {
   responds_by: string | null;
   guide_deadline: string | null;
   content: MarkingGuideQuestion[] | null;
+  paper_file_url: string | null;
+  guide_storage_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -55,6 +62,32 @@ export async function respondToMarkingRequest(spekoohRequestId: number, decision
 export async function submitMarkingGuide(spekoohRequestId: number, content: MarkingGuideQuestion[]): Promise<void> {
   const { error } = await supabase.functions.invoke('spekooh-respond', {
     body: { spekooh_request_id: spekoohRequestId, action: 'submit_guide', content },
+  });
+  if (error) throw error;
+}
+
+// Private bucket, RLS-scoped to the caller's own folder
+// (0062_spekooh_marking_guide_file_upload.sql) -- same pattern as
+// lib/instructorApplications.ts's uploadCredential. Returns the storage
+// path (not a URL); spekooh-respond signs it server-side right before
+// forwarding to Spekooh, so no long-lived signed URL is generated here.
+export async function uploadGuideFile(instructorId: string, spekoohRequestId: number, file: File): Promise<string> {
+  const extension = file.name.split('.').pop();
+  const path = `${instructorId}/${spekoohRequestId}-${Date.now()}.${extension}`;
+
+  const { error } = await supabase.storage.from('marking-guides').upload(path, file);
+  if (error) throw error;
+
+  return path;
+}
+
+export async function submitMarkingGuideFile(
+  spekoohRequestId: number,
+  tally: MarkingGuideQuestionTally[],
+  storagePath: string
+): Promise<void> {
+  const { error } = await supabase.functions.invoke('spekooh-respond', {
+    body: { spekooh_request_id: spekoohRequestId, action: 'submit_guide', content: tally, storage_path: storagePath },
   });
   if (error) throw error;
 }

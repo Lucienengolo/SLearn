@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, XCircle, FileCheck, FileText } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, FileCheck, FileText, ExternalLink } from 'lucide-react';
 import {
   SpekoohMarkingRequest,
   SpekoohMarkingRequestStatus,
@@ -137,6 +137,18 @@ export default function SpekoohMarkingRequests() {
                     {t('dashboard.marking.sentPrefix')} {new Date(request.sent_at).toLocaleDateString()}
                   </span>
                 </div>
+
+                {request.paper_file_url && (
+                  <a
+                    href={request.paper_file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:text-primary-800 transition mb-3"
+                  >
+                    <ExternalLink size={14} />
+                    <span>{t('dashboard.marking.viewQuestionPaper')}</span>
+                  </a>
+                )}
 
                 {request.status === 'pending' && request.responds_by && (
                   <p className="text-sm text-gray-500 mb-3">

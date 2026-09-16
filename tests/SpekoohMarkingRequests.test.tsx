@@ -10,7 +10,14 @@ import type { SpekoohMarkingRequest } from '../lib/spekoohMarkingRequests';
 
 vi.mock('../lib/spekoohMarkingRequests', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../lib/spekoohMarkingRequests')>();
-  return { ...actual, fetchMyMarkingRequests: vi.fn(), respondToMarkingRequest: vi.fn(), submitMarkingGuide: vi.fn() };
+  return {
+    ...actual,
+    fetchMyMarkingRequests: vi.fn(),
+    respondToMarkingRequest: vi.fn(),
+    submitMarkingGuide: vi.fn(),
+    uploadGuideFile: vi.fn(),
+    submitMarkingGuideFile: vi.fn(),
+  };
 });
 
 function mockAuth() {
@@ -30,6 +37,8 @@ const PENDING_REQUEST: SpekoohMarkingRequest = {
   responds_by: '2026-09-18T09:00:00Z',
   guide_deadline: null,
   content: null,
+  paper_file_url: 'https://spekooh-staging.onrender.com/media/paper.pdf',
+  guide_storage_path: null,
   created_at: '2026-09-16T09:00:00Z',
   updated_at: '2026-09-16T09:00:00Z',
 };
@@ -103,6 +112,14 @@ describe('SpekoohMarkingRequests', () => {
     await waitFor(() => expect(spekoohLib.respondToMarkingRequest).toHaveBeenCalledWith(5, 'REJECTED'));
   });
 
+  it('links to the real question paper when one is available', async () => {
+    vi.mocked(spekoohLib.fetchMyMarkingRequests).mockResolvedValue([PENDING_REQUEST]);
+    renderList();
+
+    const link = await screen.findByRole('link', { name: /view question paper/i });
+    expect(link).toHaveAttribute('href', 'https://spekooh-staging.onrender.com/media/paper.pdf');
+  });
+
   it('opens the marking-guide form for an accepted request and submits it', async () => {
     const user = userEvent.setup();
     vi.mocked(spekoohLib.fetchMyMarkingRequests).mockResolvedValue([ACCEPTED_REQUEST]);
@@ -121,6 +138,33 @@ describe('SpekoohMarkingRequests', () => {
       expect(spekoohLib.submitMarkingGuide).toHaveBeenCalledWith(6, [
         { question_type: 'SHORT_ANSWER', text: 'What is photosynthesis?', answer: 'The process plants use to convert light to energy.' },
       ])
+    );
+  });
+
+  it('uploads a file and submits a question-type tally instead of the full form', async () => {
+    const user = userEvent.setup();
+    vi.mocked(spekoohLib.fetchMyMarkingRequests).mockResolvedValue([ACCEPTED_REQUEST]);
+    vi.mocked(spekoohLib.uploadGuideFile).mockResolvedValue('instructor-1/6-123456.pdf');
+    vi.mocked(spekoohLib.submitMarkingGuideFile).mockResolvedValue(undefined);
+    renderList();
+    await screen.findByText('Accepted');
+
+    await user.click(screen.getByRole('button', { name: /write marking guide/i }));
+    await user.click(screen.getByRole('button', { name: /upload a file/i }));
+
+    const file = new File(['%PDF-1.4 fake pdf bytes'], 'guide.pdf', { type: 'application/pdf' });
+    const fileInput = screen.getByLabelText(/choose file/i) as HTMLInputElement;
+    await user.upload(fileInput, file);
+
+    await user.click(screen.getByRole('button', { name: /submit marking guide/i }));
+
+    await waitFor(() => expect(spekoohLib.uploadGuideFile).toHaveBeenCalledWith('instructor-1', 6, file));
+    await waitFor(() =>
+      expect(spekoohLib.submitMarkingGuideFile).toHaveBeenCalledWith(
+        6,
+        [{ question_type: 'SHORT_ANSWER' }],
+        'instructor-1/6-123456.pdf'
+      )
     );
   });
 
