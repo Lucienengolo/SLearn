@@ -5,12 +5,18 @@
 -- filter in fetchMyMatchesAsTutor); it never deletes the underlying row,
 -- which stays intact for payment history, reviewer settlement records, and
 -- notifications that reference it.
-alter table matches add column tutor_dismissed_at timestamptz;
+-- Deploy-time drift found 2026-09-15: this whole migration was already
+-- applied live out-of-band before this file existed (column, policy, and
+-- trigger all pre-exist) -- every statement below is made idempotent
+-- rather than assumed to be a first application.
+alter table matches add column if not exists tutor_dismissed_at timestamptz;
 
 -- Scoped to the same terminal set TERMINAL_MATCH_STATUSES already uses in
 -- lib/matches.ts (expired, declined, cancelled_refunded, completed) -- an
 -- active match can't be dismissed out from under a parent still relying on
 -- it, only ones that are actually finished.
+drop policy if exists "tutors dismiss their own terminal matches" on matches;
+
 create policy "tutors dismiss their own terminal matches"
   on matches for update
   using (tutor_id = (select auth.uid()) and status in ('expired', 'declined', 'cancelled_refunded', 'completed'))
@@ -43,6 +49,8 @@ begin
   return new;
 end;
 $$;
+
+drop trigger if exists matches_guard_tutor_dismissal on matches;
 
 create trigger matches_guard_tutor_dismissal
   before update on matches
