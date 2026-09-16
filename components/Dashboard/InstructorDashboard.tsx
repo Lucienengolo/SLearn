@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import CourseEditor from './CourseEditor';
 import CourseStudents from './CourseStudents';
 import SLearnClassroom from './SLearnClassroom';
+import SpekoohMarkingRequests from './SpekoohMarkingRequests';
 import ConfirmDialog from '../UI/ConfirmDialog';
 import { useLocale } from '../../contexts/LocaleContext';
 import type { TranslationKey } from '../../lib/i18n';
@@ -14,12 +15,15 @@ type CourseWithStats = Course & { enrollmentCount: number; lessonCount: number }
 // S@Learn Classroom absorbed Tutor Matches and League as internal sections
 // (founder request, 2026-07-27) -- it's the whole class-management
 // workspace now, not one tab among several. Only Courses (CRUD) stays
-// separate at this top level.
-type DashboardTab = 'courses' | 'classroom';
+// separate at this top level. Spekooh marking requests (2026-09-16) join it
+// as a third top-level tab rather than folding into Classroom -- these are
+// exam papers from an external partner platform, not course-teaching work.
+type DashboardTab = 'courses' | 'classroom' | 'marking';
 
 const TAB_LABEL_KEYS: Record<DashboardTab, TranslationKey> = {
   courses: 'nav.courses',
   classroom: 'dashboard.classroom.title',
+  marking: 'dashboard.marking.tabLabel',
 };
 
 type StatusFilter = 'all' | 'draft' | 'pending' | 'live' | 'rejected';
@@ -174,6 +178,15 @@ export default function InstructorDashboard() {
 
   if (tab === 'classroom') {
     return <SLearnClassroom onBack={() => setTab('courses')} />;
+  }
+
+  if (tab === 'marking') {
+    return (
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
+        <TabNav tab={tab} onSelect={setTab} />
+        <SpekoohMarkingRequests />
+      </div>
+    );
   }
 
   const visibleCourses = courses.filter((course) => {
