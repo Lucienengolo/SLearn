@@ -6,7 +6,7 @@
 // pushes with, then updates our own row only after Spekooh confirms it
 // applied the change -- so our state can never drift ahead of Spekooh's.
 //
-// Call with: POST { spekooh_request_id, action: 'respond', decision: 'ACCEPTED' | 'REJECTED' }
+// Call with: POST { spekooh_request_id, action: 'respond', decision: 'ACCEPTED' | 'REJECTED', reason?: string }
 //         or POST { spekooh_request_id, action: 'submit_guide', content: [...], storage_path?: '<uid>/...' }
 //
 // content is always required for submit_guide, even when storage_path is
@@ -24,7 +24,16 @@ const SPEKOOH_PARTNER_ID = Deno.env.get('SPEKOOH_PARTNER_ID') ?? 's-learn';
 // generous given it downloads it synchronously within the same webhook call.
 const GUIDE_FILE_SIGNED_URL_TTL_SECONDS = 3600;
 
-type RespondBody = { spekooh_request_id: number; action: 'respond'; decision: 'ACCEPTED' | 'REJECTED' };
+// reason is only ever stored here (decline_reason): Spekooh's routing only
+// needs the decision, so it is not forwarded.
+const MAX_DECLINE_REASON_LENGTH = 500;
+
+type RespondBody = {
+  spekooh_request_id: number;
+  action: 'respond';
+  decision: 'ACCEPTED' | 'REJECTED';
+  reason?: string;
+};
 type SubmitGuideBody = {
   spekooh_request_id: number;
   action: 'submit_guide';
@@ -37,7 +46,12 @@ function isRequestBody(value: unknown): value is RequestBody {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
   if (typeof v.spekooh_request_id !== 'number') return false;
-  if (v.action === 'respond') return v.decision === 'ACCEPTED' || v.decision === 'REJECTED';
+  if (v.action === 'respond') {
+    if (v.reason !== undefined && (typeof v.reason !== 'string' || v.reason.length > MAX_DECLINE_REASON_LENGTH)) {
+      return false;
+    }
+    return v.decision === 'ACCEPTED' || v.decision === 'REJECTED';
+  }
   if (v.action === 'submit_guide') {
     return Array.isArray(v.content) && (v.storage_path === undefined || typeof v.storage_path === 'string');
   }
@@ -148,10 +162,24 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Spekooh rejected the update', detail: spekoohResult }, 409);
   }
 
+  const now = new Date().toISOString();
   const update =
     body.action === 'respond'
-      ? { status: body.decision === 'ACCEPTED' ? 'accepted' : 'rejected' }
-      : { status: 'submitted', content: body.content, guide_storage_path: body.storage_path ?? null };
+      ? {
+          status: body.decision === 'ACCEPTED' ? 'accepted' : 'rejected',
+          responded_at: now,
+          decline_reason: body.decision === 'REJECTED' ? body.reason?.trim() || null : null,
+        }
+      : {
+          status: 'submitted',
+          content: body.content,
+          guide_storage_path: body.storage_path ?? null,
+          submitted_at: now,
+          // The draft has served its purpose; keeping it would show a stale
+          // "saved draft" on a request that is already submitted.
+          draft_content: null,
+          draft_saved_at: null,
+        };
 
   const { error: updateError } = await admin.from('spekooh_marking_requests').update(update).eq('id', row.id);
   if (updateError) {

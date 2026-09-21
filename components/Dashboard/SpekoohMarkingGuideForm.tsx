@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Plus, Trash2, ExternalLink, Upload } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Trash2, Upload } from 'lucide-react';
 import {
   MarkingGuideQuestion,
   MarkingGuideQuestionTally,
   SpekoohMarkingRequest,
+  saveGuideDraft,
   submitMarkingGuide,
   submitMarkingGuideFile,
   uploadGuideFile,
@@ -15,9 +16,15 @@ import type { TranslationKey } from '../../lib/i18n';
 
 type SpekoohMarkingGuideFormProps = {
   request: SpekoohMarkingRequest;
-  onBack: () => void;
   onSubmitted: () => void;
 };
+
+// How long after the last keystroke the draft is saved. Long enough not to
+// write on every character, short enough that closing the tab right after
+// typing loses at most a moment of work.
+export const DRAFT_SAVE_DELAY_MS = 1500;
+
+type DraftStatus = 'idle' | 'saving' | 'saved' | 'failed';
 
 type GuideMode = 'form' | 'file';
 
@@ -53,17 +60,41 @@ function ModeToggle({ mode, onChange, t }: { mode: GuideMode; onChange: (m: Guid
   );
 }
 
-// Full-page drill-in, matching GradingPanel's established pattern for
-// anything more complex than a single-field form (rather than a modal).
-export default function SpekoohMarkingGuideForm({ request, onBack, onSubmitted }: SpekoohMarkingGuideFormProps) {
+// The marking-guide editor, embedded in the request page beside the paper
+// itself (SpekoohRequestDetail) so the instructor can read a question and
+// write its answer without leaving the screen. Form mode autosaves a draft.
+export default function SpekoohMarkingGuideForm({ request, onSubmitted }: SpekoohMarkingGuideFormProps) {
   const { t } = useLocale();
   const { user } = useAuth();
   const { showToast } = useToast();
   const [mode, setMode] = useState<GuideMode>('form');
-  const [questions, setQuestions] = useState<MarkingGuideQuestion[]>([emptyQuestion()]);
+  const [questions, setQuestions] = useState<MarkingGuideQuestion[]>(
+    request.draft_content && request.draft_content.length > 0 ? request.draft_content : [emptyQuestion()]
+  );
+  const [draftStatus, setDraftStatus] = useState<DraftStatus>(request.draft_saved_at ? 'saved' : 'idle');
+  // What is already saved, so the first render does not write the draft (or
+  // an empty form) back over itself; only a real edit differs from it.
+  const lastSavedRef = useRef<string>(JSON.stringify(request.draft_content && request.draft_content.length > 0 ? request.draft_content : [emptyQuestion()]));
   const [tallyRows, setTallyRows] = useState<(MarkingGuideQuestionTally & { count: number })[]>([emptyTallyRow()]);
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'form') return;
+    const snapshot = JSON.stringify(questions);
+    if (snapshot === lastSavedRef.current) return;
+    const timer = setTimeout(async () => {
+      setDraftStatus('saving');
+      try {
+        await saveGuideDraft(request.spekooh_request_id, questions);
+        lastSavedRef.current = snapshot;
+        setDraftStatus('saved');
+      } catch {
+        setDraftStatus('failed');
+      }
+    }, DRAFT_SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [questions, mode, request.spekooh_request_id]);
 
   const updateQuestion = (index: number, patch: Partial<MarkingGuideQuestion>) => {
     setQuestions((prev) => prev.map((q, i) => (i === index ? { ...q, ...patch } : q)));
@@ -84,6 +115,10 @@ export default function SpekoohMarkingGuideForm({ request, onBack, onSubmitted }
   const handleSubmitForm = async () => {
     if (questions.length === 0) {
       showToast(t('dashboard.marking.needsAtLeastOneQuestion'), 'error');
+      return;
+    }
+    if (questions.some((question) => !question.answer.trim())) {
+      showToast(t('dashboard.marking.answerRequired'), 'error');
       return;
     }
     setSubmitting(true);
@@ -127,22 +162,7 @@ export default function SpekoohMarkingGuideForm({ request, onBack, onSubmitted }
 
   return (
     <div>
-      <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition mb-4">
-        ← {t('dashboard.marking.backToRequests')}
-      </button>
-      <h2 className="font-display text-2xl text-gray-900 mb-1">{request.subject ?? t('dashboard.marking.title')}</h2>
-      {request.paper_file_url && (
-        <a
-          href={request.paper_file_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:text-primary-800 transition mb-3"
-        >
-          <ExternalLink size={14} />
-          <span>{t('dashboard.marking.viewQuestionPaper')}</span>
-        </a>
-      )}
-      <p className="text-gray-500 mb-4">{t('dashboard.marking.guideFormSubtitle')}</p>
+      <p className="text-gray-500 text-sm mb-4">{t('dashboard.marking.guideFormSubtitle')}</p>
 
       <ModeToggle mode={mode} onChange={setMode} t={t} />
 
@@ -207,6 +227,11 @@ export default function SpekoohMarkingGuideForm({ request, onBack, onSubmitted }
           >
             {t('dashboard.marking.submitGuideButton')}
           </button>
+          <p role="status" className={`text-2xs mt-3 ${draftStatus === 'failed' ? 'text-red-600' : 'text-gray-500'}`}>
+            {draftStatus === 'saving' && t('dashboard.marking.draftSaving')}
+            {draftStatus === 'saved' && t('dashboard.marking.draftSaved')}
+            {draftStatus === 'failed' && t('dashboard.marking.draftSaveFailed')}
+          </p>
         </>
       ) : (
         <>
