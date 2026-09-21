@@ -21,6 +21,20 @@ type NewRequestPayload = {
   paper_file_url: string | null;
   sent_at: string;
   responds_by: string;
+  // Paper context added to Spekooh's push on 2026-09-21. Optional: an older
+  // Spekooh deployment omits all of it, and the row is simply shown with
+  // less detail.
+  category?: string | null;
+  category_title?: string | null;
+  exam_type?: string | null;
+  system?: string | null;
+  track?: string | null;
+  exam_board?: string | null;
+  year?: number | null;
+  language?: string | null;
+  report_title?: string | null;
+  report_institution?: string | null;
+  report_discipline?: string | null;
 };
 
 type GuideReminderPayload = {
@@ -80,6 +94,17 @@ Deno.serve(async (req: Request) => {
         instructor_id: body.instructor_id,
         subject: body.subject,
         paper_file_url: body.paper_file_url,
+        category: body.category ?? null,
+        category_title: body.category_title ?? null,
+        exam_type: body.exam_type ?? null,
+        system: body.system ?? null,
+        track: body.track ?? null,
+        exam_board: body.exam_board ?? null,
+        exam_year: body.year ?? null,
+        language: body.language ?? null,
+        report_title: body.report_title ?? null,
+        report_institution: body.report_institution ?? null,
+        report_discipline: body.report_discipline ?? null,
         status: 'pending',
         sent_at: body.sent_at,
         responds_by: body.responds_by,
