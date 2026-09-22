@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../contexts/LocaleContext';
 import type { TranslationKey } from '../../lib/i18n';
 import SpekoohEarnings from './SpekoohEarnings';
+import SpekoohQualifications from './SpekoohQualifications';
 import SpekoohRequestDetail from './SpekoohRequestDetail';
 import { DeadlineChip, FactChips, StatusBadge } from './spekoohShared';
 
@@ -33,7 +34,13 @@ const BUCKET_EMPTY_KEYS: Record<InboxBucket, TranslationKey> = {
   closed: 'dashboard.marking.bucketEmpty.closed',
 };
 
-type Section = 'requests' | 'earnings';
+type Section = 'requests' | 'earnings' | 'qualifications';
+
+const SECTION_LABEL_KEYS: Record<Section, TranslationKey> = {
+  requests: 'dashboard.marking.sectionRequests',
+  earnings: 'dashboard.marking.sectionEarnings',
+  qualifications: 'dashboard.marking.sectionQualifications',
+};
 
 // How often the countdowns re-evaluate. A minute is the finest unit shown.
 const CLOCK_TICK_MS = 60_000;
@@ -110,7 +117,7 @@ export default function SpekoohMarkingRequests() {
   return (
     <div>
       <div className="flex gap-1 mb-6" role="tablist" aria-label={t('dashboard.marking.title')}>
-        {(['requests', 'earnings'] as Section[]).map((key) => (
+        {(['requests', 'earnings', 'qualifications'] as Section[]).map((key) => (
           <button
             key={key}
             role="tab"
@@ -120,13 +127,15 @@ export default function SpekoohMarkingRequests() {
               section === key ? 'bg-primary-500 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            {t(key === 'requests' ? 'dashboard.marking.sectionRequests' : 'dashboard.marking.sectionEarnings')}
+            {t(SECTION_LABEL_KEYS[key])}
           </button>
         ))}
       </div>
 
       {section === 'earnings' ? (
         <SpekoohEarnings />
+      ) : section === 'qualifications' ? (
+        <SpekoohQualifications />
       ) : (
         <>
           <h1 className="font-display text-3xl sm:text-4xl text-gray-900 mb-1">{t('dashboard.marking.title')}</h1>
