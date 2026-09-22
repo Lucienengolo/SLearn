@@ -25,7 +25,7 @@ export async function signPayload(timestamp: string, rawBody: string, secret: st
 // env var that could drift out of step with it. Returns null when the URL is
 // not the shape we expect, so a misconfiguration fails loudly instead of
 // signing a request to the wrong place.
-export function partnerApiUrl(webhookUrl: string | undefined, path: 'paper-link' | 'earnings'): string | null {
+export function partnerApiUrl(webhookUrl: string | undefined, path: 'paper-link' | 'earnings' | 'categories'): string | null {
   if (!webhookUrl) return null;
   const match = webhookUrl.trim().match(/^(https?:\/\/.+\/api\/instructors)\/webhook\/?$/);
   return match ? `${match[1]}/partner/${path}/` : null;

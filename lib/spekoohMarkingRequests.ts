@@ -286,3 +286,43 @@ export async function fetchEarnings(): Promise<SpekoohEarnings> {
   if (error) throw error;
   return data as SpekoohEarnings;
 }
+
+// --- Qualifications ---
+// Which of Spekooh's own education-level categories this instructor is
+// qualified to mark, pushed to Spekooh so its routing can filter on it
+// (2026-09-22 owner report: a paper was routed by subject alone, with no
+// qualification check at all). See supabase/functions/spekooh-qualifications.
+
+export type SpekoohCategory = { key: string; title: string };
+
+// Spekooh's own live category list -- never hardcoded here, so the picker
+// can't drift out of sync with what Spekooh's routing actually checks.
+export async function fetchSpekoohCategories(): Promise<SpekoohCategory[]> {
+  const { data, error } = await supabase.functions.invoke('spekooh-qualifications', {
+    body: { action: 'list_categories' },
+  });
+  if (error) throw error;
+  return (data as { categories: SpekoohCategory[] }).categories;
+}
+
+export async function fetchMyQualifications(instructorId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('spekooh_instructor_qualifications')
+    .select('qualified_categories')
+    .eq('instructor_id', instructorId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.qualified_categories as string[] | undefined) ?? [];
+}
+
+// Saves locally on S@Learn's side and pushes the update to Spekooh in the
+// same call. A `warning` in the result means the local save succeeded but
+// the push to Spekooh didn't -- the instructor's choice isn't lost, but
+// Spekooh's own routing won't see it yet until a retry goes through.
+export async function saveSpekoohQualifications(qualifiedCategories: string[]): Promise<{ warning?: string }> {
+  const { data, error } = await supabase.functions.invoke('spekooh-qualifications', {
+    body: { action: 'save', qualified_categories: qualifiedCategories },
+  });
+  if (error) throw error;
+  return data as { warning?: string };
+}
