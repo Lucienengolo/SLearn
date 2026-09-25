@@ -105,9 +105,18 @@ Deno.serve(async (req: Request) => {
     return json({ error: `Unknown category key(s): ${unknown.join(', ')}` }, 400);
   }
 
+  // The email comes from the verified session, not the profiles table:
+  // migration 0046 revoked column-level SELECT on profiles.email from
+  // `authenticated`, so selecting it through the caller's client fails
+  // ("Could not load your profile") for every instructor. full_name is still
+  // readable there.
+  const email = userData.user.email;
+  if (!email) {
+    return json({ error: 'Your account has no email address on file' }, 500);
+  }
   const { data: profile, error: profileError } = await caller
     .from('profiles')
-    .select('email, full_name')
+    .select('full_name')
     .eq('id', userData.user.id)
     .single();
   if (profileError || !profile) {
@@ -132,7 +141,7 @@ Deno.serve(async (req: Request) => {
       payload: {
         event_type: 'instructor_profile_update',
         instructor_id: userData.user.id,
-        email: profile.email,
+        email,
         display_name: profile.full_name ?? '',
         qualified_categories: requested,
       },
